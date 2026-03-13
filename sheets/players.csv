@@ -1,0 +1,673 @@
+id,jersey,first_name,last_name,age,team_name,ppos,spos,role,throws,bats,power,contact,speed,fielding,arm,velocity,junk,accuracy,pitchTypes,salary
+41321,29,James,Dozer,42,Chicago Dogs,P,,RP,L,L,42,7,3,27,0,65,9,16,"4F, 2F, FK, SL",$1.3m
+41349,35,Mabel,Byrd,41,Kyoto Baseball Club,P,,SP,R,L,29,26,16,59,0,52,47,67,"4F, CH, CB, SL, CF",$5.2m
+41412,40,Thrash,Allmeyer,40,Carolina Reapers,P,,SP,R,R,2,14,21,83,0,53,60,86,"4F, CH, CB, SL",$7.0m
+41528,49,Bryant,Wiley,39,Havana Nights,P,,SP,R,R,12,6,85,61,0,60,42,41,"4F, 2F, CH, CB, SL",$4.0m
+41570,64,Caiden,Carey,42,Golondrinas Valencia,P,,SP/RP,R,R,5,34,8,76,0,85,67,57,"4F, SL, CF",$7.2m
+41592,63,Francis,King,40,Havana Nights,P,,SP,R,R,10,24,23,78,0,84,42,3,"4F, 2F, CH, CB, SL",$3.9m
+41812,66,Turner,Waller,45,Nagoya Nocturnals,CF,1B/OF,,L,L,53,26,48,56,31,0,0,0,,$2.7m
+41843,49,Density,Angeles,39,Golondrinas Valencia,P,,SP,L,L,17,3,23,83,0,21,25,52,"4F, CH, CB, SL",$1.6m
+41889,22,Brantley,Driver,40,Carolina Reapers,P,,RP,R,R,23,26,4,56,0,23,46,68,"4F, CH, SL",$2.6m
+41939,8,Louisa,Burton,39,Nagoya Nocturnals,C,RF,,R,L,53,71,56,67,38,0,0,0,,$5.5m
+44533,90,Adina,Gallagher,40,Melbourne Platypi,SS,2B,,R,R,26,34,62,65,54,0,0,0,,$2.2m
+44542,71,Dom,Hudson,38,Yoff-Mariners Dakar,C,LF,,R,R,73,64,86,62,69,0,0,0,,$10.7m
+44548,38,Ralph,Herrera,38,Portland Swifts,CF,OF,,R,L,52,52,86,63,45,0,0,0,,$6.4m
+45225,0,John,Halo,37,Munich Engineers,1B,,,L,L,83,45,61,67,99,0,0,0,,$7.2m
+45228,44,Anakin,Petersen,39,Carolina Reapers,RF,C,,R,R,28,42,87,48,68,0,0,0,,$2.8m
+45229,4,Ellen,Bryce,38,Boston Commodores,2B,,,R,L,50,71,79,53,62,0,0,0,,$5.3m
+45230,41,Julio,Wheeler,37,New York Favorites,P,,SP,R,R,4,40,4,48,0,57,72,49,"4F, 2F, CH, CB, SL",$8.1m
+45234,24,Beau,Rosas,40,Cascadia Kodiaks,P,,RP,R,L,35,1,8,94,0,51,49,57,"4F, CB, SL",$3.8m
+45235,33,Thiago,Boyd,37,Munich Engineers,P,,SP,L,L,12,32,33,81,0,58,74,49,"4F, 2F, CH, CB, SL",$7.3m
+45236,20,Holden,Harrison,37,Seoul Spectres,P,,SP,R,L,2,34,27,48,0,62,49,0,"4F, 2F, CB, CF",$2.7m
+45237,73,Kole,Duke,38,New York Nemesis,SS,2B,,R,R,75,86,16,72,79,0,0,0,,$7.1m
+45243,17,Lucian,Buttes,37,Missoula Moose,P,,SP,R,R,6,21,3,37,0,65,94,54,"4F, 2F, CH, CB, SL",$9.2m
+45246,31,Jason,Baldwin,39,Munich Engineers,P,,RP,L,L,0,0,91,45,0,37,42,71,"4F, 2F, CH, SL",$3.2m
+45247,39,Ray,Bangit,38,FREE AGENT,P,,CL,R,R,0,0,6,41,0,53,48,89,"4F, SL",$6.8m
+46280,11,Marge,Pharma,36,Honolulu Yellowfins,3B,IF,,R,L,44,60,89,63,74,0,0,0,,$6.5m
+46281,76,Dave,Honker,36,Carolina Reapers,LF,,,R,R,69,64,75,41,69,0,0,0,,$6.8m
+46285,32,Pastel,Harper,38,Nagoya Nocturnals,1B,,,R,L,57,81,64,66,87,0,0,0,,$7.9m
+46286,16,Gerry,Glover,36,Jakarta Jaguars,C,OF,,R,L,30,72,58,62,79,0,0,0,,$6.1m
+46290,74,Grady,Barron,40,Boston Commodores,P,,SP/RP,R,R,60,0,0,74,0,70,37,23,"4F, CH, CB, SL",$2.7m
+46291,15,Dawn,Anger,36,FREE AGENT,P,,SP,R,L,24,7,25,19,0,37,61,84,"4F, CH, CB, SL",$9.3m
+46295,6,Petres,Rojas,36,Chicago Dogs,3B,SS,,R,L,55,96,62,31,78,0,0,0,,$8.7m
+46298,71,Carlisle,Lewis,36,New York Favorites,C,,,R,R,46,35,56,52,88,0,0,0,,$3.9m
+46299,68,Les,Hines,40,Joburg Springboks,P,,RP,R,R,18,1,0,45,0,50,52,49,"4F, 2F, SL",$3.0m
+46995,91,Jeremy,Nash,38,Busan Blowfish,3B,,,R,R,56,80,66,50,71,0,0,0,,$7.3m
+46996,22,Trevor,Nichols,36,Boston Commodores,CF,OF,,R,R,64,43,79,24,87,0,0,0,,$6.2m
+47000,35,Gristle,McThornbody,36,FREE AGENT,P,,CL,R,R,2,18,26,31,0,80,67,61,"4F, SL",$4.5m
+47001,88,Edwin,Laffeyette,35,Havana Nights,LF,OF,,R,R,48,45,59,47,96,0,0,0,,$4.3m
+47002,49,Leonel,Oldham,35,New York Nemesis,P,,SP,L,L,9,12,65,81,0,97,93,45,"4F, CH, CB, SL",$15.3m
+47006,60,Chet,Rocket,42,Montreal Voyageurs,2B,IF/OF,,R,L,50,63,28,30,33,0,0,0,,$3.6m
+47008,26,Pyper,Govender,37,Portland Swifts,P,,SP,L,L,13,42,2,29,0,31,58,99,"4F, 2F, CH, CB, SL",$6.7m
+47009,3,Ivor,Roberts,37,Sao Paulo Toucans,3B,SS,,R,S,63,45,87,95,72,0,0,0,,$8.8m
+47013,43,Jules,Verne,35,FREE AGENT,P,,RP,L,L,5,5,40,20,0,83,71,55,"4F, CH, CB",$5.9m
+47014,17,Anson,Fitzgerald,35,Melbourne Platypi,C,RF,,R,R,60,74,23,65,87,0,0,0,,$7.6m
+47963,61,Abraham,Landry,36,Yoff-Mariners Dakar,P,,SP,L,L,0,21,22,77,0,61,29,38,"4F, CH, CB, SL",$3.6m
+47964,11,Jasiah,May,38,Heaters CDMX,SS,3B,,R,L,52,35,42,90,91,0,0,0,,$4.4m
+47965,53,Barny,Friedman,37,Yoff-Mariners Dakar,P,,RP,L,L,26,0,17,62,0,45,31,55,"4F, CB, SL",$1.6m
+47966,29,Teeny,Extreme,34,Kyoto Baseball Club,P,,CL,L,L,12,0,2,59,0,77,55,83,"4F, 2F, CH, CB, SL",$7.0m
+47969,72,Aurelia,Rosales,34,Havana Nights,3B,,,R,R,92,78,97,65,77,0,0,0,,$11.4m
+47972,23,Sage,Kaur,35,Golondrinas Valencia,P,,SP/RP,L,L,13,2,21,42,0,91,89,80,"4F, SL, CF",$16.4m
+47973,92,Enzo,Valdez,34,Kyoto Baseball Club,CF,OF,,R,R,68,99,94,54,90,0,0,0,,$16.7m
+47974,94,Sleve,McDichael,34,Montreal Voyageurs,C,OF,,R,S,58,91,16,60,37,0,0,0,,$4.7m
+47975,37,Andrea,Bishop,39,Yoff-Mariners Dakar,P,,SP,R,R,6,54,78,76,0,56,53,82,"4F, 2F, CH, CB",$6.9m
+47977,18,Terrone,Hurley,44,Joburg Springboks,RF,1B/OF,,L,L,29,42,42,14,3,0,0,0,,$1.5m
+47978,8,Prowlette,Johansen,38,Bomberos San.Dom,C,1B,,R,R,72,72,0,51,57,0,0,0,,$4.5m
+47979,39,Miguel,Nava,34,Sao Paulo Toucans,P,,SP,R,R,14,1,69,31,0,14,65,46,"4F, CH, FK, CB, SL",$3.0m
+47980,6,Cooper,Caterpillar,38,Corsa Palermo,P,,RP,L,L,20,33,12,74,0,79,68,0,"4F, SL",$3.8m
+47983,23,Marina,Berry,40,FREE AGENT,LF,1B/OF,,L,L,71,44,56,39,76,0,0,0,,$8.4m
+47984,28,Dae-Ho,Seong,37,Montreal Voyageurs,P,,RP,R,L,1,14,28,57,0,49,65,68,"4F, CB, SL",$6.2m
+47985,33,Greyson,Hooper,41,Montreal Voyageurs,CF,IF/OF,,R,L,0,54,49,63,99,0,0,0,,$2.9m
+47987,64,Karter,Reed,34,Glasgow Greys,P,,SP/RP,R,L,22,8,0,63,0,83,95,0,"4F, CB, SL",$4.9m
+47988,3,Julius,Adams,35,FREE AGENT,SS,3B,,R,R,48,80,84,65,76,0,0,0,,$9.9m
+47989,39,Kori,Greenman,34,Dublin Mallards,P,,SP,R,L,36,22,84,79,0,87,74,85,"4F, 2F, CB, SL",$16.8m
+47990,9,William,Warren,34,Melbourne Platypi,P,,SP,R,R,7,7,3,30,0,55,57,63,"4F, 2F, CH, CB, SL",$6.3m
+47991,57,Jestre,McDonnie,34,Santa Cruz Sawteeth,P,,RP,R,R,9,1,36,55,0,80,68,88,"4F, CH, SL",$10.5m
+47992,47,Chip,Krasmynski,34,Pittsburgh Unioneers,P,,SP,L,L,5,29,2,62,0,58,79,63,"4F, 2F, CB, SL, CF",$6.9m
+47993,71,Yordan,Sierra,34,Havana Nights,P,,SP,L,L,0,28,21,51,0,53,64,39,"4F, CB, SL",$4.6m
+47994,55,Satoshi,Hanahara,34,Missoula Moose,P,,SP,R,L,5,1,50,86,0,87,54,99,"4F, CH, CB, SL",$14.5m
+48962,31,Ryland,Baja,33,Montreal Voyageurs,3B,1B,,R,S,52,81,90,88,99,0,0,0,,$12.6m
+48965,47,Kris,Trevino,36,Busan Blowfish,P,,SP,R,R,15,15,69,19,0,73,50,34,"4F, 2F, CH, CB",$5.3m
+48966,65,Web,Townsend,33,Boston Commodores,P,,CL,L,L,37,15,7,74,0,53,92,99,"4F, CB",$9.7m
+48968,43,Koil,Lindsey,33,Munich Engineers,P,,RP,L,L,2,7,57,45,0,33,79,74,"4F, CB, SL",$5.5m
+48969,24,Pop,Worrymore,33,Sao Paulo Toucans,P,,RP,L,L,7,6,18,65,0,65,45,54,"4F, CH, CB, SL",$3.7m
+48973,22,Nimbus,Banks,33,Portland Swifts,SS,2B,,R,R,41,59,70,97,89,0,0,0,,$7.1m
+48976,33,Leonard,Huber,36,Havana Nights,C,,,R,R,66,99,0,85,53,0,0,0,,$8.2m
+48981,79,Harlan,Chung,37,Brisbane Rangers,LF,OF,,R,L,69,47,99,36,66,0,0,0,,$7.8m
+48982,61,Aloha,O'Daball,38,FREE AGENT,SS,3B,,R,R,46,69,42,66,99,0,0,0,,$6.1m
+48983,13,Claire,South,37,Santa Cruz Sawteeth,3B,1B,,R,L,68,63,45,37,31,0,0,0,,$3.9m
+48985,12,Marge,Lowbrau,37,Yoff-Mariners Dakar,1B,3B,,R,R,99,65,62,77,37,0,0,0,,$11.1m
+49910,33,Liberty,Solis,32,Jakarta Jaguars,P,,SP/RP,R,R,3,23,75,34,0,96,76,67,"4F, CB, SL",$13.8m
+49912,21,Royce,Boyd,37,Golondrinas Valencia,2B,,,R,L,15,30,61,58,39,0,0,0,,$1.9m
+49914,32,Braydon,Franklin,34,FREE AGENT,2B,IF,,R,R,65,54,70,61,60,0,0,0,,$8.6m
+49915,14,Adelina,Humphrey,32,Glasgow Greys,C,LF,,R,R,57,62,62,47,95,0,0,0,,$7.1m
+49916,40,Volodymyr,Antonyuk,32,New York Favorites,P,,SP/RP,L,L,32,9,41,61,0,94,67,45,"4F, 2F, CH, CB",$8.4m
+49917,10,Saige,Wiggins,39,Brisbane Rangers,LF,OF,,R,R,38,70,83,28,34,0,0,0,,$4.6m
+49918,33,Pat,Crocker,42,Corsa Palermo,P,,RP,R,R,21,1,0,55,0,41,43,22,"4F, CH, CB",$1.9m
+49921,88,Jazmine,Boyle,38,Melbourne Platypi,LF,RF,,R,R,94,69,30,31,64,0,0,0,,$7.1m
+49922,52,Amari,Tropicus,32,Santa Cruz Sawteeth,C,1B,,R,L,64,85,44,64,90,0,0,0,,$12.0m
+49923,54,Ahmed,Farahani,34,Bomberos San.Dom,1B,,,R,L,83,54,88,53,80,0,0,0,,$7.3m
+49927,44,Caden,Minors,35,Seoul Spectres,CF,OF,,R,R,56,53,62,62,83,0,0,0,,$6.4m
+49929,8,John,Villalobos,32,New York Favorites,2B,,,R,L,48,65,73,99,86,0,0,0,,$8.4m
+49930,62,Eastman,York,40,Heaters CDMX,1B,3B,,R,R,81,20,37,13,45,0,0,0,,$2.1m
+49932,72,Rhett,Williamson,37,Joburg Springboks,SS,3B,,R,R,54,24,46,79,41,0,0,0,,$3.3m
+49936,2,Levi,Ware,32,Havana Nights,LF,,,R,L,78,75,81,48,55,0,0,0,,$9.6m
+49938,6,Brittany,Hancock,39,Yoff-Mariners Dakar,2B,SS,,R,L,50,44,53,52,42,0,0,0,,$3.8m
+50927,68,Rex,Wrestles,38,Munich Engineers,P,,RP,R,R,14,4,61,69,0,43,47,82,"4F, CH, CB, CF",$4.4m
+50928,88,Brownie,Batter,32,Seoul Spectres,2B,IF,,R,R,61,70,69,88,40,0,0,0,,$8.5m
+50929,29,Jamal,El-Mehdi,31,Seoul Spectres,RF,LF,,R,L,98,67,84,56,93,0,0,0,,$14.2m
+50930,44,Duarte,Silva,36,New York Favorites,SS,,,R,L,87,33,55,54,96,0,0,0,,$7.5m
+50931,36,Tigran,Zakaryan,31,Portland Swifts,C,,,R,R,82,75,18,69,75,0,0,0,,$9.5m
+50933,56,Barrett,Chambers,35,New York Nemesis,LF,1B/OF,,R,L,56,45,51,66,91,0,0,0,,$5.3m
+50935,27,Pork,Martinelli,34,Jakarta Jaguars,C,1B,,R,R,47,47,65,34,87,0,0,0,,$5.2m
+50936,48,Jason,David,39,Corsa Palermo,SS,IF/OF,,R,L,91,44,64,62,42,0,0,0,,$7.4m
+50937,61,Keith,Gibbon,31,Nagoya Nocturnals,P,,RP,R,L,1,14,81,70,0,60,99,67,"4F, CH, SL",$9.8m
+50939,33,Kimber,Choi,34,Melbourne Platypi,P,,SP,R,R,52,4,3,54,0,60,75,69,"4F, CB, SL, CF",$8.1m
+50941,55,Kira,Chan,37,New York Nemesis,P,,SP,R,R,13,26,13,65,0,92,31,63,"4F, FK, CB, SL",$8.8m
+50942,66,Ramon,Adkins,40,Corsa Palermo,1B,3B,,R,L,67,20,66,26,55,0,0,0,,$2.9m
+50944,80,Dominic,Coleman,36,Chicago Dogs,3B,SS,,R,R,40,58,60,44,72,0,0,0,,$3.6m
+50945,41,Star,Wise,38,Brisbane Rangers,P,,CL,L,L,1,2,38,62,0,51,18,35,"4F, CB, SL",$1.2m
+50947,24,Makenna,Patterson,39,New York Favorites,LF,OF,,R,L,5,59,47,44,56,0,0,0,,$1.9m
+50948,50,Harrison,Sierra,36,Golondrinas Valencia,SS,IF/OF,,R,L,84,41,71,68,93,0,0,0,,$10.0m
+50949,60,Marrigold,Kelley,42,Seoul Spectres,SS,2B,,R,R,48,28,24,76,9,0,0,0,,$2.0m
+50951,2,Emilio,Ingram,37,Honolulu Yellowfins,LF,RF,,R,R,23,3,54,29,56,0,0,0,,$1.3m
+50952,46,Grip,Robles,31,Munich Engineers,RF,OF,,R,R,58,72,79,62,86,0,0,0,,$9.6m
+50953,23,Dubai,Morrow,31,New York Nemesis,P,,SP,L,L,3,13,45,57,0,79,88,79,"4F, CH, CB, SL",$16.6m
+50954,39,Ayden,Benson,35,Kyoto Baseball Club,P,,SP,L,L,67,4,29,25,0,61,90,55,"4F, 2F, CH, CB, SL",$10.8m
+50955,52,Finley,Hester,31,Munich Engineers,1B,,,R,R,83,95,57,38,54,0,0,0,,$9.7m
+50956,84,Seppo,Heikkinen,34,FREE AGENT,CF,1B/OF,,R,S,49,76,84,80,75,0,0,0,,$11.5m
+50957,27,Charlie,Sanchez,39,Missoula Moose,2B,SS,,R,R,88,71,40,59,42,0,0,0,,$7.3m
+50961,3,Donovan,Frigate,33,New York Favorites,P,,RP,R,R,10,12,7,61,0,32,63,64,"4F, CH, SL",$2.8m
+50963,23,Clayton,Stephens,36,Sao Paulo Toucans,P,,SP/RP,L,L,21,86,0,85,0,30,63,27,"4F, CB, SL",$1.9m
+50965,24,Wissle,Becker,34,Munich Engineers,P,,SP,R,L,11,23,29,53,0,51,78,48,"4F, CH, CB, SL",$5.5m
+50966,50,Bray,Grammersh,33,FREE AGENT,P,,SP/RP,R,R,0,16,63,39,0,76,59,46,"4F, 2F, CH",$8.1m
+51828,31,Artichoke,Locos,39,Sao Paulo Toucans,C,1B,,R,L,17,48,57,36,76,0,0,0,,$2.6m
+51829,35,Kamila,Reed,36,New York Favorites,P,,SP,R,L,13,2,21,47,0,6,38,43,"4F, CH, CB, SL",$1.3m
+51830,92,Dave,Blevins,39,Cascadia Kodiaks,CF,IF/OF,,R,L,6,54,79,60,50,0,0,0,,$3.8m
+51831,32,Bukkit,Navarro,38,Busan Blowfish,LF,RF,,L,L,53,60,57,26,33,0,0,0,,$4.6m
+51832,94,James,Forrest,34,Pittsburgh Unioneers,RF,1B/OF,,R,R,85,46,71,62,97,0,0,0,,$9.6m
+51833,58,Spindelle,Hampton,31,Montreal Voyageurs,P,,CL,L,L,4,16,20,42,0,40,53,81,"4F, CH, CB",$3.5m
+51834,27,Aylin,Peters,31,Kyoto Baseball Club,C,,,R,L,69,63,45,74,42,0,0,0,,$5.5m
+51835,54,Harley,Moyer,37,Glasgow Greys,3B,SS,,R,R,61,64,82,58,79,0,0,0,,$6.7m
+51836,57,Somner,Lyons,31,Portland Swifts,P,,SP,L,L,8,6,9,95,0,72,75,72,"4F, 2F, CB, SL",$11.2m
+51837,44,Ty,Armstrong,30,Joburg Springboks,P,,RP,L,L,10,10,24,77,0,48,45,99,"4F, 2F, CH, SL",$5.9m
+51838,59,Gustav,March,32,Chicago Dogs,P,,SP,R,R,48,42,8,57,0,86,71,81,"4F, CH, CB, SL",$15.4m
+51839,36,Memphis,Ross,30,Glasgow Greys,1B,LF,,R,R,42,94,60,91,42,0,0,0,,$9.5m
+51840,21,Petri,Hendrix,30,Sao Paulo Toucans,CF,OF,,R,R,95,39,79,99,51,0,0,0,,$9.5m
+51841,33,Zaylee,Garrett,30,Bomberos San.Dom,3B,1B,,R,L,51,92,75,22,98,0,0,0,,$8.1m
+51842,40,Lucca,Hull,32,Jakarta Jaguars,P,,RP,L,L,9,5,25,71,0,70,89,59,"4F, CB, SL, CF",$8.1m
+51843,48,Mitchell,Pitts,38,Pittsburgh Unioneers,LF,OF,,R,R,37,63,31,49,53,0,0,0,,$3.6m
+51844,26,Miguel,Grant,32,Glasgow Greys,P,,SP,L,R,27,12,46,48,0,33,91,42,"4F, CH, CB, SL",$4.0m
+51845,62,Marco,McKay,33,Missoula Moose,SS,3B,,R,R,59,46,63,85,86,0,0,0,,$7.8m
+51846,22,Florence,Hope,37,Glasgow Greys,1B,,,R,R,82,67,59,61,63,0,0,0,,$8.5m
+51847,83,Ravi,Kapoor,38,Dublin Mallards,2B,,,R,L,52,39,49,73,71,0,0,0,,$3.6m
+51848,18,Bronson,Swanson,30,Busan Blowfish,P,,RP,L,L,7,3,4,47,0,82,42,24,"4F, 2F, SL",$3.1m
+51849,48,Jak,Dudley III,30,Brisbane Rangers,LF,RF,,R,R,31,82,60,70,52,0,0,0,,$4.4m
+51851,8,Malakai,Cortes,31,Heaters CDMX,3B,IF,,R,R,43,68,49,70,61,0,0,0,,$5.8m
+51852,52,Maximus,Power,36,FREE AGENT,SS,3B,,R,L,65,71,61,84,84,0,0,0,,$14.4m
+51853,3,Viggo,Pruitt,34,Montreal Voyageurs,CF,1B/OF,,L,L,59,55,91,62,89,0,0,0,,$8.0m
+51854,20,Nathaniel,Porter,30,Pittsburgh Unioneers,P,,RP,L,L,26,43,17,68,0,41,37,36,"4F, 2F, CB, SL",$2.6m
+51855,83,Johan,Pirelli,31,Joburg Springboks,CF,OF,,R,S,33,71,97,62,55,0,0,0,,$7.2m
+51856,1,Eternity,Gutierrez,41,Bomberos San.Dom,LF,1B/OF,,L,L,62,12,43,30,48,0,0,0,,$3.1m
+51857,77,Paxton,Green,30,New York Favorites,RF,OF,,R,L,99,52,58,65,81,0,0,0,,$7.9m
+51858,24,Hefty,Ali,30,Portland Swifts,C,,,R,R,16,60,77,88,57,0,0,0,,$4.2m
+51859,95,Tyrone,Lungcaster,30,Havana Nights,SS,2B,,R,S,88,74,57,87,96,0,0,0,,$11.8m
+51860,45,Zion,Strudly,33,FREE AGENT,P,,RP,R,L,2,5,7,31,0,37,73,74,"4F, 2F, SL",$5.5m
+51861,59,Dakota,Parra,36,Yoff-Mariners Dakar,P,,SP,R,R,9,3,6,87,0,91,58,84,"4F, 2F, CH, CB, SL",$13.3m
+51862,45,Churn,Kasa,32,Montreal Voyageurs,P,,SP,R,R,60,4,15,56,0,47,28,36,"4F, 2F, CH, CB, SL",$2.2m
+51865,29,Jean-Luc,De Guyon,33,Glasgow Greys,P,,SP,R,R,0,13,3,54,0,81,64,56,"4F, CH, CB, SL",$8.2m
+51866,46,Mirai,Dream,30,Santa Cruz Sawteeth,1B,,,R,L,51,66,52,98,76,0,0,0,,$6.8m
+51867,11,Domingo,Moreno,30,Sao Paulo Toucans,C,RF,,R,S,55,54,35,58,93,0,0,0,,$6.5m
+51869,3,Alaia,Novak,30,Bomberos San.Dom,1B,,,R,L,70,74,86,63,55,0,0,0,,$9.1m
+51870,10,Yvonne,Hicks,37,Melbourne Platypi,SS,,,R,R,84,52,50,70,57,0,0,0,,$8.5m
+51871,9,Jewel,Romero,32,Yoff-Mariners Dakar,SS,2B,,R,R,52,69,30,62,48,0,0,0,,$4.0m
+53091,62,Chamberlain,Testarosa,31,Chicago Dogs,CF,1B,,R,R,79,45,67,77,44,0,0,0,,$5.8m
+53092,7,Ezinne,Igwe,29,Dublin Mallards,P,,SP/RP,R,L,11,3,34,55,0,40,76,69,"4F, CH, CB, SL",$6.1m
+53093,30,Cash,Considerations,29,Sao Paulo Toucans,SS,2B,,R,R,57,65,52,96,62,0,0,0,,$6.7m
+53094,33,Commander,Shepard,29,Yoff-Mariners Dakar,2B,SS,,R,S,81,85,72,86,40,0,0,0,,$14.7m
+53095,46,Ribby,Double,31,Chicago Dogs,RF,OF,,R,R,65,33,72,69,84,0,0,0,,$5.8m
+53096,24,Jagan,Kade,29,New York Nemesis,P,,RP,R,R,14,17,41,46,0,85,33,47,"4F, CB",$3.3m
+53098,27,Bone,Boro,29,Portland Swifts,P,,SP,R,R,44,6,47,51,0,83,68,47,"4F, 2F, CH, CB, SL",$9.1m
+53099,16,Ridge,Racer,33,FREE AGENT,CF,OF,,R,R,64,17,81,90,89,0,0,0,,$7.1m
+53100,41,Fernando,Mota,33,Portland Swifts,3B,SS,,R,L,50,74,91,80,65,0,0,0,,$8.8m
+53101,19,Sammy,Dallara,29,Bomberos San.Dom,C,1B,,R,R,59,52,45,56,83,0,0,0,,$5.3m
+53103,42,Plaid,Rasputin,31,Chicago Dogs,1B,,,R,L,99,69,77,40,85,0,0,0,,$10.3m
+53105,52,Boo,Huffman,33,Honolulu Yellowfins,LF,OF,,R,L,54,64,88,40,57,0,0,0,,$8.1m
+53106,93,Armando,Dickerson,32,Brisbane Rangers,1B,3B,,R,R,23,92,53,54,37,0,0,0,,$4.8m
+53107,13,Lucy,Desmond,37,Chicago Dogs,LF,RF,,R,R,45,72,34,52,64,0,0,0,,$3.5m
+53108,3,Reemus,Freeman,30,Joburg Springboks,3B,1B,,R,L,75,84,80,79,81,0,0,0,,$13.2m
+53109,14,Justin,Blackburn,39,Kyoto Baseball Club,C,,,R,R,46,58,6,58,39,0,0,0,,$2.4m
+53110,45,Chenae,Poker,29,Cascadia Kodiaks,P,,RP,L,L,24,8,43,53,0,72,87,41,"4F, 2F, SL, CF",$6.9m
+53111,40,Ayden,Hart,32,Missoula Moose,P,,SP/RP,R,R,0,0,12,88,0,64,99,53,"4F, CB, SL",$9.9m
+53112,45,Naito,Wang,42,Glasgow Greys,C,RF,,R,L,52,0,0,57,6,0,0,0,,$0.7m
+53113,43,Solanum,Bramble,36,Seoul Spectres,P,,SP,R,R,0,19,5,35,0,66,53,35,"4F, 2F, CB, SL",$4.0m
+53114,12,Valentino,Rosebud,29,FREE AGENT,RF,IF/OF,,R,L,72,62,61,48,81,0,0,0,,$10.0m
+53119,20,Spooky,Faust,34,Nagoya Nocturnals,LF,OF,,R,L,40,48,58,38,72,0,0,0,,$3.2m
+53120,64,Rob,Schneider,29,Chicago Dogs,P,,SP,R,L,1,2,13,81,0,46,96,71,"4F, 2F, CH, CB, SL",$10.6m
+53121,23,Callum,Von Krumm,29,Heaters CDMX,P,,RP,R,R,9,4,25,56,0,74,45,99,"4F, CH, CB",$10.5m
+53122,4,Sun-Lee,Kim,30,FREE AGENT,1B,3B,,R,R,71,22,60,96,68,0,0,0,,$5.5m
+53123,37,Tyler,Brandt,29,Heaters CDMX,P,,SP,L,L,57,18,79,69,0,73,63,60,"4F, 2F, CH, SL",$9.0m
+53124,70,Archer,Freehold,36,Seoul Spectres,LF,,,R,R,75,63,37,24,62,0,0,0,,$4.5m
+53125,22,Hudson,Dakota,30,Busan Blowfish,CF,1B/OF,,L,L,47,99,98,62,93,0,0,0,,$14.9m
+53126,2,Heo,Moon,31,New York Favorites,CF,OF,,R,R,58,83,79,78,50,0,0,0,,$8.9m
+53127,51,Amalee,Fromello,32,Bomberos San.Dom,P,,RP,L,L,14,17,31,64,0,57,82,53,"4F, CH, CB, SL",$5.5m
+53129,32,Bakka,Rumms,37,Missoula Moose,P,,SP,R,R,6,4,45,45,0,43,31,85,"4F, 2F, SL, CF",$4.4m
+53130,32,Crook,Scirelli,40,Dublin Mallards,C,,,R,R,74,42,43,8,69,0,0,0,,$3.1m
+53131,47,Jettison,Estrada,29,FREE AGENT,P,,RP,L,R,18,15,16,57,0,68,43,86,"4F, CH, CB",$13.1m
+53132,56,Broderick,Dacus,30,Portland Swifts,P,,RP,R,L,14,14,28,61,0,50,99,57,"4F, CB, SL",$4.7m
+53133,14,Marlon,Sanders,34,Honolulu Yellowfins,RF,1B/OF,,R,R,69,55,55,63,88,0,0,0,,$7.1m
+53134,26,Jinkies,Ford,31,Boston Commodores,P,,SP,R,R,17,35,16,23,0,31,71,76,"4F, CH, CB, SL",$5.9m
+53135,14,Roberto,Plaza,30,Dublin Mallards,LF,RF,,R,R,46,73,69,87,56,0,0,0,,$5.8m
+53136,30,Bryant,Brandt,38,Carolina Reapers,1B,3B,,R,L,42,21,52,33,66,0,0,0,,$1.5m
+53137,66,Callan,Stout,34,Heaters CDMX,LF,OF,,R,R,54,72,86,62,69,0,0,0,,$8.4m
+53138,20,Olympus,Mons,32,Brisbane Rangers,2B,,,R,R,92,84,71,92,80,0,0,0,,$16.2m
+53139,48,Brock,Beefton,29,Honolulu Yellowfins,1B,,,R,L,75,73,63,83,85,0,0,0,,$10.3m
+53140,72,Ibrahim,Abate,29,Jakarta Jaguars,CF,1B/OF,,R,L,68,69,50,82,59,0,0,0,,$8.3m
+53141,32,Frankie,Jager,30,Corsa Palermo,CF,OF,,R,R,87,98,96,72,92,0,0,0,,$23.5m
+53142,7,Nash,Yun,29,Jakarta Jaguars,3B,,,R,R,47,64,57,29,96,0,0,0,,$3.5m
+54130,45,Makantor,Warbeast,30,FREE AGENT,P,,CL,R,R,16,6,30,56,0,89,64,66,"4F, CB, SL",$6.8m
+54131,25,Milan,Le,29,FREE AGENT,P,,RP,R,R,30,10,44,38,0,48,37,95,"4F, CH, FK, CF",$8.2m
+54132,40,Yes,O'Neill,33,Santa Cruz Sawteeth,P,,SP,R,R,48,25,28,38,0,83,9,72,"4F, 2F, CH",$4.2m
+54133,22,Cais,Tien,31,New York Nemesis,P,,RP,R,R,9,2,4,53,0,59,68,27,"4F, CB, SL",$3.0m
+54134,17,Gerdy,Banks,32,Seoul Spectres,P,,SP/RP,R,R,38,14,11,73,0,57,60,49,"4F, CH, CB, SL",$4.7m
+54135,3,Sean,Buck,37,Corsa Palermo,C,LF,,R,R,62,14,33,33,73,0,0,0,,$2.1m
+54136,14,Theo,Trench,35,Bomberos San.Dom,2B,,,R,R,14,57,27,71,16,0,0,0,,$2.9m
+54137,2,Lukas,Sanbrontszen,28,Glasgow Greys,RF,LF,,R,S,85,52,45,47,99,0,0,0,,$7.1m
+54138,35,Kaden,Diligence,36,Busan Blowfish,1B,OF,,R,L,86,48,57,44,42,0,0,0,,$6.1m
+54139,13,Dale,Ramos,31,Glasgow Greys,CF,1B/OF,,R,R,37,62,99,82,96,0,0,0,,$9.1m
+54141,63,Ma,Soul,28,Glasgow Greys,CF,OF,,R,R,77,99,73,94,95,0,0,0,,$16.1m
+54142,62,Jakub,Miazga,28,Brisbane Rangers,SS,2B,,R,L,98,86,50,94,68,0,0,0,,$15.1m
+54143,40,Lola,Dominguez,29,Cascadia Kodiaks,1B,,,R,L,60,99,70,31,76,0,0,0,,$9.0m
+54144,39,Lance,Ferrari,28,Honolulu Yellowfins,3B,SS,,R,L,99,92,78,69,52,0,0,0,,$14.7m
+54145,75,P.T.,Beenil,28,FREE AGENT,3B,1B,,R,L,8,57,75,80,95,0,0,0,,$4.8m
+54146,61,Swing,Slinger,30,FREE AGENT,P,,SP,R,L,8,35,25,31,0,69,98,73,"4F, CH, CB, SL, CF",$14.0m
+54147,33,Jazzy,Knoxville,28,Sao Paulo Toucans,RF,OF,,R,S,69,89,95,72,65,0,0,0,,$13.5m
+54148,74,Beatee,Sventwo,29,Sao Paulo Toucans,P,,RP,L,L,11,2,83,81,0,91,75,51,"4F, CH, CB, SL",$8.5m
+54149,68,Letti,Caballero,28,Carolina Reapers,P,,SP,L,R,8,71,41,55,0,70,62,81,"4F, CH, CB, SL",$7.9m
+54151,-1,Heliocentric,Orbital,31,Busan Blowfish,SS,2B,,R,R,93,99,48,99,79,0,0,0,,$17.2m
+54153,46,Ventura,Ngata,30,Carolina Reapers,P,,SP,L,L,7,10,28,61,0,76,64,45,"4F, 2F, CB, SL",$6.9m
+54155,26,Francesca,Andrews,36,Busan Blowfish,P,,RP,R,L,32,3,14,43,0,40,49,63,"4F, 2F, CB, SL",$3.3m
+54157,7,Bimto,Smack,29,Bomberos San.Dom,RF,OF,,R,R,37,91,65,51,99,0,0,0,,$8.4m
+54159,36,Bocce,Pallino,38,Dublin Mallards,3B,1B,,R,L,46,59,29,45,50,0,0,0,,$3.4m
+54160,66,Toronto,Mann,38,Montreal Voyageurs,3B,SS,,R,S,37,51,59,34,18,0,0,0,,$2.1m
+54161,53,Bere,Kanto,38,New York Nemesis,C,,,R,L,38,59,47,89,47,0,0,0,,$5.2m
+54162,37,Alia,Fields,33,Glasgow Greys,P,,CL,L,L,35,15,42,97,0,94,89,5,"4F, CB",$5.1m
+54163,52,Meshal,Al-Qadir,28,New York Favorites,P,,RP,R,L,44,14,8,36,0,70,80,75,"4F, CH, CB",$8.3m
+54164,30,Kobe,Rossi,30,Havana Nights,P,,SP,R,R,19,45,28,54,0,61,68,79,"4F, 2F, CH, SL",$8.9m
+54165,48,Ivory,Gangrene,36,Nagoya Nocturnals,P,,SP,R,L,11,95,13,94,0,78,66,39,"4F, CH, CB, SL, CF",$9.3m
+54166,52,Jude,Mezannine,28,Brisbane Rangers,1B,,,R,R,49,47,81,68,39,0,0,0,,$4.3m
+54168,13,Geoff,Bahzoes,30,Boston Commodores,2B,SS,,R,R,48,80,55,76,57,0,0,0,,$4.8m
+54169,28,Brycen,Longstroke,42,Yoff-Mariners Dakar,P,,SP,L,L,13,49,0,61,0,69,11,38,"4F, CH, CB, SL",$3.4m
+54170,7,Pow,Shaw,28,Nagoya Nocturnals,P,,RP,R,L,12,17,4,37,0,80,73,56,"4F, FK, SL, CF",$6.8m
+54171,9,Hector,Hebert,31,Brisbane Rangers,C,RF,,R,R,55,62,45,70,84,0,0,0,,$7.5m
+54172,4,Emmet,Stephenson,31,Missoula Moose,C,OF,,R,R,62,71,16,59,66,0,0,0,,$6.0m
+54173,89,Tristen,Benitez,38,Kyoto Baseball Club,2B,SS,,R,L,66,76,42,36,13,0,0,0,,$4.6m
+54174,57,Poppy,Pipps,30,Seoul Spectres,CF,1B/OF,,L,L,62,64,92,58,50,0,0,0,,$8.8m
+54175,60,Maya,Armhorn,35,New York Nemesis,LF,RF,,R,R,48,56,28,39,42,0,0,0,,$2.2m
+54176,11,Goldie,Legstrong,33,Kyoto Baseball Club,1B,C,,R,R,19,53,71,67,79,0,0,0,,$3.8m
+54177,80,Nevada,Steady,36,Golondrinas Valencia,RF,OF,,R,L,46,62,55,43,65,0,0,0,,$4.4m
+54178,53,Barney,Blowers,35,Missoula Moose,3B,,,R,R,7,24,71,54,67,0,0,0,,$1.4m
+54179,71,Walter,Rodriguez,31,Busan Blowfish,C,,,R,L,82,34,45,64,72,0,0,0,,$5.6m
+54180,10,Addilynn,Prowse,36,Yoff-Mariners Dakar,CF,OF,,R,R,76,42,80,68,79,0,0,0,,$7.3m
+54181,99,Monty,Summit,35,Nagoya Nocturnals,2B,3B,,R,R,63,55,70,71,70,0,0,0,,$7.7m
+54182,66,Carlos,Cisneros,34,Havana Nights,RF,C,,R,R,38,77,87,38,74,0,0,0,,$6.4m
+54183,22,Kellan,Zuniga,28,FREE AGENT,1B,,,R,S,98,63,76,61,82,0,0,0,,$12.3m
+54184,30,Erik,Sigrun,31,FREE AGENT,SS,2B,,R,L,62,65,52,99,99,0,0,0,,$9.5m
+54185,9,Babu,Salah,33,Dublin Mallards,RF,LF,,R,R,76,78,69,77,73,0,0,0,,$10.4m
+55740,5,Maxi,Five,27,Montreal Voyageurs,P,,SP,L,L,45,28,23,44,0,49,98,60,"4F, 2F, CB, SL",$7.8m
+55741,70,Decha,Srisuwan,27,Portland Swifts,1B,,,R,L,58,44,50,68,74,0,0,0,,$4.0m
+55742,29,Garland,Painter,27,Joburg Springboks,LF,OF,,R,R,44,99,74,70,27,0,0,0,,$8.2m
+55744,26,Dumbbell,Thatcher,28,Pittsburgh Unioneers,C,1B,,R,L,57,59,32,46,71,0,0,0,,$4.4m
+55745,27,Soap,MacTavish,27,Yoff-Mariners Dakar,RF,LF,,R,R,99,79,92,77,93,0,0,0,,$20.2m
+55746,4,Itsami,Mario,29,Nagoya Nocturnals,3B,IF/OF,,R,R,83,57,77,62,97,0,0,0,,$10.9m
+55747,25,Alfie,Minkleshneider,28,FREE AGENT,1B,C,,R,R,64,72,44,34,43,0,0,0,,$4.3m
+55748,33,Yern,Dervish,39,FREE AGENT,P,,RP,R,R,1,9,13,34,0,6,59,85,"4F, CB, SL",$3.2m
+55749,67,Mel,Rodriguez,33,Jakarta Jaguars,P,,SP,R,R,7,6,45,86,0,43,84,65,"4F, CH, FK, CB, SL",$7.3m
+55750,51,Datsun,Traveller,31,Boston Commodores,P,,SP/RP,R,R,16,11,13,73,0,63,64,59,"4F, CH, SL",$5.5m
+55751,14,Monsieur,Doofy,31,Jakarta Jaguars,SS,IF,,R,L,73,14,65,67,87,0,0,0,,$4.9m
+55752,56,Remy,Linguini,39,Jakarta Jaguars,P,,SP,R,R,9,6,8,70,0,39,26,39,"4F, 2F, CH, CB, SL",$2.2m
+55753,54,Bryce,Rose,28,Missoula Moose,LF,RF,,R,R,54,28,78,78,43,0,0,0,,$3.1m
+55754,18,Manny,Mann,27,Montreal Voyageurs,CF,OF,,R,R,60,62,99,99,89,0,0,0,,$11.3m
+55755,3,Stee,Rike,27,Honolulu Yellowfins,P,,RP,R,R,14,6,34,53,0,86,38,50,"4F, 2F, CB, SL",$4.7m
+55756,9,Paille,Finley,34,FREE AGENT,RF,OF,,R,R,64,70,43,31,77,0,0,0,,$5.9m
+55757,9,Walker,Nassir,30,FREE AGENT,P,,CL,L,L,3,7,53,64,0,64,68,44,"4F, CB, SL",$4.6m
+55758,53,Abram,Lovebright,27,Montreal Voyageurs,P,,RP,R,L,11,9,0,48,0,76,63,68,"4F, CH, CB",$6.5m
+55759,21,Captain,Price,30,Portland Swifts,2B,SS,,R,R,76,90,42,75,37,0,0,0,,$10.5m
+55760,19,Wheet,Lowery,42,New York Nemesis,C,RF,,R,L,0,64,40,12,63,0,0,0,,$2.2m
+55761,27,Rafa,California,28,Chicago Dogs,P,,RP,R,R,7,4,60,66,0,84,88,61,"4F, 2F, CH, CB",$9.8m
+55762,47,Happy,Goodfella,27,Montreal Voyageurs,P,,SP,R,L,23,15,52,61,0,88,61,99,"4F, 2F, CH, SL",$13.7m
+55763,10,Maxime,Mendoza,28,Carolina Reapers,2B,SS,,R,L,61,99,76,58,24,0,0,0,,$9.5m
+55764,91,Shoshanna,al-Habib,30,Pittsburgh Unioneers,3B,2B,,R,L,97,68,60,65,88,0,0,0,,$12.9m
+55765,82,Stellina,Seraphina,30,Santa Cruz Sawteeth,RF,1B/OF,,L,S,70,65,88,78,91,0,0,0,,$13.1m
+55766,51,Ransom,Splintz,35,Golondrinas Valencia,P,,SP,L,L,17,15,5,52,0,34,49,74,"4F, CH, CB, SL",$4.8m
+55767,13,Sigurd,Bastani,37,Carolina Reapers,CF,1B/OF,,L,L,64,59,44,62,67,0,0,0,,$8.4m
+55768,88,Karmea,Noelani,38,Jakarta Jaguars,CF,OF,,R,R,15,38,73,85,14,0,0,0,,$2.6m
+55769,14,Briq,Chithaus,27,Munich Engineers,SS,2B,,R,R,99,59,88,89,88,0,0,0,,$15.2m
+55770,20,Eustice,Wankah,28,Heaters CDMX,1B,,,R,R,96,90,42,65,39,0,0,0,,$13.3m
+55771,16,Nylon,Feathers,32,Nagoya Nocturnals,P,,RP,R,R,8,1,25,56,0,82,34,68,"4F, CB",$3.5m
+55772,30,Bente,Berg,31,Corsa Palermo,P,,SP,R,R,4,25,15,37,0,84,68,57,"4F, CH, CB, SL",$9.1m
+55773,32,Valentino,Costa,35,Santa Cruz Sawteeth,SS,3B,,R,R,17,58,58,66,79,0,0,0,,$3.1m
+55774,33,Branson,Richard,27,Heaters CDMX,C,,,R,R,17,61,88,45,57,0,0,0,,$2.8m
+55775,9,Sunday,Calabasas,35,FREE AGENT,2B,,,R,R,61,67,65,68,24,0,0,0,,$7.4m
+55776,12,George,Kennet,27,New York Favorites,C,1B,,R,R,64,42,79,71,87,0,0,0,,$5.2m
+55777,53,Skuuter,Cooley,36,Pittsburgh Unioneers,P,,RP,R,R,13,7,22,36,0,22,14,75,"4F, 2F, CH, CF",$1.7m
+55778,35,Mama,Welles,27,Glasgow Greys,P,,SP,R,R,5,9,6,31,0,66,25,51,"4F, CH, CB, SL",$3.6m
+55779,25,Ken,Ruroni,27,New York Favorites,LF,IF/OF,,R,R,79,29,93,83,73,0,0,0,,$12.5m
+55780,5,Vincent,Vallejo,27,Carolina Reapers,RF,LF,,R,R,74,51,61,55,73,0,0,0,,$5.2m
+55781,37,Chum,Sudabuda,30,Missoula Moose,P,,RP,L,L,8,6,13,67,0,85,79,78,"4F, CH, CB, SL",$7.5m
+55782,43,January,Travis,36,Santa Cruz Sawteeth,P,,SP,L,L,33,12,1,65,0,71,63,24,"4F, CH, CB, SL, CF",$5.0m
+55783,12,Biff,Ironbarge Jr.,29,Sao Paulo Toucans,SS,2B,,R,L,60,85,67,76,85,0,0,0,,$10.2m
+55784,12,Cannoli,Buccellato,28,Havana Nights,3B,SS,,R,R,51,69,78,54,99,0,0,0,,$7.3m
+55785,66,Cortega,Dominguez,28,Portland Swifts,CF,OF,,L,L,44,33,89,90,97,0,0,0,,$5.0m
+55787,91,Makarov,Kamarov,27,Melbourne Platypi,RF,OF,,R,R,45,96,84,61,91,0,0,0,,$6.5m
+55788,30,Tasha,Johnston-Foster,27,Seoul Spectres,P,,SP/RP,R,R,16,4,37,83,0,74,50,78,"4F, CH, CB",$7.5m
+55789,7,Ude,Kadabura,27,Cascadia Kodiaks,RF,,,R,R,92,99,53,55,89,0,0,0,,$11.1m
+55790,16,Naomi,Ceddanne,27,Portland Swifts,C,1B,,R,R,63,24,87,55,59,0,0,0,,$4.5m
+55791,48,Dezzy,Yakobson,28,Busan Blowfish,P,,RP,R,L,2,4,0,86,0,85,74,70,"4F, CB, SL",$9.1m
+55792,71,Charlee,McKnight,27,Heaters CDMX,LF,OF,,R,R,37,84,81,51,64,0,0,0,,$8.0m
+55793,21,Catan,Settler,32,Carolina Reapers,C,,,R,R,88,55,33,25,44,0,0,0,,$4.8m
+55794,15,Slasher,Hashslinging,29,Kyoto Baseball Club,2B,,,R,R,81,93,73,59,81,0,0,0,,$10.7m
+55795,32,Juice,Magoose,35,Munich Engineers,CF,1B/OF,,R,L,46,57,74,79,91,0,0,0,,$7.0m
+55796,33,Rodger,McFurlow,31,Busan Blowfish,P,,CL,R,R,9,9,21,72,0,92,51,76,"4F, CH",$5.5m
+55797,28,Repo,Musto,28,Sao Paulo Toucans,2B,SS,,R,L,53,17,75,71,74,0,0,0,,$3.5m
+55798,27,Adriana,de Matteo,30,Seoul Spectres,1B,3B,,R,R,46,88,56,56,53,0,0,0,,$5.6m
+55799,64,Ravenswood,Bluff,32,New York Nemesis,SS,3B,,R,R,83,49,47,88,73,0,0,0,,$8.6m
+55800,91,Sonny,Yutokome,30,Kyoto Baseball Club,3B,1B,,R,L,54,70,76,39,99,0,0,0,,$7.4m
+55801,82,Suna,Ehmani,28,Bomberos San.Dom,C,1B,,R,R,31,60,68,94,72,0,0,0,,$5.7m
+57062,38,Rafaela,Zidane,26,Nagoya Nocturnals,P,,SP,R,R,49,68,49,88,0,74,46,48,"4F, 2F, SL, CF",$5.9m
+57063,58,Wax,Poetic,32,FREE AGENT,P,,RP,R,R,0,5,14,72,0,72,42,65,"4F, 2F, CH, SL",$6.7m
+57064,55,Magnus,Bale,28,Boston Commodores,P,,RP,L,L,0,5,11,58,0,45,74,72,"4F, 2F, CH, SL",$5.2m
+57065,2,Minty,Gelato,26,Munich Engineers,C,LF,,R,R,49,63,35,42,95,0,0,0,,$4.9m
+57066,55,Ryne,Riverbend,37,Havana Nights,CF,OF,,R,R,39,61,84,61,43,0,0,0,,$6.5m
+57067,30,Waldorf,Quantum,31,Nagoya Nocturnals,CF,1B,,R,R,95,58,86,83,64,0,0,0,,$12.1m
+57068,11,Liz,Mutton,35,FREE AGENT,LF,OF,,R,R,39,63,47,50,53,0,0,0,,$4.1m
+57069,34,Dandelion,Mocha,31,Heaters CDMX,C,,,R,R,77,42,42,13,63,0,0,0,,$3.3m
+57070,13,Werner,Lam,40,Jakarta Jaguars,1B,,,R,S,50,50,65,51,49,0,0,0,,$3.7m
+57071,35,Prickly,Pear,26,Munich Engineers,3B,,,R,R,33,92,68,47,74,0,0,0,,$4.0m
+57072,29,Scooby,Blackburn,30,New York Favorites,P,,RP,R,R,1,2,83,34,0,85,98,55,"4F, CB, SL",$8.8m
+57073,34,Dirt,Claude,29,Cascadia Kodiaks,P,,RP,R,L,11,10,53,45,0,47,64,76,"4F, CB, SL",$6.0m
+57074,24,Pancake,Griddles,34,Brisbane Rangers,P,,SP/RP,R,L,7,10,12,73,0,89,80,69,"4F, CH, CB, SL",$12.7m
+57075,49,Molson,Marquez,26,Corsa Palermo,P,,SP,R,R,59,32,6,80,0,79,58,45,"4F, CH, CB, SL",$6.1m
+57076,65,Alejandro,Thrustmaster,35,Kyoto Baseball Club,3B,SS,,R,R,61,61,47,38,61,0,0,0,,$5.8m
+57077,12,Silvio,Muramasa,26,Heaters CDMX,2B,SS,,R,R,85,41,71,78,45,0,0,0,,$7.8m
+57078,43,Vito,Andrade,29,Honolulu Yellowfins,P,,SP,R,R,6,4,49,90,0,42,55,62,"4F, 2F, CB, SL",$4.4m
+57079,2,Bertram,Hoj,38,Brisbane Rangers,LF,RF,,L,S,40,49,52,66,75,0,0,0,,$3.5m
+57080,62,Alika,Moody,35,New York Favorites,SS,3B,,R,R,78,46,46,89,36,0,0,0,,$6.2m
+57081,77,Uptown,Mendoza,32,Santa Cruz Sawteeth,RF,OF,,R,R,57,87,55,44,71,0,0,0,,$6.7m
+57082,44,Quattro,Quattro,32,FREE AGENT,SS,2B,,R,R,39,60,71,68,89,0,0,0,,$6.7m
+57083,27,Berry,LaCroix,35,Carolina Reapers,C,LF,,R,R,59,40,30,73,79,0,0,0,,$6.0m
+57084,71,Giuseppe,Cacciatore,30,Honolulu Yellowfins,CF,1B,,L,L,88,86,90,61,25,0,0,0,,$13.8m
+57085,28,Yaya,Souba,33,Santa Cruz Sawteeth,P,,SP/RP,L,R,6,1,17,80,0,60,54,82,"4F, 2F, CB",$6.4m
+57086,55,Chestly,Beard,26,Bomberos San.Dom,P,,RP,R,R,27,20,37,27,0,99,30,80,"4F, CH, SL",$6.6m
+57087,1,Aida,Melfi,26,Sao Paulo Toucans,1B,OF,,L,L,75,65,74,67,44,0,0,0,,$9.7m
+57088,45,Kaylani,Love,31,Kyoto Baseball Club,RF,OF,,R,L,78,70,85,62,94,0,0,0,,$13.0m
+57089,57,Powerslide,Jones,32,Corsa Palermo,P,,SP,R,L,67,3,59,18,0,53,71,68,"4F, 2F, CH, CB, SL",$9.7m
+57090,14,Eziz,Dawamet,27,Joburg Springboks,P,,CL,R,L,7,53,42,66,0,84,78,61,"4F, CH, CB, SL",$8.0m
+57091,39,Mercedes,Palomar,26,Chicago Dogs,SS,3B,,R,R,99,82,43,89,76,0,0,0,,$9.5m
+57092,10,Coyote,Braxton-Carter,32,Pittsburgh Unioneers,2B,IF/OF,,R,R,39,98,38,79,4,0,0,0,,$8.5m
+57093,50,Bradley,Weebee,34,Melbourne Platypi,P,,RP,R,R,9,4,9,33,0,40,44,63,"4F, 2F, CB",$2.9m
+57094,55,Jade,Shadebright,26,Joburg Springboks,C,1B,,R,R,54,50,85,55,74,0,0,0,,$5.3m
+57095,25,Persephone,Moonbeam,28,Sao Paulo Toucans,1B,C,,R,L,84,68,15,62,76,0,0,0,,$6.4m
+57096,36,Sophie,Bikes,26,New York Nemesis,CF,OF,,R,L,67,79,97,87,33,0,0,0,,$8.4m
+57097,4,Husky,Bonatello,27,Brisbane Rangers,RF,,,R,R,66,40,72,99,40,0,0,0,,$5.9m
+57098,24,Skip,Seranthony,31,Nagoya Nocturnals,SS,2B,,R,R,54,27,86,91,75,0,0,0,,$5.3m
+57099,83,Bober,Jackson Jr.,27,Glasgow Greys,LF,OF,,R,R,53,83,62,92,80,0,0,0,,$9.1m
+57100,74,Wave,Dash,26,Kyoto Baseball Club,3B,,,R,L,53,79,99,25,72,0,0,0,,$3.7m
+57101,77,Bam,Dickerson,35,Nagoya Nocturnals,LF,1B/OF,,L,L,82,52,44,39,49,0,0,0,,$6.2m
+57102,48,Stoney,Baloney,33,FREE AGENT,CF,1B/OF,,R,S,40,88,88,95,62,0,0,0,,$12.1m
+57103,6,Ken,Yafilme,26,Dublin Mallards,2B,3B,,R,R,92,83,47,72,56,0,0,0,,$13.2m
+57104,27,Tamarindo,Mezcal,29,Bomberos San.Dom,SS,3B,,R,R,77,42,51,97,99,0,0,0,,$8.1m
+58533,82,Julie,Mao,28,Cascadia Kodiaks,3B,SS,,R,L,92,59,39,63,66,0,0,0,,$7.4m
+58534,43,Gregory,Gordon,31,Havana Nights,RF,OF,,R,L,42,10,84,68,60,0,0,0,,$3.1m
+58535,76,Celeste,Leblanc,25,Cascadia Kodiaks,P,,SP,R,R,3,2,3,98,0,99,47,92,"4F, 2F, CH, CB",$5.8m
+58536,23,Yenenesh,Henoke,29,Kyoto Baseball Club,P,,RP,R,L,2,9,36,63,0,99,56,7,"4F, 2F, SL",$4.0m
+58537,13,Kian,Cochise,29,Portland Swifts,P,,RP,L,L,19,1,5,30,0,73,66,72,"4F, CB, SL",$7.4m
+58538,18,Kenny,Blankenship,25,Honolulu Yellowfins,P,,SP,L,L,33,35,27,34,0,79,93,58,"4F, CH, CB, SL",$9.5m
+58539,53,Olga,Uberschneizen,27,FREE AGENT,P,,RP,R,R,5,6,14,61,0,71,38,59,"4F, CH, SL, CF",$4.6m
+58540,42,Gonk,Choom,27,Bomberos San.Dom,P,,SP/RP,L,L,21,61,15,79,0,66,35,92,"4F, 2F, CH, CB",$7.4m
+58541,51,Hassan,Demirtas,26,Pittsburgh Unioneers,1B,3B,,R,L,77,95,63,93,38,0,0,0,,$16.4m
+58542,60,Valdomiro,Takeda,26,Cascadia Kodiaks,3B,IF/OF,,R,R,69,82,99,67,76,0,0,0,,$13.7m
+58543,34,Winston,Person,28,Pittsburgh Unioneers,LF,OF,,L,L,60,64,91,57,69,0,0,0,,$9.4m
+58544,73,Spartanne,Layzar,28,Brisbane Rangers,CF,OF,,R,R,82,44,99,82,86,0,0,0,,$10.7m
+58545,46,Slap,Dappy,29,Golondrinas Valencia,RF,LF,,L,L,40,92,49,41,99,0,0,0,,$7.3m
+58546,15,Jumbo,Socks,25,FREE AGENT,SS,2B,,R,R,73,90,69,79,83,0,0,0,,$14.5m
+58547,25,Raleigh,Forte,27,Cascadia Kodiaks,C,,,R,S,82,54,47,75,72,0,0,0,,$6.0m
+58548,35,Grover,Lobster,30,Corsa Palermo,C,RF,,R,R,54,44,51,29,56,0,0,0,,$2.7m
+58549,21,Wolfgang,Gismondo,25,Heaters CDMX,P,,SP,R,R,8,2,3,46,0,66,84,85,"4F, 2F, CH, CB, SL",$14.0m
+58550,22,Debonnaire,Chastain,25,Seoul Spectres,1B,,,R,L,66,66,51,69,11,0,0,0,,$6.2m
+58551,76,Monica,Mueller,35,FREE AGENT,CF,,,R,S,57,47,68,55,53,0,0,0,,$4.8m
+58552,86,Montgomery,Scott,28,Carolina Reapers,2B,,,R,R,46,98,53,63,72,0,0,0,,$7.6m
+58553,59,Frye,Sauce,27,Portland Swifts,P,,RP,R,L,1,5,6,85,0,93,53,93,"4F, CB, SL",$7.1m
+58554,40,Mitch,Dawson,25,Kyoto Baseball Club,P,,RP,R,L,5,15,16,44,0,30,99,67,"4F, CH, CB",$6.1m
+58555,43,Cumulo,Buffims,26,Glasgow Greys,SS,2B,,R,R,99,84,40,98,99,0,0,0,,$11.4m
+58556,17,Sigorine,Labelle,27,Pittsburgh Unioneers,P,,SP,R,R,44,14,32,82,0,94,53,43,"4F, 2F, CB, SL",$4.9m
+58557,59,Braylon,Pacheco,29,Nagoya Nocturnals,RF,,,R,L,55,74,51,75,86,0,0,0,,$6.6m
+58558,1,Makenzie,Sacred,28,Melbourne Platypi,2B,IF/OF,,R,L,67,73,70,82,72,0,0,0,,$11.0m
+58559,24,Marko,Jovic,25,Glasgow Greys,1B,OF,,R,L,30,68,80,27,77,0,0,0,,$3.2m
+58560,50,Josephine,Engels,25,Sao Paulo Toucans,P,,SP,L,L,4,2,15,91,0,75,54,62,"4F, 2F, FK, CB, SL",$9.7m
+58561,3,Ana,Spelunky,29,Nagoya Nocturnals,P,,SP,R,R,19,18,2,66,0,96,47,60,"4F, 2F, CH, CB, SL",$8.3m
+58562,1,Shinji,Yunitowon,29,Dublin Mallards,1B,3B,,R,L,85,92,70,56,42,0,0,0,,$11.5m
+58563,12,Sienna,Barrera,36,Boston Commodores,C,1B,,R,R,83,18,40,42,88,0,0,0,,$5.5m
+58564,77,Chris,Hanel,25,Cascadia Kodiaks,C,,,R,R,67,58,51,48,71,0,0,0,,$3.7m
+58565,56,Pierre,Depraetere,25,Busan Blowfish,P,,SP,R,R,4,14,1,68,0,62,78,70,"4F, CH, CB, SL",$7.0m
+58566,8,Daytah,Lorre,38,Sao Paulo Toucans,3B,SS,,R,R,37,48,32,57,40,0,0,0,,$2.2m
+58567,24,Crackshot,Spumoni,25,Chicago Dogs,CF,1B,,R,R,83,79,95,81,84,0,0,0,,$13.5m
+58569,93,Oskar,Kubicek,27,Kyoto Baseball Club,RF,OF,,R,R,50,72,71,99,76,0,0,0,,$7.7m
+58570,30,Vic,Romano,31,Yoff-Mariners Dakar,P,,RP,L,R,11,2,18,23,0,54,70,36,"4F, CH, SL",$3.7m
+58571,36,Shaebrook,Whippersnap,38,Heaters CDMX,P,,RP,R,R,2,9,54,50,0,51,52,48,"4F, CB, SL",$3.1m
+58572,50,Jacinto,Baptista,25,Corsa Palermo,P,,SP/RP,R,R,40,4,61,89,0,77,90,67,"4F, CH, SL",$10.6m
+58573,82,Eric,Parmigiano,32,Jakarta Jaguars,2B,SS,,R,R,74,47,67,73,54,0,0,0,,$7.6m
+58574,27,Darigold,Tillamook,25,Busan Blowfish,CF,1B/OF,,R,S,41,44,75,98,73,0,0,0,,$4.5m
+58575,4,Froyo,Wagons,26,Melbourne Platypi,P,,SP,L,L,6,0,11,50,0,42,80,58,"4F, 2F, CH, SL",$3.1m
+58576,31,Se,Chao Xiong,25,Seoul Spectres,C,RF,,R,L,74,46,57,61,40,0,0,0,,$3.2m
+58577,10,Griffin,Steelmeister,31,Nagoya Nocturnals,CF,OF,,L,L,68,64,90,71,53,0,0,0,,$10.3m
+58578,25,Paavo,Jokela,27,Montreal Voyageurs,LF,RF,,L,L,55,62,82,70,68,0,0,0,,$9.3m
+58579,25,Dave,Barnett,27,Bomberos San.Dom,SS,2B,,R,L,56,68,64,86,57,0,0,0,,$7.8m
+58580,34,Robo,Jugo,25,Honolulu Yellowfins,RF,OF,,R,L,91,92,58,53,83,0,0,0,,$13.7m
+58581,15,Beaufort,Flowers,30,Yoff-Mariners Dakar,LF,OF,,R,S,34,46,73,64,65,0,0,0,,$3.2m
+58583,65,Felicity,Spencer,37,Yoff-Mariners Dakar,1B,,,R,S,61,47,50,25,37,0,0,0,,$3.6m
+58584,34,Vijay,Ramdeen,25,Corsa Palermo,RF,LF,,R,R,64,87,55,75,91,0,0,0,,$10.3m
+60244,17,Jiowana,Tagi,30,Honolulu Yellowfins,P,,RP,R,R,21,1,22,62,0,54,31,88,"4F, CH, SL",$4.6m
+60245,3,Ri,Kyung-Jae,35,Yoff-Mariners Dakar,3B,SS,,R,R,60,46,55,68,28,0,0,0,,$3.6m
+60246,54,Pallas,Lynx,24,New York Favorites,P,,RP,R,R,4,27,22,50,0,44,86,53,"4F, CH, CB",$3.6m
+60247,46,Baba,Isu,26,Kyoto Baseball Club,P,,RP,R,R,10,77,2,71,0,36,84,72,"4F, 2F, CB, SL",$5.3m
+60248,5,Bruno,Callahan,24,Honolulu Yellowfins,C,,,R,L,46,30,75,37,68,0,0,0,,$2.5m
+60249,92,Sigourney,Blair,30,New York Nemesis,2B,SS,,R,R,85,61,54,98,61,0,0,0,,$10.1m
+60250,15,Jayzax,Taylor,24,Boston Commodores,LF,RF,,R,R,83,54,93,36,57,0,0,0,,$7.3m
+60251,60,Churro,Bugsby,31,Missoula Moose,RF,OF,,R,L,39,83,43,74,66,0,0,0,,$6.0m
+60252,39,Enokida,Takahiro,24,Carolina Reapers,P,,SP,R,L,20,60,13,87,0,63,74,74,"4F, CB, SL, CF",$7.2m
+60253,16,Chip,Hazard,26,Chicago Dogs,P,,SP/RP,R,L,16,63,36,56,0,55,63,60,"4F, 2F, SL, CF",$5.2m
+60254,23,Robin,Rufner,25,Corsa Palermo,CF,OF,,L,S,48,34,98,86,75,0,0,0,,$4.7m
+60255,82,Swamp,Donkey,35,Boston Commodores,SS,,,R,R,83,63,73,70,48,0,0,0,,$9.9m
+60256,13,Zariyah,Hail,25,Dublin Mallards,LF,OF,,L,L,79,81,33,71,92,0,0,0,,$5.7m
+60257,50,Giancarlo,St. Lucia,24,Honolulu Yellowfins,P,,SP,R,L,21,29,2,78,0,67,78,63,"4F, 2F, CB, SL",$6.7m
+60258,81,Khat,Rotha,30,Santa Cruz Sawteeth,SS,2B,,R,R,74,52,49,89,66,0,0,0,,$6.6m
+60260,72,Vidar,Ousted,24,Yoff-Mariners Dakar,C,RF,,R,L,31,75,46,79,75,0,0,0,,$6.3m
+60261,58,Colby,Lebowski,24,New York Nemesis,P,,CL,L,L,2,0,71,54,0,83,82,63,"4F, 2F, CB",$8.0m
+60262,34,Alleycat,Crunchwrap,32,Busan Blowfish,2B,,,R,L,64,96,91,72,19,0,0,0,,$10.6m
+60263,34,Hank,Kennedy,24,Brisbane Rangers,P,,SP,R,L,4,6,72,55,0,72,45,50,"4F, 2F, CH, CB, SL",$6.3m
+60264,26,Mayodae,Noche,31,New York Nemesis,1B,,,R,R,58,92,57,57,49,0,0,0,,$9.7m
+60265,8,Boba,Crush,26,Joburg Springboks,3B,SS,,R,S,72,64,68,32,83,0,0,0,,$6.6m
+60266,36,Panzer,Fist,30,FREE AGENT,1B,3B,,R,L,95,68,69,71,59,0,0,0,,$13.7m
+60267,42,Cheddar,Cassidy,24,Golondrinas Valencia,1B,,,R,L,60,56,69,93,69,0,0,0,,$6.4m
+60268,16,Bolivar,Magana,24,Corsa Palermo,P,,SP/RP,L,L,0,23,29,93,0,69,48,90,"4F, CH, SL",$7.9m
+60269,19,Augustus,Overly,38,Pittsburgh Unioneers,LF,1B/OF,,R,R,32,43,30,47,50,0,0,0,,$2.2m
+60270,9,Branwen,Badham,26,Joburg Springboks,2B,,,R,R,77,75,37,59,19,0,0,0,,$4.4m
+60271,16,Carson,Runnette,37,Munich Engineers,LF,OF,,R,S,15,60,26,57,59,0,0,0,,$2.3m
+60273,29,Skunk,Bandana,25,Dublin Mallards,P,,SP,R,R,13,37,6,39,0,78,43,65,"4F, CH, CB, SL",$5.8m
+60274,1,Gia,Starradottir,25,Portland Swifts,3B,1B,,R,L,58,40,58,69,74,0,0,0,,$4.3m
+60275,26,Panini,Tuscadero,29,Corsa Palermo,SS,2B,,R,R,92,80,76,63,99,0,0,0,,$10.6m
+60276,57,Sludge,Grimer,24,Busan Blowfish,C,1B,,R,R,41,99,31,55,83,0,0,0,,$5.0m
+60277,4,Yim,Chiminey,24,Golondrinas Valencia,C,,,R,S,69,67,51,79,64,0,0,0,,$7.6m
+60278,39,Mizz,Frizzle,24,Melbourne Platypi,P,,SP,L,L,0,47,56,55,0,93,79,55,"4F, 2F, CB, SL, CF",$11.1m
+60279,41,Brayden,Alvarado,29,Joburg Springboks,P,,RP,R,R,17,8,78,51,0,41,57,65,"4F, CH, CB",$3.5m
+60280,60,Legend,Rivera,31,Havana Nights,P,,RP,R,L,16,6,56,51,0,69,80,57,"4F, 2F, CH",$6.6m
+60281,23,Bangarang,Orangutan,25,Pittsburgh Unioneers,P,,SP,R,L,29,13,36,45,0,52,78,83,"4F, CH, CB, SL",$8.4m
+60282,7,Stefan,Bond,24,New York Favorites,RF,LF,,R,R,84,56,89,55,91,0,0,0,,$9.7m
+60283,33,Kamari,Koch,25,Chicago Dogs,P,,SP,L,R,7,17,48,81,0,44,59,77,"4F, 2F, CH, CB, SL",$7.2m
+60284,31,Chili,Esposito Jr.,35,New York Nemesis,P,,RP,R,R,5,5,12,65,0,47,56,30,"4F, CB, SL",$1.9m
+60285,33,J.J. Frankie,Jacques-Jean,30,Santa Cruz Sawteeth,CF,OF,,R,L,41,56,77,68,59,0,0,0,,$5.2m
+60286,34,Monster,Launcheros,31,Seoul Spectres,2B,3B,,R,S,70,82,21,74,77,0,0,0,,$8.0m
+60287,45,Rog,Morgan,28,Santa Cruz Sawteeth,1B,3B,,R,R,68,44,96,31,71,0,0,0,,$4.5m
+60288,53,Jordy,Nightrider,31,New York Favorites,3B,,,R,R,57,63,82,64,79,0,0,0,,$8.2m
+60289,42,Wagwan,Mumsy,24,Santa Cruz Sawteeth,P,,SP,R,R,5,19,2,81,0,65,85,90,"4F, CH, FK, CB, CF",$9.4m
+60290,51,Myles,Braughtson,30,Montreal Voyageurs,CF,OF,,R,R,51,42,99,78,19,0,0,0,,$5.2m
+60291,30,Petra,Kraasenberg,27,Santa Cruz Sawteeth,LF,RF,,R,L,41,68,69,62,55,0,0,0,,$4.2m
+61510,51,Averi,Missu,25,Chicago Dogs,2B,SS,,R,R,56,27,28,82,49,0,0,0,,$3.3m
+61511,42,T.K.,Slider,23,Munich Engineers,2B,,,R,L,55,79,92,76,58,0,0,0,,$10.9m
+61512,20,Beefly,Navarro,25,Bomberos San.Dom,P,,SP,R,R,35,10,64,89,0,56,58,65,"4F, CH, CB, SL",$6.3m
+61513,49,Einhardt,Dampflok,23,Busan Blowfish,RF,,,R,S,45,74,64,55,95,0,0,0,,$5.9m
+61514,59,Furby,Funderberg,23,Dublin Mallards,CF,1B,,R,R,47,47,87,99,71,0,0,0,,$5.3m
+61515,41,Bertrand,Renaudin,23,Golondrinas Valencia,SS,3B,,R,R,71,95,47,70,99,0,0,0,,$10.5m
+61516,61,Dud,Sputters,23,Chicago Dogs,1B,,,R,R,20,48,70,58,57,0,0,0,,$2.9m
+61517,28,Todd,Dorsey,34,Havana Nights,LF,IF/OF,,R,R,54,57,74,56,32,0,0,0,,$7.4m
+61518,19,Isabella,Quintero,23,Melbourne Platypi,P,,CL,R,R,11,0,28,71,0,48,60,99,"4F, CB",$5.1m
+61519,53,Athena,Patagonia,24,Golondrinas Valencia,P,,RP,R,R,19,15,57,69,0,95,47,59,"4F, CH, CB, SL",$7.7m
+61520,45,Desmond,Richard,33,Melbourne Platypi,C,,,R,L,93,90,17,45,53,0,0,0,,$7.9m
+61521,37,Tokko,Ji-Min,26,Cascadia Kodiaks,P,,SP,L,L,5,6,17,72,0,61,52,51,"4F, 2F, CB, CF",$6.3m
+61522,37,Tony,Delvecchio,23,Dublin Mallards,P,,SP,R,R,29,12,44,31,0,65,82,51,"4F, CH, CB, SL, CF",$9.1m
+61523,9,Dimitri,Petrovich,23,Chicago Dogs,C,OF,,R,L,25,85,26,89,59,0,0,0,,$4.8m
+61524,57,Alexia,Soto,23,Montreal Voyageurs,P,,RP,L,L,35,7,19,60,0,50,57,56,"4F, CH, SL",$3.3m
+61525,4,Smoke,Singleton,29,Joburg Springboks,CF,OF,,R,L,80,78,91,91,82,0,0,0,,$14.4m
+61526,28,Billy-Jean,Blackwood,30,Golondrinas Valencia,RF,LF,,R,L,89,55,75,29,67,0,0,0,,$8.5m
+61527,30,Benedikt,Steiner,27,Pittsburgh Unioneers,3B,,,R,R,63,73,73,55,63,0,0,0,,$7.2m
+61528,50,Xander,Jordan,28,Golondrinas Valencia,P,,SP,L,L,39,4,83,65,0,45,74,93,"4F, 2F, CB, SL, CF",$8.2m
+61529,31,Yosef,Luundegaard,34,Melbourne Platypi,1B,OF,,R,R,83,42,54,36,50,0,0,0,,$6.5m
+61530,34,Roger,Hatter,29,Melbourne Platypi,P,,RP,R,R,5,0,78,53,0,94,17,67,"4F, CH, SL",$4.5m
+61531,38,Kenny,Kawaguchi,25,Seoul Spectres,P,,SP/RP,L,L,7,38,59,60,0,91,65,86,"4F, CH, CB, SL",$13.7m
+61532,25,Belle,Bottoms,23,Boston Commodores,C,RF,,R,R,59,83,37,99,87,0,0,0,,$10.7m
+61533,7,Jay-Grey,Jaygerson,23,Corsa Palermo,SS,,,R,L,89,43,49,92,44,0,0,0,,$5.8m
+61534,28,Ryker,Vaughan,23,Bomberos San.Dom,P,,SP,R,R,14,20,43,50,0,68,54,98,"4F, CH, CB, SL",$8.1m
+61535,42,Takuma,Hatakame,23,New York Nemesis,P,,SP,R,R,31,13,35,45,0,67,33,65,"4F, 2F, CH, SL, CF",$4.7m
+61536,17,Jamelius,Kramilius,26,Busan Blowfish,SS,2B,,R,S,65,42,82,82,66,0,0,0,,$6.0m
+61537,79,Sally,Dobbs,23,Glasgow Greys,P,,RP,R,L,15,29,24,58,0,74,76,62,"4F, CH, SL",$8.2m
+61538,21,Vincent,Buhr,29,Munich Engineers,P,,SP,L,L,24,2,34,60,0,34,49,64,"4F, FK, CB, SL",$3.8m
+61540,49,Broseph,Thirzty,23,Pittsburgh Unioneers,CF,1B,,L,L,44,58,99,72,88,0,0,0,,$8.1m
+61541,11,Pete,Wheeler,30,Boston Commodores,RF,1B/OF,,R,R,43,64,95,55,78,0,0,0,,$8.0m
+61542,46,Salvador,Mancini,29,Sao Paulo Toucans,1B,LF,,L,L,90,79,32,46,58,0,0,0,,$8.6m
+61543,15,Grady,Wyronski,23,Dublin Mallards,C,,,R,R,63,73,71,82,38,0,0,0,,$3.8m
+61544,2,Dainty,Villanueva,32,FREE AGENT,RF,LF,,R,L,66,62,59,71,93,0,0,0,,$9.1m
+61545,67,Meregrin,Brandytook,28,Joburg Springboks,P,,SP,R,R,76,16,5,68,0,66,55,85,"4F, CH, CB, SL",$9.2m
+61546,5,Madalyn,Ingram,34,Boston Commodores,2B,,,R,R,40,63,77,68,49,0,0,0,,$6.0m
+61547,13,Karter,Day Jr,23,Melbourne Platypi,LF,,,R,R,72,41,83,30,41,0,0,0,,$5.3m
+61548,62,Brodie,Lobolomo,29,Glasgow Greys,P,,RP,R,L,25,0,31,82,0,47,53,55,"4F, CH, CB",$3.0m
+61549,44,Jimi,Dubois,23,Havana Nights,P,,RP,R,R,6,18,32,45,0,42,50,46,"4F, CH, CB",$2.5m
+61550,83,Rhyse,Vargas,35,Heaters CDMX,LF,OF,,R,S,67,76,39,64,32,0,0,0,,$5.8m
+61551,82,Dino,Murfee,32,FREE AGENT,3B,IF,,R,R,50,45,59,67,66,0,0,0,,$5.5m
+61552,58,Pipe,Baum,26,Joburg Springboks,P,,SP,R,L,4,21,10,62,0,73,57,47,"4F, CH, CB, SL, CF",$5.1m
+61553,36,Fay,Dingaway,34,Busan Blowfish,P,,SP,L,L,19,15,12,30,0,39,58,68,"4F, CH, CB, SL, CF",$6.3m
+61554,48,Anastasia,Van Klos,23,Carolina Reapers,P,,CL,L,L,23,25,29,58,0,86,53,95,"4F, CH",$6.1m
+61555,55,Angelo,Boulevard,23,Heaters CDMX,P,,SP,L,L,12,14,16,57,0,99,66,67,"4F, 2F, CH, SL",$13.2m
+61556,46,Joestar,Whimsy,28,Heaters CDMX,P,,RP,R,R,4,10,21,60,0,55,96,38,"4F, 2F, CB, SL",$4.7m
+61557,40,Cha Cha,Booger,26,Golondrinas Valencia,P,,SP/RP,R,R,16,5,32,67,0,99,34,55,"4F, 2F, CH",$5.6m
+61558,91,Samir,Corona,25,FREE AGENT,P,,RP,R,R,4,7,78,82,0,69,21,86,"4F, CH, SL",$6.4m
+61559,43,Jesse,Cain,39,Sao Paulo Toucans,P,,RP,R,R,9,26,78,53,0,52,83,9,"4F, 2F, CB, SL",$3.4m
+61560,25,Prince,Stinkleton,25,Pittsburgh Unioneers,P,,CL,R,L,5,6,2,81,0,69,99,89,"4F, SL",$7.8m
+61561,57,Reef,Triggerfish,23,Honolulu Yellowfins,P,,SP,R,R,34,26,67,64,0,31,59,68,"4F, 2F, CH, CB, SL",$3.9m
+61562,22,Tuck,Sutton,32,Santa Cruz Sawteeth,P,,RP,L,L,2,3,2,46,0,29,78,45,"4F, FK, CB, SL",$3.5m
+62949,2,Jocinda,Pope,22,Montreal Voyageurs,RF,OF,,R,R,42,69,84,33,60,0,0,0,,$5.4m
+62950,22,Chewie,Crosby,22,Munich Engineers,CF,OF,,R,R,36,99,72,99,82,0,0,0,,$11.2m
+62951,40,Egon,Kosma,30,FREE AGENT,3B,2B,,R,L,95,58,65,74,54,0,0,0,,$10.5m
+62952,47,Mauricio,Atkinson,29,Boston Commodores,3B,1B,,R,R,55,69,85,42,82,0,0,0,,$6.7m
+62953,2,Nisha,Antoine,22,Jakarta Jaguars,P,,RP,L,L,3,7,65,42,0,58,68,69,"4F, CH, CB, SL",$4.9m
+62954,52,Ruddy,Bass,32,New York Nemesis,2B,,,R,S,60,62,41,59,35,0,0,0,,$5.1m
+62955,88,Iliana,Alejo,22,Golondrinas Valencia,LF,OF,,R,R,60,26,97,70,35,0,0,0,,$5.2m
+62956,16,Jimmy,Harada,24,Seoul Spectres,P,,SP/RP,R,R,13,1,33,79,0,71,47,64,"4F, 2F, CB",$5.0m
+62957,21,Cola,Johansen,22,Cascadia Kodiaks,SS,2B,,R,R,91,80,42,99,75,0,0,0,,$11.8m
+62958,42,Sonja,Petrovic,30,Montreal Voyageurs,P,,SP,R,R,11,8,58,16,0,79,58,52,"4F, 2F, CH, CB, SL",$6.9m
+62959,18,Adrien,Hirsh,25,Santa Cruz Sawteeth,C,,,R,R,50,50,53,79,71,0,0,0,,$4.8m
+62960,77,Munko,Griff,22,Seoul Spectres,C,OF,,R,R,77,60,32,46,99,0,0,0,,$8.2m
+62961,22,Tandy,Nash,26,Missoula Moose,P,,RP,R,R,9,7,42,74,0,58,60,83,"4F, CB, SL",$5.3m
+62962,10,Packie,Naughton,23,New York Favorites,1B,C,,R,L,93,60,58,54,67,0,0,0,,$6.7m
+62963,30,Nib,Crimbler,29,Munich Engineers,P,,SP,L,L,3,1,7,20,0,63,66,68,"4F, 2F, CB, SL",$7.0m
+62964,13,Yoba,Polomito,22,Bomberos San.Dom,2B,SS,,R,R,89,99,82,74,30,0,0,0,,$9.5m
+62965,51,Biff,Stanton,34,Honolulu Yellowfins,P,,CL,R,R,4,10,93,38,0,81,69,30,"4F, SL, CF",$5.3m
+62966,6,Bijan,Golzar,22,Seoul Spectres,P,,RP,R,L,8,4,12,76,0,36,69,63,"4F, CH, CB, SL",$4.2m
+62967,59,Titan,Brownpole,30,Kyoto Baseball Club,P,,SP,R,L,6,6,13,83,0,67,43,49,"4F, CH, CB, SL",$4.8m
+62968,23,Pascal,Bernard,22,Missoula Moose,RF,1B/OF,,L,S,51,78,62,66,89,0,0,0,,$8.9m
+62969,32,Ryan,Porkman,29,Jakarta Jaguars,LF,1B,,R,R,36,47,63,56,46,0,0,0,,$3.3m
+62970,30,Chappie,Johnson,34,Joburg Springboks,CF,1B,,R,L,50,59,80,97,73,0,0,0,,$8.8m
+62971,33,Ruben,Walsh,22,Missoula Moose,P,,SP,R,R,4,10,4,38,0,11,49,68,"4F, CH, CB, SL",$3.4m
+62972,43,Chonz,Foster,30,Kyoto Baseball Club,LF,RF,,R,R,62,49,60,46,78,0,0,0,,$5.1m
+62973,29,Piriperi,Leone,22,Nagoya Nocturnals,C,1B,,R,L,26,64,15,87,71,0,0,0,,$3.8m
+62974,13,Shark,Burgess,26,Golondrinas Valencia,3B,1B,,R,L,77,46,80,62,51,0,0,0,,$6.2m
+62975,18,Cheyenne,Houndstooth,22,Glasgow Greys,2B,3B,,R,R,80,60,53,48,27,0,0,0,,$5.7m
+62976,45,Quark,Markenstein,22,Pittsburgh Unioneers,C,OF,,R,R,73,40,50,46,85,0,0,0,,$5.8m
+62977,54,Cam,Acosta,25,Brisbane Rangers,3B,SS,,R,L,55,71,31,33,53,0,0,0,,$4.4m
+62979,15,Paloma,Montecarlo,32,Melbourne Platypi,CF,OF,,R,R,85,53,83,76,81,0,0,0,,$12.1m
+62980,23,Mario,Harris,27,Joburg Springboks,P,,SP,R,L,26,15,82,44,0,56,99,66,"4F, 2F, CH, CB, SL",$13.2m
+62981,39,Freeman,Pugh,33,Boston Commodores,1B,,,R,L,95,17,43,43,29,0,0,0,,$3.6m
+62982,38,Cosmo,Green,22,Golondrinas Valencia,P,,CL,R,L,13,8,6,56,0,74,55,69,"4F, CH, SL",$5.0m
+62983,8,Kenny,Funkhouser,32,Munich Engineers,SS,3B,,R,L,42,81,69,73,84,0,0,0,,$7.2m
+62984,19,Leona,DeLeon,22,Carolina Reapers,RF,LF,,R,L,77,97,91,42,76,0,0,0,,$15.3m
+62985,28,Buddy,Weaver,36,Joburg Springboks,SS,IF/OF,,R,R,27,74,30,84,63,0,0,0,,$5.4m
+62986,25,Jak,Gaines,36,Dublin Mallards,P,,RP,R,R,1,0,3,45,0,25,44,58,"4F, CH, CB, SL",$2.3m
+62987,71,Pak,Ye-Jun,22,Missoula Moose,RF,OF,,R,L,73,68,93,49,93,0,0,0,,$9.3m
+62988,21,Seto,Nanami,22,Jakarta Jaguars,P,,SP/RP,R,L,12,6,49,81,0,90,50,74,"4F, CH, SL, CF",$12.3m
+62989,53,Phoenix,Woody,30,Munich Engineers,P,,RP,R,R,6,23,25,68,0,70,64,66,"4F, CH, SL",$6.8m
+62990,40,Rafael,Francis,22,Seoul Spectres,P,,RP,L,L,6,16,61,51,0,77,21,98,"4F, CH, CB",$4.7m
+62991,9,Sincere,Cabbagestalk,26,FREE AGENT,CF,OF,,R,L,69,42,76,99,85,0,0,0,,$9.0m
+62992,38,Seymour,Blues,27,Missoula Moose,P,,RP,R,L,7,83,30,64,0,58,35,94,"4F, CH, SL",$3.4m
+64064,18,Jefferson,Benson,34,Sao Paulo Toucans,LF,1B/OF,,L,R,62,46,60,50,66,0,0,0,,$6.3m
+64065,42,Gaitok,Pongsanam,21,Carolina Reapers,P,,RP,R,R,15,0,10,37,0,83,61,44,"4F, 2F, CB, SL",$5.7m
+64066,53,Murray,Villa,29,Joburg Springboks,P,,SP,R,L,17,16,74,57,0,21,70,46,"4F, CH, CB, SL",$3.2m
+64067,1,Chewie,Goldberg,23,Joburg Springboks,C,1B,,R,R,48,62,18,66,72,0,0,0,,$4.2m
+64068,29,Aalto,Driveway,36,Yoff-Mariners Dakar,P,,RP,R,R,0,13,38,55,0,30,81,33,"4F, CH, CB",$2.8m
+64069,46,CJ,Boss,23,Boston Commodores,P,,SP,R,R,0,2,57,69,0,36,96,80,"4F, 2F, CH, CB, SL",$9.1m
+64070,20,Chick,Gandil,29,Missoula Moose,CF,OF,,R,R,54,50,94,57,69,0,0,0,,$7.2m
+64071,7,Warming,Bernabel,25,Joburg Springboks,1B,3B,,R,R,80,58,52,75,50,0,0,0,,$7.9m
+64072,40,Ishwar,Khan,23,Chicago Dogs,2B,,,R,L,45,62,64,60,43,0,0,0,,$5.3m
+64073,23,Selene,Aberdeen,23,Honolulu Yellowfins,SS,,,R,R,62,55,76,78,65,0,0,0,,$8.0m
+64074,6,Luanne,Tuscon,32,Munich Engineers,C,,,R,R,64,73,54,31,62,0,0,0,,$6.2m
+64075,53,Desta,Negasi,25,Busan Blowfish,2B,3B,,R,L,66,46,80,60,12,0,0,0,,$4.9m
+64076,18,Bayclo,Maxx,23,Heaters CDMX,RF,LF,,R,L,33,73,74,58,84,0,0,0,,$6.2m
+64077,9,Crosby,Sandoval,25,New York Nemesis,RF,OF,,R,L,69,53,54,67,63,0,0,0,,$5.1m
+64078,22,Duke,Bilgewater,22,Pittsburgh Unioneers,SS,3B,,R,R,79,94,18,81,52,0,0,0,,$9.1m
+64079,15,Tommy,Thrasher,24,Pittsburgh Unioneers,P,,RP,R,R,19,9,35,59,0,99,21,53,"4F, CH, CB, CF",$4.6m
+64080,68,Pattie,Caykz,22,Jakarta Jaguars,P,,SP/RP,L,L,20,27,14,70,0,62,41,76,"4F, CH, CB",$4.2m
+64081,49,Peter,Bee,27,Dublin Mallards,P,,CL,L,L,11,3,45,61,0,64,57,83,"4F, CB, SL",$5.1m
+64082,30,Buck,Dancer,21,Honolulu Yellowfins,CF,1B,,R,L,58,64,84,89,58,0,0,0,,$6.5m
+64083,25,Chris,Christmas,21,New York Nemesis,3B,SS,,R,S,76,76,68,47,76,0,0,0,,$7.4m
+64084,59,Grizzleigh,Mamba,30,Sao Paulo Toucans,P,,SP,R,L,6,6,24,67,0,71,86,51,"4F, 2F, CB, SL",$8.3m
+64085,26,Feech,La Manna,27,Dublin Mallards,C,RF,,R,R,80,65,38,65,55,0,0,0,,$6.0m
+64086,82,Case,Christian,29,New York Nemesis,1B,OF,,R,R,56,52,83,44,35,0,0,0,,$4.7m
+64087,29,Mike,Quackenbush,26,Missoula Moose,1B,3B,,R,R,86,56,91,59,62,0,0,0,,$8.2m
+64088,16,Bai,Tsu,21,Dublin Mallards,P,,RP,R,R,2,16,1,70,0,47,57,61,"4F, CH, CB, SL",$3.9m
+64089,3,Fruscar,Bravaldo,23,Melbourne Platypi,3B,SS,,R,S,65,78,52,49,99,0,0,0,,$7.6m
+64090,44,Jordan,Pepper,24,Cascadia Kodiaks,CF,,,R,L,36,26,82,64,42,0,0,0,,$2.7m
+64091,19,Patsy,Traveller,23,Kyoto Baseball Club,SS,3B,,R,S,63,65,60,87,67,0,0,0,,$6.9m
+64092,8,Butters,Buchanan,21,Brisbane Rangers,P,,SP,R,R,3,25,1,72,0,55,68,37,"4F, CH, CB, SL, CF",$4.2m
+64093,12,Chromatic,Aberration,21,Portland Swifts,LF,OF,,R,R,74,74,53,47,63,0,0,0,,$10.2m
+64094,10,Kimball,Beletrance,23,Havana Nights,P,,SP/RP,R,R,4,40,15,33,0,68,78,90,"4F, CB, SL",$10.3m
+64095,26,Fizzy,Tallboy,26,Santa Cruz Sawteeth,C,,,R,R,65,69,50,71,68,0,0,0,,$8.9m
+64096,20,Tony,Felix Da Costa,30,Boston Commodores,P,,SP,R,L,11,7,14,38,0,88,30,51,"4F, 2F, FK, CB, SL",$5.1m
+64097,34,Cedric,Lacampaigne,21,Carolina Reapers,3B,1B/OF,,R,S,48,81,69,70,86,0,0,0,,$10.3m
+64098,40,Harry,Woodpecker,24,Heaters CDMX,P,,CL,L,R,21,10,18,38,0,32,84,77,"4F, CB, SL",$5.0m
+64099,37,Hub,Soagie,22,Bomberos San.Dom,P,,RP,R,R,3,8,14,57,0,67,55,55,"4F, 2F, CB",$4.6m
+64100,32,Fausto,Swenson,21,FREE AGENT,P,,SP,R,R,49,41,8,24,0,75,58,69,"4F, CB, SL, CF",$9.6m
+64101,6,Ella,Bamber,37,Santa Cruz Sawteeth,2B,SS,,R,S,47,62,47,65,39,0,0,0,,$4.9m
+64102,51,Hiroyuki,Sakai,28,Jakarta Jaguars,CF,1B,,R,R,41,83,87,65,36,0,0,0,,$7.5m
+64103,2,Farchamp,Zamboni,21,Cascadia Kodiaks,LF,RF,,R,L,78,61,57,71,66,0,0,0,,$6.8m
+64104,18,Jiri,Bednar,22,Yoff-Mariners Dakar,P,,SP/RP,R,R,2,8,16,63,0,90,53,40,"4F, CB, SL",$5.6m
+64105,11,Sloane,Lawson,33,Yoff-Mariners Dakar,RF,1B/OF,,R,R,68,36,63,36,87,0,0,0,,$6.5m
+64106,30,Chad,Hellman,25,Jakarta Jaguars,P,,SP,R,R,42,37,7,58,0,57,81,82,"4F, 2F, CH, CB, SL",$12.8m
+64107,61,Pascale,Noir,21,Cascadia Kodiaks,P,,SP,L,L,15,35,6,70,0,91,58,60,"4F, 2F, CB, CF",$4.8m
+64108,38,Joram,Boneschansker,27,Honolulu Yellowfins,2B,,,R,R,31,75,45,82,50,0,0,0,,$4.3m
+64109,52,Junior,Sarsaparilla,27,Golondrinas Valencia,CF,1B/OF,,R,R,34,60,87,32,27,0,0,0,,$5.0m
+64110,10,Tycho,Raikkonen,25,Montreal Voyageurs,SS,2B,,R,L,98,38,83,77,89,0,0,0,,$9.9m
+64111,15,Massimo,Aldente,21,Chicago Dogs,P,,RP,R,R,10,12,30,40,0,82,53,21,"4F, 2F, CB, SL",$4.2m
+65351,2,Fairy,Nuffers,22,Seoul Spectres,3B,1B/OF,,R,L,64,83,45,61,86,0,0,0,,$10.4m
+65352,7,Viper,Rattlebattle,28,Portland Swifts,CF,1B,,R,L,53,72,80,85,20,0,0,0,,$5.5m
+65353,46,Kyle,Thomas,25,Melbourne Platypi,P,,RP,R,L,11,3,13,49,0,76,46,81,"4F, CH, SL",$6.0m
+65354,17,Jaxton,Davenport,24,Dublin Mallards,P,,SP,R,R,21,5,0,26,0,28,48,78,"4F, CH, CB, SL",$3.4m
+65355,82,Marquis,Bethea,29,Havana Nights,2B,SS,,R,S,62,40,66,70,21,0,0,0,,$4.4m
+65356,16,Octo,Genarian,21,Honolulu Yellowfins,C,RF,,R,R,78,20,37,46,50,0,0,0,,$2.8m
+65357,51,"Greta ""Ice""",Vixen,27,Melbourne Platypi,LF,1B/OF,,L,R,65,62,66,40,86,0,0,0,,$9.0m
+65358,34,Taka,Shift,22,Portland Swifts,P,,RP,L,L,3,5,54,34,0,76,58,48,"4F, 2F, CH, CB",$4.7m
+65359,21,Solomon,Doinkers,27,Yoff-Mariners Dakar,1B,3B,,R,S,73,49,77,61,63,0,0,0,,$6.8m
+65360,44,Jim,Merryman,29,Santa Cruz Sawteeth,P,,SP,L,L,46,3,57,65,0,77,81,74,"4F, CH, CB, SL",$14.4m
+65361,4,Newt,Gizmo,24,Cascadia Kodiaks,SS,IF/OF,,R,R,62,33,68,95,47,0,0,0,,$6.9m
+65362,4,Masahiro,Hu,20,Montreal Voyageurs,1B,C,,R,R,58,91,62,58,45,0,0,0,,$8.1m
+65363,0,Joanna,Dark,21,Brisbane Rangers,C,1B,,R,R,51,46,62,89,92,0,0,0,,$8.1m
+65364,37,Eddie,Kit,23,Jakarta Jaguars,CF,1B/OF,,R,R,65,60,56,95,49,0,0,0,,$7.2m
+65365,92,Ned,Piggles Jr.,20,New York Favorites,RF,OF,,R,S,64,62,71,31,83,0,0,0,,$7.5m
+65366,7,Meatball,Cookie,20,Brisbane Rangers,P,,RP,R,L,10,4,37,54,0,53,64,41,"4F, CB, SL",$2.9m
+65367,10,Girl,Bassnerd,29,Seoul Spectres,2B,3B,,R,R,73,98,42,75,47,0,0,0,,$10.5m
+65368,51,Gob,Gobetto,23,Portland Swifts,P,,SP,R,R,77,56,43,61,0,96,46,46,"4F, 2F, CB, SL",$7.0m
+65369,36,Crouch,Kick,20,Cascadia Kodiaks,P,,RP,R,R,18,12,9,38,0,52,62,99,"4F, CH, SL, CF",$8.1m
+65370,22,Bubber,Reeves,26,Heaters CDMX,P,,SP,R,L,29,70,19,37,0,54,47,63,"4F, CH, CB, SL",$5.0m
+65371,48,Miles,O'Brien,25,Munich Engineers,LF,RF,,R,R,30,78,56,26,82,0,0,0,,$4.0m
+65372,95,Antoine,Goldsmith,20,Cascadia Kodiaks,3B,2B,,R,S,74,78,39,60,63,0,0,0,,$5.7m
+65373,19,Tatsuo,Shinada,27,FREE AGENT,2B,IF,,R,R,64,37,64,88,43,0,0,0,,$9.0m
+65374,24,Yambag,Jones,24,Golondrinas Valencia,C,,,R,R,58,50,41,68,67,0,0,0,,$6.2m
+65375,49,Bogo,Boneless,26,Carolina Reapers,SS,3B,,R,R,74,67,66,69,94,0,0,0,,$9.4m
+65376,95,Colin,McRally,20,Heaters CDMX,CF,,,R,L,28,93,89,58,66,0,0,0,,$6.8m
+65377,50,Rebecca,Peebers,22,Busan Blowfish,2B,SS,,R,L,46,62,61,59,54,0,0,0,,$5.0m
+65378,73,Duke,Fleshman,23,Brisbane Rangers,P,,SP/RP,R,R,17,3,6,72,0,83,58,47,"4F, 2F, CH, SL",$6.5m
+65379,44,Moot,Pointe,27,Honolulu Yellowfins,P,,RP,R,L,5,6,68,36,0,46,58,51,"4F, CB, SL, CF",$3.6m
+65380,6,Havarti,Foots,26,Melbourne Platypi,LF,RF,,R,R,69,59,61,43,38,0,0,0,,$4.6m
+65381,54,Sammy,Seagull,24,Havana Nights,1B,,,R,R,57,86,43,25,60,0,0,0,,$4.6m
+65382,14,Yips,Donahue,20,Portland Swifts,RF,OF,,R,R,65,34,72,72,87,0,0,0,,$5.0m
+65383,34,Yoseph,Papa,24,Santa Cruz Sawteeth,P,,CL,L,L,6,16,4,48,0,63,69,65,"4F, SL",$4.4m
+65384,39,Stilla,Paradonuts,21,New York Favorites,P,,SP,L,L,31,34,2,36,0,56,62,73,"4F, SB, CH, CB, SL",$7.2m
+65385,57,Bane,Sayavong,30,Chicago Dogs,P,,RP,L,L,12,15,63,67,0,49,42,83,"4F, CH, CB",$4.8m
+65386,36,Faith,Connors,32,Nagoya Nocturnals,P,,SP,L,L,3,60,26,86,0,20,78,70,"4F, 2F, CB, SL, CF",$6.5m
+65387,66,Autumn,Pillar,20,Carolina Reapers,P,,RP,R,R,1,10,9,45,0,71,52,82,"4F, CH, CB",$6.2m
+65388,3,Carly,Jayy,26,Kyoto Baseball Club,P,,SP,L,L,10,24,28,13,0,56,65,44,"4F, 2F, CB, SL",$5.8m
+65389,25,Paislee,Church,20,Brisbane Rangers,P,,SP,L,R,0,9,4,51,0,32,94,64,"4F, CH, CB, SL",$7.2m
+65390,52,Cape,Disappointment,30,Bomberos San.Dom,P,,SP/RP,R,R,15,27,37,56,0,61,84,70,"4F, CB, SL, CF",$9.8m
+65391,27,Daxton,McLongthrob,21,Glasgow Greys,P,,SP,R,R,26,14,41,48,0,66,50,39,"4F, 2F, CB, SL, CF",$5.2m
+67261,5,Chutney,Beavertail,26,Jakarta Jaguars,2B,IF,,R,R,71,81,47,66,35,0,0,0,,$9.1m
+67262,31,Kirk,Groombridge,19,Corsa Palermo,P,,RP,R,R,19,15,62,65,0,51,66,33,"4F, CB, SL",$3.5m
+67263,25,Tomfoolery,Hellskate,34,Heaters CDMX,LF,OF,,R,R,27,61,76,47,44,0,0,0,,$3.7m
+67264,8,Lotta,Dosh,31,Dublin Mallards,SS,IF,,R,R,85,72,78,70,55,0,0,0,,$13.0m
+67265,10,Teckno,Union,24,Glasgow Greys,CF,1B,,R,L,74,39,79,79,56,0,0,0,,$6.6m
+67266,46,Fleetwood,Walker,19,Corsa Palermo,2B,SS,,R,L,43,86,66,75,23,0,0,0,,$7.2m
+67267,59,Ernie,Grab,20,Corsa Palermo,LF,1B,,R,R,38,60,75,51,52,0,0,0,,$6.3m
+67268,12,Chadwick,Higgenbotham,23,Montreal Voyageurs,C,1B,,R,L,84,53,35,90,55,0,0,0,,$8.4m
+67269,44,Jake,Leg,27,Boston Commodores,CF,OF,,R,L,33,71,73,61,56,0,0,0,,$5.6m
+67270,11,Proggo,Rock,20,Pittsburgh Unioneers,3B,1B,,R,R,69,45,37,61,71,0,0,0,,$4.6m
+67271,16,Buffalo,Boone,26,Cascadia Kodiaks,P,,SP,R,R,19,22,11,94,0,73,60,56,"4F, 2F, CH, CB",$7.3m
+67272,50,Brentwood,Darlington,19,Pittsburgh Unioneers,P,,SP,R,L,16,3,1,36,0,50,43,37,"4F, 2F, CH, CB, SL",$3.3m
+67273,14,Franz,Foghorn,21,Missoula Moose,C,OF,,R,R,75,52,24,72,84,0,0,0,,$8.1m
+67274,54,Gordon,Glock,19,Carolina Reapers,RF,OF,,R,R,33,62,69,40,90,0,0,0,,$4.9m
+67275,55,Rat,Chapman,19,Busan Blowfish,P,,SP,L,L,23,8,12,64,0,81,42,46,"4F, CH, CB, SL",$5.5m
+67276,45,Wawa,Pedal,22,Nagoya Nocturnals,P,,RP,R,R,19,12,7,72,0,42,72,55,"4F, 2F, CB, SL",$4.2m
+67277,19,Medallion,Stalwart,24,Boston Commodores,P,,RP,R,L,2,14,18,44,0,78,75,66,"4F, 2F, CB",$8.5m
+67278,2,Layne,Costman,29,Missoula Moose,1B,,,L,L,77,69,58,42,40,0,0,0,,$6.2m
+67279,26,Richie,Grab,19,Golondrinas Valencia,SS,3B,,R,S,78,39,71,85,41,0,0,0,,$7.3m
+67280,18,Kelly,Calliope,22,Brisbane Rangers,P,,RP,L,L,21,1,28,45,0,62,86,26,"4F, 2F, CB, SL",$4.7m
+67281,49,Swiss,Leatherman,19,Sao Paulo Toucans,P,,SP/RP,R,R,2,25,4,61,0,66,81,78,"4F, CH, CB",$9.2m
+67282,35,Zim,Balance,21,Havana Nights,P,,CL,R,L,19,55,39,41,0,71,98,63,"4F, SL",$8.5m
+67283,36,Jessy,Thorn,19,Bomberos San.Dom,P,,SP,R,R,26,3,1,24,0,82,49,62,"4F, CH, CB, SL, CF",$7.1m
+67284,2,Monza,Montoya,29,Nagoya Nocturnals,LF,OF,,R,S,51,49,86,47,71,0,0,0,,$6.2m
+67285,30,Mooze,Hound,25,Chicago Dogs,C,RF,,R,R,79,89,9,43,72,0,0,0,,$7.2m
+67286,13,Eric,Sparrow,21,Corsa Palermo,1B,,,R,R,43,73,46,26,52,0,0,0,,$3.3m
+67287,91,Rogue,Huxley,20,Bomberos San.Dom,CF,1B,,R,R,83,34,94,60,47,0,0,0,,$7.4m
+67288,26,Rodger,Neighbor,22,Cascadia Kodiaks,LF,RF,,R,R,23,36,90,35,40,0,0,0,,$2.8m
+67289,85,Slamtona,Washington,24,Boston Commodores,1B,3B,,R,S,75,85,72,57,38,0,0,0,,$10.5m
+67290,14,Novigrad,Henchdwarf,19,Corsa Palermo,3B,1B,,R,S,37,47,63,43,71,0,0,0,,$3.6m
+67291,21,Scruff,Diggily-Buster,28,Missoula Moose,SS,2B,,R,R,47,65,49,81,59,0,0,0,,$5.1m
+67292,27,Cessna,Belmont,19,Dublin Mallards,2B,SS,,R,R,66,47,53,82,55,0,0,0,,$5.7m
+67293,22,Jerome,Monochrome,27,Havana Nights,C,,,R,R,71,67,47,88,64,0,0,0,,$8.3m
+67294,29,Tugboat,Suplex,22,Jakarta Jaguars,RF,OF,,R,L,83,53,40,86,89,0,0,0,,$8.1m
