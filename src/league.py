@@ -1,12 +1,10 @@
 """
-Compute league-wide context tables from raw (pre-derived) batter and pitcher data.
-These are needed by stats.py before individual player stats can be finalized.
-
-Returns a plain namespace so callers can do: lg.season_batting, etc.
+League-wide context tables, computed from raw batting and pitching data.
+Call compute_league() after data.stats.load_batting() and load_pitching().
+All tables are then available as module-level attributes (e.g. league.season_batting).
 """
 import numpy as np
 import pandas as pd
-from types import SimpleNamespace
 
 from constants import (
     scale_wOBA, MIN_PA,
@@ -30,19 +28,29 @@ from formulas import (
 )
 
 
-def compute_league(batters, pitchers):
-    """
-    batters  - raw DataFrame from data.load_batters() (season rows only)
-    pitchers - raw DataFrame from data.load_pitchers() (season rows only)
-    Returns a SimpleNamespace with all league context tables.
-    """
-    lg = SimpleNamespace()
+pos_fielding    = None
+pos_adjustment  = None
+season_batting  = None
+season_pitching = None
+team_defense    = None
+role_pitching   = None
+role_leverage   = None
+role_innings    = None
+
+
+def compute_league():
+    global pos_fielding, pos_adjustment, season_batting, season_pitching
+    global team_defense, role_pitching, role_leverage, role_innings
+
+    from data import stats as raw
+    batters  = raw.batting_stats
+    pitchers = raw.pitching_stats
 
     # ── Fielding averages by position ────────────────────────────────────────
     fld = batters.groupby(['PP', '2P']).agg({'E': 'sum', 'PB': 'sum', 'GF': 'sum'})  # fielding rates by position
     compute_E_per_GF(fld)
     compute_PB_per_GF(fld)
-    lg.pos_fielding = fld[['E/GF', 'PB/GF']]
+    pos_fielding = fld[['E/GF', 'PB/GF']]
 
     # ── Positional wOBA adjustments ──────────────────────────────────────────
     overall_wOBA = _div(wOBA_num(batters).sum(), wOBA_denom(batters).sum())
@@ -69,7 +77,7 @@ def compute_league(batters, pitchers):
     )
     posadj['Rpos'] = ((overall_wOBA - posadj['wOBA']) / scale_wOBA) * (posadj['PA'] / posadj['GB']) * num_games
     posadj.set_index(['PP', '2P'], inplace=True)
-    lg.pos_adjustment = posadj[['PA', 'wOBA_raw', 'wOBA', 'Rpos']]
+    pos_adjustment = posadj[['PA', 'wOBA_raw', 'wOBA', 'Rpos']]
 
     # ── Season-level batting aggregates ─────────────────────────────────────
     sb = batters.groupby('Season').agg({  # season batting totals
@@ -96,7 +104,7 @@ def compute_league(batters, pitchers):
     sb['RW/PA'] = batter_WAR / sb['PA']
     sb['RR/PA'] = sb['RW/PA'] * sb['R/W']
     compute_R_per_PA(sb)
-    lg.season_batting = sb
+    season_batting = sb
 
     # ── Season-level pitching aggregates ────────────────────────────────────
     sp = pitchers.groupby('Season').agg({  # season pitching totals
@@ -126,7 +134,7 @@ def compute_league(batters, pitchers):
     sp['GR'] = sp['GP'] - sp['GS']
     sp['G']  = pitchers.groupby('Season')['Team'].nunique() * num_games
     sp['R/G'] = _div(sp['RA'], sp['G'])
-    lg.season_pitching = sp
+    season_pitching = sp
 
     # ── Team defense BABIP ───────────────────────────────────────────────────
     td = pitchers.groupby(['Season', 'Team']).agg(  # team defense: BABIP vs league average
@@ -135,14 +143,14 @@ def compute_league(batters, pitchers):
     compute_BABIP_pit(td)
     td = td.merge(sp['BABIP'], left_on='Season', right_index=True, suffixes=('', '_lg'))
     td['BABIP_diff'] = td['BABIP'] - td['BABIP_lg']
-    lg.team_defense = td[['BABIP', 'BABIP_diff']]
+    team_defense = td[['BABIP', 'BABIP_diff']]
 
     # ── Role RA9 (starter vs. reliever) ─────────────────────────────────────
     rp = pitchers.copy()  # RA9 by starter/reliever role
     rp['Starter'] = rp['Role'] == 'SP'
     rp = rp.groupby(['Season', 'Starter']).agg({'IP_true': 'sum', 'RA': 'sum'})
     compute_RA9(rp)
-    lg.role_pitching = rp
+    role_pitching = rp
 
     # ── Role leverage (save run values) ─────────────────────────────────────
     rl = pitchers.groupby(['Season', 'Role']).agg({'GR': 'sum', 'SV': 'sum'})  # leverage run values by role
@@ -154,7 +162,7 @@ def compute_league(batters, pitchers):
         default=runs_SV,
     )
     rl['R_no_SV'] = -rl['SV%'] * runs_SV / (1 - rl['SV%'])
-    lg.role_leverage = rl
+    role_leverage = rl
 
     # ── Replacement level innings (WAR/IP by role) ───────────────────────────
     ri = pitchers.copy()  # replacement-level WAR/IP by role
@@ -180,6 +188,4 @@ def compute_league(batters, pitchers):
             raise ValueError(f"Unmatched role: {role}")
 
     ri['RW/IP'] = ri.apply(ip_adjusted, axis=1)
-    lg.role_innings = ri
-
-    return lg
+    role_innings = ri

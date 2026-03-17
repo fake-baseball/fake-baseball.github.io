@@ -4,15 +4,12 @@ from pathlib import Path
 from dominate.tags import *
 
 from pages.team_page import generate_team_page
+from data import players
 from util import make_doc
 
 
-def generate_teams_index(teams, player_info):
-    """
-    teams       - DataFrame with columns: team_name, division_name, conference_name
-    player_info - active roster DataFrame (indexed by first_name, last_name)
-    """
-    roster = player_info.reset_index()
+def generate_teams_index(teams):
+    roster = players.player_info.reset_index()
 
     doc = make_doc("BFBL Teams")
     with doc:

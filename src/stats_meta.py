@@ -703,3 +703,8 @@ for _stat_dict in (BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS, PITCHING_ST
     for _meta in _stat_dict.values():
         for _key, _val in _DEFAULTS.items():
             _meta.setdefault(_key, _val)
+
+for _meta in BATTING_STATS.values():     _meta.setdefault('qual_col', 'PA')
+for _meta in BASERUNNING_STATS.values(): _meta.setdefault('qual_col', 'SBatt')
+for _meta in FIELDING_STATS.values():    _meta.setdefault('qual_col', 'GF')
+for _meta in PITCHING_STATS.values():    _meta.setdefault('qual_col', 'IP_true')

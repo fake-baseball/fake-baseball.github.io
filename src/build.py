@@ -10,6 +10,20 @@ Options:
   --home      home page
 
 If no options are given, everything is built.
+
+--- Module-level state ---
+Each module owns its data as module-level variables; other modules import
+directly rather than receiving values as function arguments.
+
+  data/stats.py    batting_stats, pitching_stats  (raw CSV)
+  data/players.py  player_info, retired_batters, retired_pitchers
+  league.py        season_batting, season_pitching, pos_fielding,
+                   pos_adjustment, team_defense, role_pitching,
+                   role_leverage, role_innings
+  batting.py       stats  (derived batting stats)
+  pitching.py      stats  (derived pitching stats)
+  leaders.py       max_batters, max_qual_batters,
+                   max_pitchers, max_qual_pitchers, min_qual_pitchers
 """
 import argparse
 import sys
@@ -19,10 +33,14 @@ from pathlib import Path
 # Allow imports from src/ without a package prefix
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from data    import load_batters, load_pitchers, load_teams, load_player_info, load_retirements
-from league  import compute_league
-from stats   import compute_batting_stats, compute_pitching_stats
-from leaders import compute_season_maxes, compute_season_maxes_pitchers
+import league
+import batting
+import pitching
+import leaders
+
+from data.stats    import load_batting, load_pitching
+from data.players  import load_player_info, load_retirements
+from data          import load_teams
 
 from pages.batter        import generate_batter_page
 from pages.pitcher       import generate_pitcher_page
@@ -62,61 +80,45 @@ def main():
     need_raw = do_players or do_leaders or do_seasons
     if need_raw:
         print("Loading raw data...")
-        batters_raw  = load_batters()
-        pitchers_raw = load_pitchers()
+        load_batting()
+        load_pitching()
 
     # ── League averages (needed by players, leaders, seasons) ─────────────
     need_lg = do_players or do_leaders or do_seasons
     if need_lg:
         print("Computing league averages...")
-        lg = compute_league(batters_raw, pitchers_raw)
+        league.compute_league()
 
     # ── Player roster info (needed by players, leaders, teams) ────────────
     need_player_info = do_players or do_leaders or do_teams
     if need_player_info:
         print("Loading player/roster info...")
-        player_info = load_player_info()
+        load_player_info()
 
     # ── Per-player stats (needed by players, leaders) ─────────────────────
     need_stats = do_players or do_leaders
     if need_stats:
         print("Computing player stats...")
-        data_batters  = compute_batting_stats(batters_raw, lg)
-        data_pitchers = compute_pitching_stats(pitchers_raw, lg)
+        batting.compute()
+        pitching.compute()
 
         print("Loading retirements...")
-        retired_batters, retired_pitchers = load_retirements()
+        load_retirements()
 
     # ── Player pages + index ──────────────────────────────────────────────
     if do_players:
-        max_batters, max_qual_batters = compute_season_maxes(data_batters)
-        max_pitchers, max_qual_pitchers, min_qual_pitchers = compute_season_maxes_pitchers(data_pitchers)
+        leaders.compute_season_leaders()
 
         print("Generating player pages...")
         players_list = []
 
-        for first, last in data_batters[['First Name', 'Last Name']].drop_duplicates().itertuples(index=False):
+        for first, last in batting.stats[['First Name', 'Last Name']].drop_duplicates().itertuples(index=False):
             players_list.append((first, last))
-            generate_batter_page(
-                first, last,
-                data_batters=data_batters,
-                player_info=player_info,
-                retired_batters=retired_batters,
-                max_batters=max_batters,
-                max_qual_batters=max_qual_batters,
-            )
+            generate_batter_page(first, last)
 
-        for first, last in data_pitchers[['First Name', 'Last Name']].drop_duplicates().itertuples(index=False):
+        for first, last in pitching.stats[['First Name', 'Last Name']].drop_duplicates().itertuples(index=False):
             players_list.append((first, last))
-            generate_pitcher_page(
-                first, last,
-                data_pitchers=data_pitchers,
-                player_info=player_info,
-                retired_pitchers=retired_pitchers,
-                max_pitchers=max_pitchers,
-                max_qual_pitchers=max_qual_pitchers,
-                min_qual_pitchers=min_qual_pitchers,
-            )
+            generate_pitcher_page(first, last)
 
         players_list.sort(key=lambda x: x[1].lower())
 
@@ -126,12 +128,12 @@ def main():
     # ── Other pages ───────────────────────────────────────────────────────
     if do_seasons:
         print("Generating seasons page...")
-        generate_seasons(lg)
+        generate_seasons()
 
     if do_teams:
         print("Generating teams page...")
         teams_df = load_teams()
-        generate_teams_index(teams_df, player_info)
+        generate_teams_index(teams_df)
 
     if do_games:
         print("Generating games...")
@@ -143,7 +145,7 @@ def main():
 
     if do_leaders:
         print("Generating leaders pages...")
-        generate_leaders(data_batters, data_pitchers, player_info)
+        generate_leaders()
 
     print("Done.")
 

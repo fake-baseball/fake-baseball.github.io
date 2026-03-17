@@ -102,6 +102,12 @@ def min_prefix(names):
     return result
 
 
+def weighted_avg(df, stat, weight_col):
+    """Weighted average of stat by weight_col; returns 0 if total weight is zero."""
+    w = df[weight_col].sum()
+    return (df[stat] * df[weight_col]).sum() / w if w != 0 else 0.0
+
+
 def resolve_conflicts(df):
     """Add a 'Boxscore Name' column that disambiguates players sharing a surname."""
     df = df.copy()

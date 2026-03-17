@@ -4,17 +4,19 @@ from pathlib import Path
 from dominate.tags import *
 from dominate.util import raw
 
-from constants import BAT_SEASON_MIN_PA
-from leaders import BAT_COLUMNS, BAT_QUAL_COLUMNS
+import batting
+import leaders
+from data import players
+from stats_meta import BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS
 from util import fmt_df, convert_name, make_doc
 
+_ALL_BAT = {**BATTING_STATS, **BASERUNNING_STATS, **FIELDING_STATS}
 
-def generate_batter_page(first_name, last_name, *,
-                          data_batters, player_info, retired_batters,
-                          max_batters, max_qual_batters):
-    if (first_name, last_name) in player_info.index:
+
+def generate_batter_page(first_name, last_name):
+    if (first_name, last_name) in players.player_info.index:
         active        = True
-        pi            = player_info.loc[(first_name, last_name)]
+        pi            = players.player_info.loc[(first_name, last_name)]
         team_name     = pi['team_name']
         jersey_number = pi['jersey']
         bat_hand      = pi['bats']
@@ -25,13 +27,13 @@ def generate_batter_page(first_name, last_name, *,
         salary        = pi['salary']
     else:
         active      = False
-        mask        = (data_batters['Last Name'] == last_name) & (data_batters['First Name'] == first_name)
-        primary_pos   = data_batters.loc[mask, 'PP'].iloc[0]
-        secondary_pos = data_batters.loc[mask, '2P'].iloc[0]
+        mask        = (batting.stats['Last Name'] == last_name) & (batting.stats['First Name'] == first_name)
+        primary_pos   = batting.stats.loc[mask, 'PP'].iloc[0]
+        secondary_pos = batting.stats.loc[mask, '2P'].iloc[0]
         try:
-            ret_mask          = (retired_batters['Last Name'] == last_name) & (retired_batters['First Name'] == first_name)
-            retirement_season = retired_batters.loc[ret_mask, 'Retirement Season'].iloc[0]
-            retirement_age    = retired_batters.loc[ret_mask, 'Age'].iloc[0]
+            ret_mask          = (players.retired_batters['Last Name'] == last_name) & (players.retired_batters['First Name'] == first_name)
+            retirement_season = players.retired_batters.loc[ret_mask, 'Retirement Season'].iloc[0]
+            retirement_age    = players.retired_batters.loc[ret_mask, 'Age'].iloc[0]
         except (IndexError, KeyError):
             print("Unable to fetch retirement info for", first_name, last_name)
             retirement_season = "Unknown"
@@ -64,9 +66,9 @@ def generate_batter_page(first_name, last_name, *,
         hr()
         h2("Stats")
 
-        stats = data_batters[
-            (data_batters['First Name'] == first_name) &
-            (data_batters['Last Name']  == last_name)
+        stats = batting.stats[
+            (batting.stats['First Name'] == first_name) &
+            (batting.stats['Last Name']  == last_name)
         ].copy()
 
         h3("Standard Batting")
@@ -76,7 +78,7 @@ def generate_batter_page(first_name, last_name, *,
             'SB', 'CS', 'BB', 'K', 'AVG', 'OBP', 'SLG', 'OPS', 'OPS+',
             'TB', 'HBP', 'SH', 'SF', 'stat_type',
         ]]
-        _render_table(standard_batting, max_batters, max_qual_batters)
+        _render_table(standard_batting, leaders.batting_leaders)
 
         h3("Advanced Batting")
         raw(fmt_df(stats[['Season', 'Age', 'Team', 'PA',
@@ -104,7 +106,7 @@ def generate_batter_page(first_name, last_name, *,
     path.write_text(str(doc))
 
 
-def _render_table(df, max_batters, max_qual_batters):
+def _render_table(df, season_leaders):
     """Render a stat table, bolding season-leader values.
     Compares raw numeric values for bolding, then displays formatted values via fmt_df.
     """
@@ -120,20 +122,17 @@ def _render_table(df, max_batters, max_qual_batters):
             for (_, raw_row), (_, disp_row) in zip(df.iterrows(), display.iterrows()):
                 with tr():
                     if raw_row['stat_type'] == 'S':
-                        season     = raw_row['Season']
-                        season_max = max_batters.loc[season]
-                        qual_max   = max_qual_batters.loc[season]
-                        pas        = raw_row['PA']
+                        season = raw_row['Season']
+                        bests  = season_leaders.loc[season]
                         for key in df.columns:
                             if key == 'stat_type':
                                 continue
-                            raw_val  = raw_row[key]
                             disp_val = disp_row[key]
-                            if key in BAT_COLUMNS and float(raw_val) >= float(season_max[key]):
-                                td(b(disp_val))
-                            elif (key in BAT_QUAL_COLUMNS and pas >= BAT_SEASON_MIN_PA
-                                  and float(raw_val) >= float(qual_max[key])):
-                                td(b(disp_val))
+                            if key in bests.index and key in _ALL_BAT:
+                                raw_val = float(raw_row[key])
+                                best    = float(bests[key])
+                                is_best = (raw_val <= best) if _ALL_BAT[key]['lowest'] else (raw_val >= best)
+                                td(b(disp_val)) if is_best else td(disp_val)
                             else:
                                 td(disp_val)
                     else:

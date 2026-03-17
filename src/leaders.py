@@ -1,6 +1,6 @@
 """
-Functions to query statistical leaders from data_batters / data_pitchers.
-Also computes the season-max tables used for bolding on player pages.
+Functions to query statistical leaders from batting.stats / pitching.stats.
+Also computes season-best tables used for bolding on player pages.
 """
 import pandas as pd
 
@@ -12,21 +12,26 @@ from constants import (
     SEASON_RANGE,
 )
 
-_SEASON_THRESHOLDS = {'PA': BAT_SEASON_MIN_PA, 'SBatt': BR_SEASON_MIN_SBATT, 'GF': FLD_SEASON_MIN_GF}
-_CAREER_THRESHOLDS = {'PA': BAT_CAREER_MIN_PA, 'SBatt': BR_CAREER_MIN_SBATT, 'GF': FLD_CAREER_MIN_GF}
+from stats_meta import BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS, PITCHING_STATS
+
+_SEASON_THRESHOLDS = {'PA': BAT_SEASON_MIN_PA, 'SBatt': BR_SEASON_MIN_SBATT, 'GF': FLD_SEASON_MIN_GF, 'IP_true': PIT_SEASON_MIN_IP}
+_CAREER_THRESHOLDS = {'PA': BAT_CAREER_MIN_PA, 'SBatt': BR_CAREER_MIN_SBATT, 'GF': FLD_CAREER_MIN_GF, 'IP_true': PIT_CAREER_MIN_IP}
+_ALL_BAT_META = {**BATTING_STATS, **BASERUNNING_STATS, **FIELDING_STATS}
 
 
 # ── Batting leaders ──────────────────────────────────────────────────────────
 
-def get_batting_leaders(data_batters, stat, season=None, qualified=False, qual_col='PA', lowest=False, num=10, team=None):
-    df = data_batters[data_batters[qual_col] >= _SEASON_THRESHOLDS[qual_col]] if qualified else data_batters
+def get_batting_leaders(data_batters, stat, season=None, worst=False, num=10, team=None):
+    meta = _ALL_BAT_META[stat]
+    ascending = meta['lowest'] ^ worst
+    df = data_batters[data_batters[meta['qual_col']] >= _SEASON_THRESHOLDS[meta['qual_col']]] if meta['qualified'] else data_batters
     if season is None:
         df = df[df['stat_type'] == 'S']
     else:
         df = df[df['Season'] == season]
     if team is not None:
         df = df[df['Team'] == team]
-    if lowest:
+    if ascending:
         df = df[df[stat] <= df[stat].nsmallest(num).max()]
         df = df.sort_values(stat, ascending=True)
     else:
@@ -35,14 +40,16 @@ def get_batting_leaders(data_batters, stat, season=None, qualified=False, qual_c
     return df
 
 
-def get_career_batting_leaders(data_batters, player_info, stat, qualified=False, qual_col='PA', active=False, lowest=False, num=10, team=None):
-    df = data_batters[data_batters[qual_col] >= _CAREER_THRESHOLDS[qual_col]] if qualified else data_batters
+def get_career_batting_leaders(data_batters, player_info, stat, active=False, worst=False, num=10, team=None):
+    meta = _ALL_BAT_META[stat]
+    ascending = meta['lowest'] ^ worst
+    df = data_batters[data_batters[meta['qual_col']] >= _CAREER_THRESHOLDS[meta['qual_col']]] if meta['qualified'] else data_batters
     df = df[df['Season'] == 'Career']
     if active:
         df = df[df.set_index(['First Name', 'Last Name']).index.isin(player_info.index)]
     if team is not None:
         df = df[df['Team'] == team]
-    if lowest:
+    if ascending:
         df = df[df[stat] <= df[stat].nsmallest(num).max()]
         df = df.sort_values(stat, ascending=True)
     else:
@@ -51,25 +58,27 @@ def get_career_batting_leaders(data_batters, player_info, stat, qualified=False,
     return df
 
 
-def get_leaders_by_season(data_batters, stat, qualified=False, qual_col='PA', lowest=False):
+def get_leaders_by_season(data_batters, stat, worst=False):
     dfs = []
     for season in SEASON_RANGE:
-        df = get_batting_leaders(data_batters, stat, season, qualified=qualified, qual_col=qual_col, lowest=lowest, num=1)
+        df = get_batting_leaders(data_batters, stat, season, worst=worst, num=1)
         dfs.append(df)
     return pd.concat(dfs, ignore_index=True)
 
 
 # ── Pitching leaders ─────────────────────────────────────────────────────────
 
-def get_pitching_leaders(data_pitchers, stat, season=None, qualified=False, lowest=False, num=10, team=None):
-    df = data_pitchers[data_pitchers['IP_true'] >= PIT_SEASON_MIN_IP] if qualified else data_pitchers
+def get_pitching_leaders(data_pitchers, stat, season=None, worst=False, num=10, team=None):
+    meta = PITCHING_STATS[stat]
+    ascending = meta['lowest'] ^ worst
+    df = data_pitchers[data_pitchers['IP_true'] >= PIT_SEASON_MIN_IP] if meta['qualified'] else data_pitchers
     if season is None:
         df = df[df['stat_type'] == 'S']
     else:
         df = df[df['Season'] == season]
     if team is not None:
         df = df[df['Team'] == team]
-    if lowest:
+    if ascending:
         df = df[df[stat] <= df[stat].nsmallest(num).max()]
         df = df.sort_values(stat, ascending=True)
     else:
@@ -78,14 +87,16 @@ def get_pitching_leaders(data_pitchers, stat, season=None, qualified=False, lowe
     return df
 
 
-def get_career_pitching_leaders(data_pitchers, player_info, stat, qualified=False, active=False, lowest=False, num=10, team=None):
-    df = data_pitchers[data_pitchers['IP_true'] >= PIT_CAREER_MIN_IP] if qualified else data_pitchers
+def get_career_pitching_leaders(data_pitchers, player_info, stat, active=False, worst=False, num=10, team=None):
+    meta = PITCHING_STATS[stat]
+    ascending = meta['lowest'] ^ worst
+    df = data_pitchers[data_pitchers['IP_true'] >= PIT_CAREER_MIN_IP] if meta['qualified'] else data_pitchers
     df = df[df['Season'] == 'Career']
     if active:
         df = df[df.set_index(['First Name', 'Last Name']).index.isin(player_info.index)]
     if team is not None:
         df = df[df['Team'] == team]
-    if lowest:
+    if ascending:
         df = df[df[stat] <= df[stat].nsmallest(num).max()]
         df = df.sort_values(stat, ascending=True)
     else:
@@ -94,43 +105,46 @@ def get_career_pitching_leaders(data_pitchers, player_info, stat, qualified=Fals
     return df
 
 
-def get_pitching_leaders_by_season(data_pitchers, stat, qualified=False, lowest=False):
+def get_pitching_leaders_by_season(data_pitchers, stat, worst=False):
     dfs = []
     for season in SEASON_RANGE:
-        df = get_pitching_leaders(data_pitchers, stat, season, qualified=qualified, lowest=lowest, num=1)
+        df = get_pitching_leaders(data_pitchers, stat, season, worst=worst, num=1)
         dfs.append(df)
     return pd.concat(dfs, ignore_index=True)
 
 
-# ── Season-max tables (used for bolding on player pages) ────────────────────
+# ── Season bests (used for bolding on player pages) ──────────────────────────
+# For each registered stat, batting_leaders/pitching_leaders holds the season-best
+# value per season: max if lowest=False, min if lowest=True, filtered by the
+# qualification threshold if qualified=True.
 
-# Columns for which we track the season leader (used to bold individual season rows).
-# Hardcoded for now; could eventually be driven by a field in stats_meta.
-BAT_COLUMNS      = ['GB', 'WAR', 'PA', 'AB', 'R', 'H', '2B', '3B', 'HR', 'RBI',
-                     'SB', 'CS', 'BB', 'K', 'TB', 'SH', 'SF']
-BAT_QUAL_COLUMNS = ['AVG', 'OBP', 'SLG', 'OPS', 'OPS+']
-
-PIT_COLUMNS          = ['WAR', 'W', 'GP', 'GS', 'CG', 'SHO', 'SV', 'K', 'IP_true']
-PIT_QUAL_COLUMNS     = ['WIN%']
-PIT_QUAL_LOW_COLUMNS = ['ERA', 'ERA-', 'FIP', 'WHIP']
+batting_leaders  = None
+pitching_leaders = None
 
 
-def compute_season_maxes(data_batters):
-    """Returns (max_batters, max_qual_batters) used for bolding on batter pages."""
-    season_data = data_batters[data_batters['stat_type'] == 'S']
-    max_batters = season_data.groupby('Season')[BAT_COLUMNS].max()
-    max_qual_batters = (
-        season_data[season_data['PA'] >= BAT_SEASON_MIN_PA]
-        .groupby('Season')[BAT_QUAL_COLUMNS].max()
-    )
-    return max_batters, max_qual_batters
+def compute_season_leaders():
+    global batting_leaders, pitching_leaders
+    import batting
+    import pitching
+    from stats_meta import BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS, PITCHING_STATS
+
+    bat_data = batting.stats[batting.stats['stat_type'] == 'S']
+    pit_data = pitching.stats[pitching.stats['stat_type'] == 'S']
+
+    batting_leaders  = _compute_leaders(bat_data, [BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS])
+    pitching_leaders = _compute_leaders(pit_data, [PITCHING_STATS])
 
 
-def compute_season_maxes_pitchers(data_pitchers):
-    """Returns (max_pitchers, max_qual_pitchers, min_qual_pitchers) for bolding on pitcher pages."""
-    season_data = data_pitchers[data_pitchers['stat_type'] == 'S']
-    qual = season_data[season_data['IP_true'] >= PIT_SEASON_MIN_IP]
-    max_pitchers      = season_data.groupby('Season')[PIT_COLUMNS].max()
-    max_qual_pitchers = qual.groupby('Season')[PIT_QUAL_COLUMNS].max()
-    min_qual_pitchers = qual.groupby('Season')[PIT_QUAL_LOW_COLUMNS].min()
-    return max_pitchers, max_qual_pitchers, min_qual_pitchers
+def _compute_leaders(data, stat_dicts):
+    cols = {}
+    for stat_dict in stat_dicts:
+        first_meta = next(iter(stat_dict.values()))
+        qual_col   = first_meta['qual_col']
+        threshold  = _SEASON_THRESHOLDS[qual_col]
+        qual_data  = data[data[qual_col] >= threshold]
+        for stat, meta in stat_dict.items():
+            if stat not in data.columns:
+                continue
+            source = qual_data if meta['qualified'] else data
+            cols[stat] = source.groupby('Season')[stat].min() if meta['lowest'] else source.groupby('Season')[stat].max()
+    return pd.DataFrame(cols)

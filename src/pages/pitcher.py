@@ -4,17 +4,17 @@ from pathlib import Path
 from dominate.tags import *
 from dominate.util import raw
 
-from constants import PIT_SEASON_MIN_IP
-from leaders import PIT_COLUMNS, PIT_QUAL_COLUMNS, PIT_QUAL_LOW_COLUMNS
+import pitching
+import leaders
+from data import players
+from stats_meta import PITCHING_STATS
 from util import fmt_df, convert_name, make_doc
 
 
-def generate_pitcher_page(first_name, last_name, *,
-                           data_pitchers, player_info, retired_pitchers,
-                           max_pitchers, max_qual_pitchers, min_qual_pitchers):
-    if (first_name, last_name) in player_info.index:
+def generate_pitcher_page(first_name, last_name):
+    if (first_name, last_name) in players.player_info.index:
         active          = True
-        pi              = player_info.loc[(first_name, last_name)]
+        pi              = players.player_info.loc[(first_name, last_name)]
         team_name       = pi['team_name']
         jersey_number   = pi['jersey']
         throw_hand      = pi['throws']
@@ -24,12 +24,12 @@ def generate_pitcher_page(first_name, last_name, *,
         salary          = pi['salary']
     else:
         active = False
-        mask   = (data_pitchers['Last Name'] == last_name) & (data_pitchers['First Name'] == first_name)
-        pitcher_role = data_pitchers.loc[mask, 'Role'].iloc[0]
+        mask   = (pitching.stats['Last Name'] == last_name) & (pitching.stats['First Name'] == first_name)
+        pitcher_role = pitching.stats.loc[mask, 'Role'].iloc[0]
         try:
-            ret_mask         = (retired_pitchers['Last Name'] == last_name) & (retired_pitchers['First Name'] == first_name)
-            retirement_season = retired_pitchers.loc[ret_mask, 'Retirement Season'].iloc[0]
-            retirement_age    = retired_pitchers.loc[ret_mask, 'Age'].iloc[0]
+            ret_mask          = (players.retired_pitchers['Last Name'] == last_name) & (players.retired_pitchers['First Name'] == first_name)
+            retirement_season = players.retired_pitchers.loc[ret_mask, 'Retirement Season'].iloc[0]
+            retirement_age    = players.retired_pitchers.loc[ret_mask, 'Age'].iloc[0]
         except (IndexError, KeyError):
             print("Unable to fetch retirement info for", first_name, last_name)
             retirement_season = "Unknown"
@@ -57,9 +57,9 @@ def generate_pitcher_page(first_name, last_name, *,
         hr()
         h2("Stats")
 
-        stats = data_pitchers[
-            (data_pitchers['Last Name']  == last_name) &
-            (data_pitchers['First Name'] == first_name)
+        stats = pitching.stats[
+            (pitching.stats['Last Name']  == last_name) &
+            (pitching.stats['First Name'] == first_name)
         ].copy()
 
         h3("Standard Pitching")
@@ -69,7 +69,7 @@ def generate_pitcher_page(first_name, last_name, *,
             'H', 'RA', 'ER', 'HR', 'BB', 'K', 'HBP', 'WP', 'BF', 'ERA-', 'FIP', 'WHIP',
             'stat_type', 'IP_true',
         ]]
-        _render_table(standard_pitching, max_pitchers, max_qual_pitchers, min_qual_pitchers)
+        _render_table(standard_pitching, leaders.pitching_leaders)
 
         h3("Advanced Pitching")
         raw(fmt_df(stats[[
@@ -92,10 +92,11 @@ def generate_pitcher_page(first_name, last_name, *,
     path.write_text(str(doc))
 
 
-def _render_table(df, max_pitchers, max_qual_pitchers, min_qual_pitchers):
+def _render_table(df, season_leaders):
     """Render a stat table, bolding season-leader values.
     Compares raw numeric values for bolding, then displays formatted values via fmt_df.
     stat_type and IP_true columns are used for logic only and are not displayed.
+    IP is displayed as a string but compared via the hidden IP_true column.
     """
     _HIDDEN = {'stat_type', 'IP_true'}
     display = fmt_df(df)
@@ -110,27 +111,18 @@ def _render_table(df, max_pitchers, max_qual_pitchers, min_qual_pitchers):
             for (_, raw_row), (_, disp_row) in zip(df.iterrows(), display.iterrows()):
                 with tr():
                     if raw_row['stat_type'] == 'S':
-                        season     = raw_row['Season']
-                        ip         = raw_row['IP_true']
-                        season_max = max_pitchers.loc[season]
-                        qual_max   = max_qual_pitchers.loc[season]
-                        qual_min   = min_qual_pitchers.loc[season]
+                        season = raw_row['Season']
+                        bests  = season_leaders.loc[season]
                         for key in df.columns:
                             if key in _HIDDEN:
                                 continue
-                            raw_val  = raw_row[key]
                             disp_val = disp_row[key]
-                            # IP displays as a string; use IP_true for numeric comparison
                             cmp_key  = 'IP_true' if key == 'IP' else key
-                            cmp_val  = ip if key == 'IP' else raw_val
-                            if cmp_key in PIT_COLUMNS and float(cmp_val) >= float(season_max[cmp_key]):
-                                td(b(disp_val))
-                            elif (key in PIT_QUAL_COLUMNS and ip >= PIT_SEASON_MIN_IP
-                                  and float(raw_val) >= float(qual_max[key])):
-                                td(b(disp_val))
-                            elif (key in PIT_QUAL_LOW_COLUMNS and ip >= PIT_SEASON_MIN_IP
-                                  and float(raw_val) <= float(qual_min[key])):
-                                td(b(disp_val))
+                            cmp_val  = raw_row['IP_true'] if key == 'IP' else raw_row[key]
+                            if cmp_key in bests.index and cmp_key in PITCHING_STATS:
+                                best    = float(bests[cmp_key])
+                                is_best = (float(cmp_val) <= best) if PITCHING_STATS[cmp_key]['lowest'] else (float(cmp_val) >= best)
+                                td(b(disp_val)) if is_best else td(disp_val)
                             else:
                                 td(disp_val)
                     else:

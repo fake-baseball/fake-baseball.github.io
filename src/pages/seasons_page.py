@@ -5,10 +5,11 @@ from pathlib import Path
 from dominate.tags import *
 from dominate.util import raw
 
+import league as lg
 from util import fmt_df, per_game_df, make_doc
 
 
-def generate_seasons(lg):
+def generate_seasons():
     sb = lg.season_batting
     sp = lg.season_pitching
 
