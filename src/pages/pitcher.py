@@ -69,7 +69,7 @@ def generate_pitcher_page(first_name, last_name):
             'H', 'RA', 'ER', 'HR', 'BB', 'K', 'HBP', 'WP', 'BF', 'ERA-', 'FIP', 'WHIP',
             'stat_type', 'IP_true',
         ]]
-        _render_table(standard_pitching, leaders.pitching_leaders)
+        _render_table(standard_pitching)
 
         h3("Advanced Pitching")
         raw(fmt_df(stats[[
@@ -92,7 +92,8 @@ def generate_pitcher_page(first_name, last_name):
     path.write_text(str(doc))
 
 
-def _render_table(df, season_leaders):
+def _render_table(df):
+    season_leaders = leaders.pitching_leaders
     """Render a stat table, bolding season-leader values.
     Compares raw numeric values for bolding, then displays formatted values via fmt_df.
     stat_type and IP_true columns are used for logic only and are not displayed.

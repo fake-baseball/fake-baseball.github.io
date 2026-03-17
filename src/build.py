@@ -40,7 +40,7 @@ import leaders
 
 from data.stats    import load_batting, load_pitching
 from data.players  import load_player_info, load_retirements
-from data          import load_teams
+from data.teams    import load_teams
 
 from pages.batter        import generate_batter_page
 from pages.pitcher       import generate_pitcher_page
@@ -110,20 +110,14 @@ def main():
         leaders.compute_season_leaders()
 
         print("Generating player pages...")
-        players_list = []
-
         for first, last in batting.stats[['First Name', 'Last Name']].drop_duplicates().itertuples(index=False):
-            players_list.append((first, last))
             generate_batter_page(first, last)
 
         for first, last in pitching.stats[['First Name', 'Last Name']].drop_duplicates().itertuples(index=False):
-            players_list.append((first, last))
             generate_pitcher_page(first, last)
 
-        players_list.sort(key=lambda x: x[1].lower())
-
         print("Generating players index...")
-        generate_players_index(players_list)
+        generate_players_index()
 
     # ── Other pages ───────────────────────────────────────────────────────
     if do_seasons:
@@ -132,8 +126,8 @@ def main():
 
     if do_teams:
         print("Generating teams page...")
-        teams_df = load_teams()
-        generate_teams_index(teams_df)
+        load_teams()
+        generate_teams_index()
 
     if do_games:
         print("Generating games...")

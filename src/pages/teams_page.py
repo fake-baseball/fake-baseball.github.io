@@ -5,10 +5,12 @@ from dominate.tags import *
 
 from pages.team_page import generate_team_page
 from data import players
+from data import teams as teams_data
 from util import make_doc
 
 
-def generate_teams_index(teams):
+def generate_teams_index():
+    teams  = teams_data.teams
     roster = players.player_info.reset_index()
 
     doc = make_doc("BFBL Teams")

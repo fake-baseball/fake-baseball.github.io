@@ -3,13 +3,17 @@ from pathlib import Path
 
 from dominate.tags import *
 
+import batting
+import pitching
 from util import player_link, make_doc
 
 
-def generate_players_index(players_list):
-    """
-    players_list - list of (first_name, last_name) tuples, sorted by last name
-    """
+def generate_players_index():
+    names = set()
+    names.update(batting.stats[['First Name', 'Last Name']].drop_duplicates().itertuples(index=False))
+    names.update(pitching.stats[['First Name', 'Last Name']].drop_duplicates().itertuples(index=False))
+    players_list = sorted(names, key=lambda x: x[1].lower())
+
     doc = make_doc("All Players")
     with doc:
         h1("All Players")

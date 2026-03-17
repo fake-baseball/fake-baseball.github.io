@@ -78,7 +78,7 @@ def generate_batter_page(first_name, last_name):
             'SB', 'CS', 'BB', 'K', 'AVG', 'OBP', 'SLG', 'OPS', 'OPS+',
             'TB', 'HBP', 'SH', 'SF', 'stat_type',
         ]]
-        _render_table(standard_batting, leaders.batting_leaders)
+        _render_table(standard_batting)
 
         h3("Advanced Batting")
         raw(fmt_df(stats[['Season', 'Age', 'Team', 'PA',
@@ -106,7 +106,8 @@ def generate_batter_page(first_name, last_name):
     path.write_text(str(doc))
 
 
-def _render_table(df, season_leaders):
+def _render_table(df):
+    season_leaders = leaders.batting_leaders
     """Render a stat table, bolding season-leader values.
     Compares raw numeric values for bolding, then displays formatted values via fmt_df.
     """
