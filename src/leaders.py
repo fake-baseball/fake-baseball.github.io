@@ -14,8 +14,8 @@ from constants import (
 
 from stats_meta import BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS, PITCHING_STATS
 
-_SEASON_THRESHOLDS = {'PA': BAT_SEASON_MIN_PA, 'SBatt': BR_SEASON_MIN_SBATT, 'GF': FLD_SEASON_MIN_GF, 'IP_true': PIT_SEASON_MIN_IP}
-_CAREER_THRESHOLDS = {'PA': BAT_CAREER_MIN_PA, 'SBatt': BR_CAREER_MIN_SBATT, 'GF': FLD_CAREER_MIN_GF, 'IP_true': PIT_CAREER_MIN_IP}
+SEASON_THRESHOLDS = {'PA': BAT_SEASON_MIN_PA, 'SBatt': BR_SEASON_MIN_SBATT, 'GF': FLD_SEASON_MIN_GF, 'IP_true': PIT_SEASON_MIN_IP}
+CAREER_THRESHOLDS = {'PA': BAT_CAREER_MIN_PA, 'SBatt': BR_CAREER_MIN_SBATT, 'GF': FLD_CAREER_MIN_GF, 'IP_true': PIT_CAREER_MIN_IP}
 _ALL_BAT_META = {**BATTING_STATS, **BASERUNNING_STATS, **FIELDING_STATS}
 
 
@@ -24,7 +24,7 @@ _ALL_BAT_META = {**BATTING_STATS, **BASERUNNING_STATS, **FIELDING_STATS}
 def get_batting_leaders(data_batters, stat, season=None, worst=False, num=10, team=None):
     meta = _ALL_BAT_META[stat]
     ascending = meta['lowest'] ^ worst
-    df = data_batters[data_batters[meta['qual_col']] >= _SEASON_THRESHOLDS[meta['qual_col']]] if meta['qualified'] else data_batters
+    df = data_batters[data_batters[meta['qual_col']] >= SEASON_THRESHOLDS[meta['qual_col']]] if meta['qualified'] else data_batters
     if season is None:
         df = df[df['stat_type'] == 'S']
     else:
@@ -43,7 +43,7 @@ def get_batting_leaders(data_batters, stat, season=None, worst=False, num=10, te
 def get_career_batting_leaders(data_batters, player_info, stat, active=False, worst=False, num=10, team=None):
     meta = _ALL_BAT_META[stat]
     ascending = meta['lowest'] ^ worst
-    df = data_batters[data_batters[meta['qual_col']] >= _CAREER_THRESHOLDS[meta['qual_col']]] if meta['qualified'] else data_batters
+    df = data_batters[data_batters[meta['qual_col']] >= CAREER_THRESHOLDS[meta['qual_col']]] if meta['qualified'] else data_batters
     df = df[df['Season'] == 'Career']
     if active:
         df = df[df.set_index(['First Name', 'Last Name']).index.isin(player_info.index)]
@@ -140,7 +140,7 @@ def _compute_leaders(data, stat_dicts):
     for stat_dict in stat_dicts:
         first_meta = next(iter(stat_dict.values()))
         qual_col   = first_meta['qual_col']
-        threshold  = _SEASON_THRESHOLDS[qual_col]
+        threshold  = SEASON_THRESHOLDS[qual_col]
         qual_data  = data[data[qual_col] >= threshold]
         for stat, meta in stat_dict.items():
             if stat not in data.columns:

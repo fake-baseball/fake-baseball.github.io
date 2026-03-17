@@ -7,6 +7,7 @@ from dominate.util import raw
 import pitching
 import leaders
 from data import players
+from leaders import SEASON_THRESHOLDS
 from stats_meta import PITCHING_STATS
 from util import fmt_df, convert_name, make_doc
 
@@ -121,8 +122,10 @@ def _render_table(df):
                             cmp_key  = 'IP_true' if key == 'IP' else key
                             cmp_val  = raw_row['IP_true'] if key == 'IP' else raw_row[key]
                             if cmp_key in bests.index and cmp_key in PITCHING_STATS:
+                                meta = PITCHING_STATS[cmp_key]
+                                qualifies = not meta['qualified'] or raw_row[meta['qual_col']] >= SEASON_THRESHOLDS[meta['qual_col']]
                                 best    = float(bests[cmp_key])
-                                is_best = (float(cmp_val) <= best) if PITCHING_STATS[cmp_key]['lowest'] else (float(cmp_val) >= best)
+                                is_best = qualifies and ((float(cmp_val) <= best) if meta['lowest'] else (float(cmp_val) >= best))
                                 td(b(disp_val)) if is_best else td(disp_val)
                             else:
                                 td(disp_val)

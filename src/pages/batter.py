@@ -7,6 +7,7 @@ from dominate.util import raw
 import batting
 import leaders
 from data import players
+from leaders import SEASON_THRESHOLDS
 from stats_meta import BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS
 from util import fmt_df, convert_name, make_doc
 
@@ -130,9 +131,11 @@ def _render_table(df):
                                 continue
                             disp_val = disp_row[key]
                             if key in bests.index and key in _ALL_BAT:
+                                meta = _ALL_BAT[key]
+                                qualifies = not meta['qualified'] or raw_row[meta['qual_col']] >= SEASON_THRESHOLDS[meta['qual_col']]
                                 raw_val = float(raw_row[key])
                                 best    = float(bests[key])
-                                is_best = (raw_val <= best) if _ALL_BAT[key]['lowest'] else (raw_val >= best)
+                                is_best = qualifies and ((raw_val <= best) if meta['lowest'] else (raw_val >= best))
                                 td(b(disp_val)) if is_best else td(disp_val)
                             else:
                                 td(disp_val)
