@@ -1,0 +1,8 @@
+"""Paths to all source data files (relative to the project root)."""
+
+BATTERS_CSV          = "sheets/MGL's BFBL with WAR - [Batters] by Season.csv"
+PITCHERS_CSV         = "sheets/MGL's BFBL with WAR - [Pitchers] by Season.csv"
+RETIRED_BATTERS_CSV  = "sheets/MGL's BFBL with WAR - Career Totals [Batters].csv"
+RETIRED_PITCHERS_CSV = "sheets/MGL's BFBL with WAR - Career Totals [Pitchers].csv"
+PLAYERS_CSV          = "sheets/players.csv"
+TEAMS_CSV            = "sheets/teams.csv"
