@@ -40,7 +40,7 @@ import leaders
 
 from data.stats    import load_batting, load_pitching
 from data.players  import load_player_info, load_retirements
-from data.teams    import load_teams
+from data.teams    import load_teams, load_rotations, load_lineups
 
 from pages.batter        import generate_batter_page
 from pages.pitcher       import generate_pitcher_page
@@ -77,14 +77,14 @@ def main():
     Path("docs/teams").mkdir(parents=True, exist_ok=True)
 
     # ── Raw data (needed by most pages) ──────────────────────────────────────
-    need_raw = do_players or do_leaders or do_seasons
+    need_raw = do_players or do_leaders or do_seasons or do_teams
     if need_raw:
         print("Loading raw data...")
         load_batting()
         load_pitching()
 
     # ── League averages (needed by players, leaders, seasons) ─────────────
-    need_lg = do_players or do_leaders or do_seasons
+    need_lg = do_players or do_leaders or do_seasons or do_teams
     if need_lg:
         print("Computing league averages...")
         league.compute_league()
@@ -96,7 +96,7 @@ def main():
         load_player_info()
 
     # ── Per-player stats (needed by players, leaders) ─────────────────────
-    need_stats = do_players or do_leaders
+    need_stats = do_players or do_leaders or do_teams
     if need_stats:
         print("Computing player stats...")
         batting.compute()
@@ -127,6 +127,8 @@ def main():
     if do_teams:
         print("Generating teams page...")
         load_teams()
+        load_rotations()
+        load_lineups()
         generate_teams_index()
 
     if do_games:

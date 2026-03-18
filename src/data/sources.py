@@ -6,3 +6,5 @@ RETIRED_BATTERS_CSV  = "sheets/MGL's BFBL with WAR - Career Totals [Batters].csv
 RETIRED_PITCHERS_CSV = "sheets/MGL's BFBL with WAR - Career Totals [Pitchers].csv"
 PLAYERS_CSV          = "sheets/players.csv"
 TEAMS_CSV            = "sheets/teams.csv"
+ROTATIONS_CSV        = "sheets/rotations.csv"
+LINEUPS_CSV          = "sheets/lineups.csv"
