@@ -18,7 +18,7 @@ _POSITION_COLS = ['Name', '#', 'PP', '2P', 'B', 'POW', 'CON', 'SPD', 'FLD', 'ARM
 def _batter_stats(first, last):
     """Returns dict of formatted stats for the most recent season, or None."""
     df = bat_module.stats
-    mask = (df['First Name'] == first) & (df['Last Name'] == last) & (df['stat_type'] == 'S')
+    mask = (df['First Name'] == first) & (df['Last Name'] == last) & (df['stat_type'] == 'season')
     rows = df[mask]
     if rows.empty:
         return None
@@ -37,7 +37,7 @@ def _batter_stats(first, last):
 
 def _pitcher_statline(first, last):
     df = pit_module.stats
-    mask = (df['First Name'] == first) & (df['Last Name'] == last) & (df['stat_type'] == 'S')
+    mask = (df['First Name'] == first) & (df['Last Name'] == last) & (df['stat_type'] == 'season')
     rows = df[mask]
     if rows.empty:
         return None
@@ -80,7 +80,7 @@ def _lineup_table(lineup):
                     td(pi['contact'] if pi is not None else '')
                     td(pi['speed']   if pi is not None else '')
                     df = bat_module.stats
-                    mask = (df['First Name'] == first) & (df['Last Name'] == last) & (df['stat_type'] == 'S')
+                    mask = (df['First Name'] == first) & (df['Last Name'] == last) & (df['stat_type'] == 'season')
                     stat_rows = df[mask]
                     if stat_rows.empty:
                         for _ in _LINEUP_STAT_COLS:

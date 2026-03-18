@@ -9,7 +9,7 @@ import leaders
 from data import players
 from leaders import SEASON_THRESHOLDS
 from stats_meta import BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS
-from util import fmt_df, convert_name, make_doc
+from util import fmt_df, render_stat_table, convert_name, make_doc
 
 _ALL_BAT = {**BATTING_STATS, **BASERUNNING_STATS, **FIELDING_STATS}
 
@@ -82,24 +82,23 @@ def generate_batter_page(first_name, last_name):
         _render_table(standard_batting)
 
         h3("Advanced Batting")
-        raw(fmt_df(stats[['Season', 'Age', 'Team', 'PA',
+        render_stat_table(stats[['Season', 'Age', 'Team', 'PA',
                     'wOBA', 'wRC', 'wRC+', 'BIP', 'BABIP',
-                    'ISO', 'XBH', 'XBH%', 'HR%', 'K%', 'BB%']]).to_html(border=0, index=False))
+                    'ISO', 'XBH', 'XBH%', 'HR%', 'K%', 'BB%', 'stat_type']])
 
         h3("Baserunning")
-        raw(fmt_df(stats[['Season', 'Age', 'Team', 'PA',
-                    'SB', 'CS', 'SB%', 'SbAtt%', 'RS%', 'RC%']]).to_html(border=0, index=False))
+        render_stat_table(stats[['Season', 'Age', 'Team', 'PA',
+                    'SB', 'CS', 'SB%', 'SbAtt%', 'RS%', 'RC%', 'stat_type']])
 
         h3("Fielding")
-        raw(fmt_df(stats[['Season', 'Age', 'Team', 'PP', '2P',
-                    'GB', 'GF', 'E', 'E/GF', 'PB', 'PB/GF']]).to_html(border=0, index=False))
+        render_stat_table(stats[['Season', 'Age', 'Team', 'PP', '2P',
+                    'GB', 'GF', 'E', 'E/GF', 'PB', 'PB/GF', 'stat_type']])
 
         h3("Value")
-        batter_value = stats[[
+        render_stat_table(stats[[
             'Season', 'Age', 'Team', 'GB', 'PA',
-            'Rbat', 'Rbr', 'Rdef', 'Rpos', 'Rcorr', 'Rrep', 'RAA', 'RAR', 'WAA', 'WAR',
-        ]]
-        raw(fmt_df(batter_value).to_html(border=0, index=False))
+            'Rbat', 'Rbr', 'Rdef', 'Rpos', 'Rcorr', 'Rrep', 'RAA', 'RAR', 'WAA', 'WAR', 'stat_type',
+        ]])
 
         h2("Awards")
 
@@ -122,8 +121,8 @@ def _render_table(df):
                     th(col)
         with tbody():
             for (_, raw_row), (_, disp_row) in zip(df.iterrows(), display.iterrows()):
-                with tr():
-                    if raw_row['stat_type'] == 'S':
+                with tr(cls=raw_row['stat_type']):
+                    if raw_row['stat_type'] == 'season':
                         season = raw_row['Season']
                         bests  = season_leaders.loc[season]
                         for key in df.columns:

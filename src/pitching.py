@@ -100,7 +100,7 @@ def compute():
     compute_RAR_pit(d)
     d['WAR']  = d['RAR'] / rpw
 
-    d['stat_type'] = 'S'
+    d['stat_type'] = 'season'
     stats = _append_summary_rows(d)
 
 
@@ -112,7 +112,7 @@ def _append_summary_rows(d):
     career['Season']    = 'Career'
     career['Age']       = ''
     career['Role']      = ''
-    career['stat_type'] = 'C'
+    career['stat_type'] = 'career'
     team_counts = d.groupby(gp)['Team'].nunique().reset_index(name='Team')
     career = career.merge(team_counts, on=gp)
     career['Team'] = career['Team'].astype(str) + 'TM'
@@ -128,7 +128,7 @@ def _append_summary_rows(d):
         lambda n: f"{n} Szn" if n == 1 else f"{n} Szns")
     team_totals['Age']       = ''
     team_totals['Role']      = ''
-    team_totals['stat_type'] = 'T'
+    team_totals['stat_type'] = 'team'
     team_totals = _recompute_rates(team_totals)
     team_totals['ERA-']   = d.groupby(gt).apply(lambda g: weighted_avg(g, 'ERA-',   'IP_true'), include_groups=False).values
     team_totals['FIP']    = d.groupby(gt).apply(lambda g: weighted_avg(g, 'FIP',    'IP_true'), include_groups=False).values

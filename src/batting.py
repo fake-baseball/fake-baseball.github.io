@@ -109,7 +109,7 @@ def compute():
     d['wRC']  = ((d['wOBA'] - lg_wOBA) / scale_wOBA + lg_rPA) * d['PA']
     d['wRC+'] = 100 * (d['Rbat'] / d['PA'] + lg_rPA) / (lg_wRC / lg_pa)
 
-    d['stat_type'] = 'S'
+    d['stat_type'] = 'season'
     stats = _append_summary_rows(d)
 
 
@@ -122,7 +122,7 @@ def _append_summary_rows(d):
     career['Age']       = ''
     career['PP']        = ''
     career['2P']        = ''
-    career['stat_type'] = 'C'
+    career['stat_type'] = 'career'
     team_counts = d.groupby(gp)['Team'].nunique().reset_index(name='Team')
     career = career.merge(team_counts, on=gp)
     career['Team'] = career['Team'].astype(str) + 'TM'
@@ -139,7 +139,7 @@ def _append_summary_rows(d):
     team_totals['Age']       = ''
     team_totals['PP']        = ''
     team_totals['2P']        = ''
-    team_totals['stat_type'] = 'T'
+    team_totals['stat_type'] = 'team'
     team_totals = _recompute_rates(team_totals)
     team_totals['wOBA'] = d.groupby(gt).apply(lambda g: weighted_avg(g, 'wOBA', 'PA'), include_groups=False).values
     team_totals['OPS+'] = d.groupby(gt).apply(lambda g: weighted_avg(g, 'OPS+', 'PA'), include_groups=False).values

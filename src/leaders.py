@@ -26,7 +26,7 @@ def get_batting_leaders(data_batters, stat, season=None, worst=False, num=10, te
     ascending = meta['lowest'] ^ worst
     df = data_batters[data_batters[meta['qual_col']] >= SEASON_THRESHOLDS[meta['qual_col']]] if meta['qualified'] else data_batters
     if season is None:
-        df = df[df['stat_type'] == 'S']
+        df = df[df['stat_type'] == 'season']
     else:
         df = df[df['Season'] == season]
     if team is not None:
@@ -73,7 +73,7 @@ def get_pitching_leaders(data_pitchers, stat, season=None, worst=False, num=10, 
     ascending = meta['lowest'] ^ worst
     df = data_pitchers[data_pitchers['IP_true'] >= PIT_SEASON_MIN_IP] if meta['qualified'] else data_pitchers
     if season is None:
-        df = df[df['stat_type'] == 'S']
+        df = df[df['stat_type'] == 'season']
     else:
         df = df[df['Season'] == season]
     if team is not None:
@@ -128,8 +128,8 @@ def compute_season_leaders():
     import pitching
     from stats_meta import BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS, PITCHING_STATS
 
-    bat_data = batting.stats[batting.stats['stat_type'] == 'S']
-    pit_data = pitching.stats[pitching.stats['stat_type'] == 'S']
+    bat_data = batting.stats[batting.stats['stat_type'] == 'season']
+    pit_data = pitching.stats[pitching.stats['stat_type'] == 'season']
 
     batting_leaders  = _compute_leaders(bat_data, [BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS])
     pitching_leaders = _compute_leaders(pit_data, [PITCHING_STATS])

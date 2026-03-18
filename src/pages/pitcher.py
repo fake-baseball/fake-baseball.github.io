@@ -9,7 +9,7 @@ import leaders
 from data import players
 from leaders import SEASON_THRESHOLDS
 from stats_meta import PITCHING_STATS
-from util import fmt_df, convert_name, make_doc
+from util import fmt_df, render_stat_table, convert_name, make_doc
 
 
 def generate_pitcher_page(first_name, last_name):
@@ -73,19 +73,19 @@ def generate_pitcher_page(first_name, last_name):
         _render_table(standard_pitching)
 
         h3("Advanced Pitching")
-        raw(fmt_df(stats[[
+        render_stat_table(stats[[
             'Season', 'Age', 'Team', 'IP',
             'ERA', 'FIP', 'RA9', 'BAA', 'OBPA', 'BIP', 'BABIP',
             'H/9', 'HR/9', 'K/9', 'BB/9', 'K/BB', 'K%', 'BB%',
-            'P/GP', 'P/IP', 'P/PA',
-        ]]).to_html(border=0, index=False))
+            'P/GP', 'P/IP', 'P/PA', 'stat_type',
+        ]])
 
         h3("Value Pitching")
-        raw(fmt_df(stats[[
+        render_stat_table(stats[[
             'Season', 'Age', 'Team', 'IP', 'GP', 'GS',
             'RA', 'Rdef', 'RA9', 'RA9def', 'Rlev', 'Rcorr',
-            'RAA', 'RAAlev', 'WAA', 'Rrep', 'RAR', 'WAR',
-        ]]).to_html(border=0, index=False))
+            'RAA', 'RAAlev', 'WAA', 'Rrep', 'RAR', 'WAR', 'stat_type',
+        ]])
 
         h2("Awards")
 
@@ -111,8 +111,8 @@ def _render_table(df):
                     th(col)
         with tbody():
             for (_, raw_row), (_, disp_row) in zip(df.iterrows(), display.iterrows()):
-                with tr():
-                    if raw_row['stat_type'] == 'S':
+                with tr(cls=raw_row['stat_type']):
+                    if raw_row['stat_type'] == 'season':
                         season = raw_row['Season']
                         bests  = season_leaders.loc[season]
                         for key in df.columns:

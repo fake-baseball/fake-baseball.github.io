@@ -70,6 +70,27 @@ def fmt_df(df):
     return out
 
 
+def render_stat_table(df):
+    """Render a stats DataFrame as a dominate table with stat_type-based row classes.
+    The stat_type column is used for the row class and is not displayed."""
+    from dominate.tags import table, thead, tbody, tr, th, td
+    display = fmt_df(df)
+    t = table(border=0)
+    with t:
+        with thead():
+            with tr():
+                for col in df.columns:
+                    if col != 'stat_type':
+                        th(col)
+        with tbody():
+            for (_, raw_row), (_, disp_row) in zip(df.iterrows(), display.iterrows()):
+                with tr(cls=raw_row['stat_type']):
+                    for col in df.columns:
+                        if col != 'stat_type':
+                            td(disp_row[col])
+    return t
+
+
 def convert_name(first, last):
     """Turn a player name into a filename-safe string."""
     return f"{first.replace(' ', '')}{last.replace(' ', '')}"
