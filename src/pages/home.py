@@ -16,4 +16,5 @@ def generate_home():
         h2(a("Teams", href="teams/index.html"))
         h2(a("Games", href="games/index.html"))
         h2(a("Awards", href="awards.html"))
+        h2(a("Projections", href="projections.html"))
     Path("docs/index.html").write_text(str(doc))

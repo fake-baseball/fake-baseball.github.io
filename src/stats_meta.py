@@ -133,28 +133,28 @@ BATTING_STATS = {
         'description': '',
         'qualified': True,
         'decimal_places': 3, 'leading_zero': False,
-        'slug': 'avg',
+        'slug': 'avg', 'slug_worst': True
     },
     'OBP':   {
         'name': 'On-Base Percentage',
         'description': '',
         'qualified': True,
         'decimal_places': 3, 'leading_zero': False,
-        'slug': 'obp',
+        'slug': 'obp', 'slug_worst': True
     },
     'SLG':   {
         'name': 'Slugging Percentage',
         'description': '',
         'qualified': True,
         'decimal_places': 3, 'leading_zero': False,
-        'slug': 'slg',
+        'slug': 'slg', 'slug_worst': True
     },
     'OPS':   {
         'name': 'On-Base Plus Slugging',
         'description': '',
         'qualified': True,
         'decimal_places': 3, 'leading_zero': False,
-        'slug': 'ops',
+        'slug': 'ops', 'slug_worst': True
     },
     'OPS+':  {
         'name': 'OPS+',
@@ -329,7 +329,7 @@ BASERUNNING_STATS = {
         'description': '',
         'qualified': True,
         'decimal_places': 1, 'percentage': True,
-        'slug': 'sb_pct',
+        'slug': 'sb_pct', 'slug_worst': True
     },
     'SbAtt%': {
         'name': 'Stolen Base Attempt Rate',

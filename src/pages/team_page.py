@@ -4,6 +4,7 @@ from pathlib import Path
 from dominate.tags import *
 import batting as bat_module
 import pitching as pit_module
+import projections as proj_module
 from data import teams as teams_data
 from data import players
 from stats_meta import BATTING_STATS, BASERUNNING_STATS, PITCHING_STATS
@@ -51,15 +52,30 @@ def _pitcher_statline(first, last):
     return f"{int(row['W'])}-{int(row['L'])}, {era} ERA, {ip} IP, {int(row['K'])} K, {war} WAR"
 
 
-_LINEUP_STAT_COLS = ['WAR', 'PA', 'wRC+', 'OPS', 'BB%', 'K%', 'HR', 'RBI', 'SB']
-_LINEUP_HEADERS   = ['#', 'Pos', 'Name', 'B', 'Age', 'POW', 'CON', 'SPD'] + _LINEUP_STAT_COLS
+_LINEUP_HEADERS = ['#', 'Pos', 'Name', 'B', 'Age', 'POW', 'CON', 'SPD', 'FLD', 'ARM',
+                   'PA', 'xPA', 'AVG', 'xAVG', 'HR', 'xHR', 'OPS', 'xOPS',
+                   'wRC+', 'xwRC+', 'WAR', 'xWAR']
+
+# (actual stat key, proj row key, stat meta key for formatting)
+_LINEUP_PAIRED = [
+    ('PA',   'proj_pa', 'PA'),
+    ('AVG',  'xAVG',   'AVG'),
+    ('HR',   'xHR',    'HR'),
+    ('OPS',  'xOPS',   'OPS'),
+    ('wRC+', 'xwRC+',  'wRC+'),
+    ('WAR',  'xWAR',   'WAR'),
+]
 
 
 def _lineup_table(lineup):
-    def _fmt_stat(stat, val):
-        m = _ALL_BAT[stat]
+    def _fmt(stat_key, val):
+        m = _ALL_BAT[stat_key]
         return fmt_round(val, m['decimal_places'], m['leading_zero'], m['percentage'])
 
+    proj_rows = proj_module.compute_all()[0]
+    proj_by_player = {(r['first'], r['last']): r for r in proj_rows}
+
+    df = bat_module.stats
     t = table(border=1)
     with t:
         with thead():
@@ -69,26 +85,25 @@ def _lineup_table(lineup):
         with tbody():
             for _, row in lineup.iterrows():
                 first, last = row['firstName'], row['lastName']
+                pi   = players.player_info.loc[(first, last)] if (first, last) in players.player_info.index else None
+                mask = ((df['First Name'] == first) & (df['Last Name'] == last) &
+                        (df['stat_type'] == 'season') & (df['Season'] == 20))
+                s20  = df[mask].iloc[0] if not df[mask].empty else None
+                proj = proj_by_player.get((first, last))
                 with tr():
                     td(row['battingOrder'])
                     td(row['pos'])
                     td(f"{first} {last}")
-                    pi = players.player_info.loc[(first, last)] if (first, last) in players.player_info.index else None
-                    td(pi['bats']    if pi is not None else '')
-                    td(pi['age']     if pi is not None else '')
-                    td(pi['power']   if pi is not None else '')
-                    td(pi['contact'] if pi is not None else '')
-                    td(pi['speed']   if pi is not None else '')
-                    df = bat_module.stats
-                    mask = (df['First Name'] == first) & (df['Last Name'] == last) & (df['stat_type'] == 'season')
-                    stat_rows = df[mask]
-                    if stat_rows.empty:
-                        for _ in _LINEUP_STAT_COLS:
-                            td('-')
-                    else:
-                        s = stat_rows.loc[stat_rows['Season'].idxmax()]
-                        for stat in _LINEUP_STAT_COLS:
-                            td(_fmt_stat(stat, s[stat]))
+                    td(pi['bats']     if pi is not None else '')
+                    td(pi['age']      if pi is not None else '')
+                    td(pi['power']    if pi is not None else '')
+                    td(pi['contact']  if pi is not None else '')
+                    td(pi['speed']    if pi is not None else '')
+                    td(pi['fielding'] if pi is not None else '')
+                    td(pi['arm']      if pi is not None else '')
+                    for actual_key, proj_key, fmt_key in _LINEUP_PAIRED:
+                        td(_fmt(fmt_key, s20[actual_key])  if s20  is not None else '-')
+                        td(_fmt(fmt_key, proj[proj_key])   if proj is not None else '-')
     return t
 
 

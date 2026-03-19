@@ -52,6 +52,7 @@ from pages.season_page   import generate_season_page
 from pages.teams_page      import generate_teams_index
 from pages.team_season_page import generate_team_season_page
 from pages.home          import generate_home
+from pages.projections_page import generate_projections
 from pages.games_page    import generate_games
 from pages.awards_page   import generate_awards
 
@@ -63,19 +64,21 @@ def main():
     parser.add_argument("--seasons", action="store_true", help="Build seasons page")
     parser.add_argument("--teams",   action="store_true", help="Build teams index page")
     parser.add_argument("--home",    action="store_true", help="Build home page")
-    parser.add_argument("--awards",  action="store_true", help="Build awards page")
+    parser.add_argument("--awards",       action="store_true", help="Build awards page")
+    parser.add_argument("--projections",  action="store_true", help="Build projections page")
     parser.add_argument("--games",   action="store_true", help="Copy game files to docs/games/")
     args = parser.parse_args()
 
     # If nothing specified, build everything.
-    build_all = not any([args.players, args.leaders, args.seasons, args.teams, args.home, args.games, args.awards])
-    do_players = build_all or args.players
-    do_leaders = build_all or args.leaders
-    do_seasons = build_all or args.seasons
-    do_teams   = build_all or args.teams
-    do_home    = build_all or args.home
-    do_games   = build_all or args.games or do_home
-    do_awards  = build_all or args.awards
+    build_all      = not any([args.players, args.leaders, args.seasons, args.teams, args.home, args.games, args.awards, args.projections])
+    do_players     = build_all or args.players
+    do_leaders     = build_all or args.leaders
+    do_seasons     = build_all or args.seasons
+    do_teams       = build_all or args.teams
+    do_home        = build_all or args.home
+    do_games       = build_all or args.games or do_home
+    do_awards      = build_all or args.awards
+    do_projections = build_all or args.projections
 
     # ── Ensure output directories exist ──────────────────────────────────────
     Path("docs/players").mkdir(parents=True, exist_ok=True)
@@ -84,26 +87,26 @@ def main():
     Path("docs/seasons").mkdir(parents=True, exist_ok=True)
 
     # ── Raw data (needed by most pages) ──────────────────────────────────────
-    need_raw = do_players or do_leaders or do_seasons or do_teams or do_awards
+    need_raw = do_players or do_leaders or do_seasons or do_teams or do_awards or do_projections
     if need_raw:
         print("Loading raw data...")
         load_batting()
         load_pitching()
 
     # ── League averages (needed by players, leaders, seasons) ─────────────
-    need_lg = do_players or do_leaders or do_seasons or do_teams or do_awards
+    need_lg = do_players or do_leaders or do_seasons or do_teams or do_awards or do_projections
     if need_lg:
         print("Computing league averages...")
         league.compute_league()
 
     # ── Player roster info (needed by players, leaders, teams) ────────────
-    need_player_info = do_players or do_leaders or do_teams
+    need_player_info = do_players or do_leaders or do_teams or do_projections
     if need_player_info:
         print("Loading player/roster info...")
         load_player_info()
 
     # ── Per-player stats (needed by players, leaders, seasons) ───────────
-    need_stats = do_players or do_leaders or do_seasons or do_teams or do_awards
+    need_stats = do_players or do_leaders or do_seasons or do_teams or do_awards or do_projections
     if need_stats:
         print("Computing player stats...")
         batting.compute()
@@ -166,6 +169,10 @@ def main():
     if do_awards:
         print("Generating awards page...")
         generate_awards()
+
+    if do_projections:
+        print("Generating projections page...")
+        generate_projections()
 
     if do_leaders:
         print("Generating leaders pages...")
