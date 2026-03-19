@@ -201,6 +201,13 @@ def generate_team_page(team_name, roster, team_info):
         team_standings = teams_data.standings[teams_data.standings['teamName'] == team_name].sort_values('Season').copy()
         team_standings['Pct'] = (team_standings['gamesWon'] / (team_standings['gamesWon'] + team_standings['gamesLost'])).map(lambda v: f"{v:.3f}".lstrip('0'))
         team_standings['Diff'] = team_standings['runsFor'] - team_standings['runsAgainst']
+        total_w  = team_standings['gamesWon'].sum()
+        total_l  = team_standings['gamesLost'].sum()
+        total_rs = team_standings['runsFor'].sum()
+        total_ra = team_standings['runsAgainst'].sum()
+        total_pct  = f"{total_w / (total_w + total_l):.3f}".lstrip('0')
+        total_diff = fmt_rdiff(total_rs - total_ra)
+        p(f"Lifetime: {total_w}-{total_l} ({total_pct}), {total_rs} RS, {total_ra} RA, {total_diff} Diff")
         with table(border=0):
             with thead():
                 with tr():
