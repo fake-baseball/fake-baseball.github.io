@@ -22,7 +22,7 @@ _ALL_BAT_META = {**BATTING_STATS, **BASERUNNING_STATS, **FIELDING_STATS}
 
 # ── Batting leaders ──────────────────────────────────────────────────────────
 
-def get_batting_leaders(stat, season=None, worst=False, num=10, team=None):
+def get_batting_leaders(stat, season=None, worst=False, num=10, team=None, teams=None):
     import batting
     meta = _ALL_BAT_META[stat]
     ascending = meta['lowest'] ^ worst
@@ -33,6 +33,8 @@ def get_batting_leaders(stat, season=None, worst=False, num=10, team=None):
         df = df[df['Season'] == season]
     if team is not None:
         df = df[df['Team'] == team]
+    if teams is not None:
+        df = df[df['Team'].isin(teams)]
     if ascending:
         df = df[df[stat] <= df[stat].nsmallest(num).max()]
         df = df.sort_values(stat, ascending=True)
@@ -74,7 +76,7 @@ def get_leaders_by_season(stat, worst=False):
 
 # ── Pitching leaders ─────────────────────────────────────────────────────────
 
-def get_pitching_leaders(stat, season=None, worst=False, num=10, team=None):
+def get_pitching_leaders(stat, season=None, worst=False, num=10, team=None, teams=None):
     import pitching
     meta = PITCHING_STATS[stat]
     ascending = meta['lowest'] ^ worst
@@ -85,6 +87,8 @@ def get_pitching_leaders(stat, season=None, worst=False, num=10, team=None):
         df = df[df['Season'] == season]
     if team is not None:
         df = df[df['Team'] == team]
+    if teams is not None:
+        df = df[df['Team'].isin(teams)]
     if ascending:
         df = df[df[stat] <= df[stat].nsmallest(num).max()]
         df = df.sort_values(stat, ascending=True)

@@ -126,10 +126,11 @@ def main():
         print("Generating players index...")
         generate_players_index()
 
-    # ── Team/standings data (needed by seasons and teams) ─────────────────
-    need_teams_data = do_seasons or do_teams
+    # ── Team/standings data (needed by seasons, teams, and awards) ────────
+    need_teams_data = do_seasons or do_teams or do_awards
     if need_teams_data:
         load_teams()
+    if do_seasons or do_teams:
         load_standings()
 
     # ── Other pages ───────────────────────────────────────────────────────
