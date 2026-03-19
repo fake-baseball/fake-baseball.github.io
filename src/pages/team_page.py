@@ -9,7 +9,7 @@ from data import players
 from stats_meta import BATTING_STATS, BASERUNNING_STATS, PITCHING_STATS
 
 _ALL_BAT = {**BATTING_STATS, **BASERUNNING_STATS}
-from util import player_link, make_doc, fmt_ip, fmt_round
+from util import player_link, make_doc, fmt_ip, fmt_round, fmt_rdiff
 
 _PITCHER_COLS  = ['Name', '#', 'Role', 'T', 'VEL', 'JNK', 'ACC', 'FLD', 'Arsenal', 'Age', 'Salary']
 _POSITION_COLS = ['Name', '#', 'PP', '2P', 'B', 'POW', 'CON', 'SPD', 'FLD', 'ARM', 'Age', 'Salary']
@@ -104,7 +104,7 @@ def _roster_table(group, cols, link_col='Name'):
                 with tr():
                     for col in cols:
                         if col == link_col:
-                            td(player_link(row['first_name'], row['last_name']))
+                            td(player_link(row['first_name'], row['last_name'], prefix='../../players/'))
                         else:
                             td(row[col])
     return t
@@ -115,6 +115,7 @@ def generate_team_page(team_name, roster, team_info):
     team_name - string team name
     roster    - DataFrame of players on this team (rows from player_info, reset_index'd)
     """
+    slug     = team_name.replace(' ', '')
     pitchers = roster[roster['ppos'] == 'P'].sort_values(['last_name', 'first_name']).copy()
     position = roster[roster['ppos'] != 'P'].sort_values(['last_name', 'first_name']).copy()
 
@@ -144,7 +145,7 @@ def generate_team_page(team_name, roster, team_info):
     rotation = teams_data.rotations[teams_data.rotations['teamName'] == team_name].sort_values('rotation')
     lineup   = teams_data.lineups[teams_data.lineups['teamName'] == team_name].sort_values('battingOrder')
 
-    doc = make_doc(team_name)
+    doc = make_doc(team_name, css='../../style.css')
     with doc:
         h1(team_name)
         p(f"{team_info['conference_name']} - {team_info['division_name']}")
@@ -196,5 +197,24 @@ def generate_team_page(team_name, roster, team_info):
         h3("Position Players")
         _roster_table(position, _POSITION_COLS)
 
-    slug = team_name.replace(' ', '')
-    Path(f"docs/teams/{slug}.html").write_text(str(doc))
+        h2("History")
+        team_standings = teams_data.standings[teams_data.standings['teamName'] == team_name].sort_values('Season').copy()
+        team_standings['Pct'] = (team_standings['gamesWon'] / (team_standings['gamesWon'] + team_standings['gamesLost'])).map(lambda v: f"{v:.3f}".lstrip('0'))
+        team_standings['Diff'] = team_standings['runsFor'] - team_standings['runsAgainst']
+        with table(border=0):
+            with thead():
+                with tr():
+                    for col in ['Season', 'W', 'L', 'Pct', 'RS', 'RA', 'Diff']:
+                        th(col)
+            with tbody():
+                for _, row in team_standings.iterrows():
+                    with tr():
+                        td(a(row['Season'], href=f"{int(row['Season'])}.html"))
+                        td(row['gamesWon'])
+                        td(row['gamesLost'])
+                        td(row['Pct'])
+                        td(row['runsFor'])
+                        td(row['runsAgainst'])
+                        td(fmt_rdiff(row['Diff']))
+
+    Path(f"docs/teams/{slug}/index.html").write_text(str(doc))

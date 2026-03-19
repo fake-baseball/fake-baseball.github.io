@@ -7,9 +7,8 @@ from dominate.util import raw
 import batting
 import leaders
 from data import players
-from leaders import SEASON_THRESHOLDS
 from stats_meta import BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS
-from util import fmt_df, render_stat_table, convert_name, make_doc
+from util import fmt_df, render_stat_table, render_leaders_table, convert_name, make_doc
 
 _ALL_BAT = {**BATTING_STATS, **BASERUNNING_STATS, **FIELDING_STATS}
 
@@ -79,7 +78,7 @@ def generate_batter_page(first_name, last_name):
             'SB', 'CS', 'BB', 'K', 'AVG', 'OBP', 'SLG', 'OPS', 'OPS+',
             'TB', 'HBP', 'SH', 'SF', 'stat_type',
         ]]
-        _render_table(standard_batting)
+        render_leaders_table(standard_batting, leaders.batting_leaders, _ALL_BAT)
 
         h3("Advanced Batting")
         render_stat_table(stats[['Season', 'Age', 'Team', 'PA',
@@ -106,40 +105,3 @@ def generate_batter_page(first_name, last_name):
     path.write_text(str(doc))
 
 
-def _render_table(df):
-    season_leaders = leaders.batting_leaders
-    """Render a stat table, bolding season-leader values.
-    Compares raw numeric values for bolding, then displays formatted values via fmt_df.
-    """
-    display = fmt_df(df)
-    with table():
-        with thead():
-            with tr():
-                for col in df.columns:
-                    if col == 'stat_type':
-                        continue
-                    th(col)
-        with tbody():
-            for (_, raw_row), (_, disp_row) in zip(df.iterrows(), display.iterrows()):
-                with tr(cls=raw_row['stat_type']):
-                    if raw_row['stat_type'] == 'season':
-                        season = raw_row['Season']
-                        bests  = season_leaders.loc[season]
-                        for key in df.columns:
-                            if key == 'stat_type':
-                                continue
-                            disp_val = disp_row[key]
-                            if key in bests.index and key in _ALL_BAT:
-                                meta = _ALL_BAT[key]
-                                qualifies = not meta['qualified'] or raw_row[meta['qual_col']] >= SEASON_THRESHOLDS[meta['qual_col']]
-                                raw_val = float(raw_row[key])
-                                best    = float(bests[key])
-                                is_best = qualifies and ((raw_val <= best) if meta['lowest'] else (raw_val >= best))
-                                td(b(disp_val)) if is_best else td(disp_val)
-                            else:
-                                td(disp_val)
-                    else:
-                        for key in df.columns:
-                            if key == 'stat_type':
-                                continue
-                            td(disp_row[key])

@@ -13,6 +13,7 @@ from constants import (
 )
 
 from stats_meta import BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS, PITCHING_STATS
+from util import rank_column
 
 SEASON_THRESHOLDS = {'PA': BAT_SEASON_MIN_PA, 'SBatt': BR_SEASON_MIN_SBATT, 'GF': FLD_SEASON_MIN_GF, 'IP_true': PIT_SEASON_MIN_IP}
 CAREER_THRESHOLDS = {'PA': BAT_CAREER_MIN_PA, 'SBatt': BR_CAREER_MIN_SBATT, 'GF': FLD_CAREER_MIN_GF, 'IP_true': PIT_CAREER_MIN_IP}
@@ -21,10 +22,11 @@ _ALL_BAT_META = {**BATTING_STATS, **BASERUNNING_STATS, **FIELDING_STATS}
 
 # ── Batting leaders ──────────────────────────────────────────────────────────
 
-def get_batting_leaders(data_batters, stat, season=None, worst=False, num=10, team=None):
+def get_batting_leaders(stat, season=None, worst=False, num=10, team=None):
+    import batting
     meta = _ALL_BAT_META[stat]
     ascending = meta['lowest'] ^ worst
-    df = data_batters[data_batters[meta['qual_col']] >= SEASON_THRESHOLDS[meta['qual_col']]] if meta['qualified'] else data_batters
+    df = batting.stats[batting.stats[meta['qual_col']] >= SEASON_THRESHOLDS[meta['qual_col']]] if meta['qualified'] else batting.stats
     if season is None:
         df = df[df['stat_type'] == 'season']
     else:
@@ -37,16 +39,19 @@ def get_batting_leaders(data_batters, stat, season=None, worst=False, num=10, te
     else:
         df = df[df[stat] >= df[stat].nlargest(num).min()]
         df = df.sort_values(stat, ascending=False)
+    df.index = rank_column(df[stat])
     return df
 
 
-def get_career_batting_leaders(data_batters, player_info, stat, active=False, worst=False, num=10, team=None):
+def get_career_batting_leaders(stat, active=False, worst=False, num=10, team=None):
+    import batting
+    from data import players
     meta = _ALL_BAT_META[stat]
     ascending = meta['lowest'] ^ worst
-    df = data_batters[data_batters[meta['qual_col']] >= CAREER_THRESHOLDS[meta['qual_col']]] if meta['qualified'] else data_batters
+    df = batting.stats[batting.stats[meta['qual_col']] >= CAREER_THRESHOLDS[meta['qual_col']]] if meta['qualified'] else batting.stats
     df = df[df['Season'] == 'Career']
     if active:
-        df = df[df.set_index(['First Name', 'Last Name']).index.isin(player_info.index)]
+        df = df[df.set_index(['First Name', 'Last Name']).index.isin(players.player_info.index)]
     if team is not None:
         df = df[df['Team'] == team]
     if ascending:
@@ -55,23 +60,25 @@ def get_career_batting_leaders(data_batters, player_info, stat, active=False, wo
     else:
         df = df[df[stat] >= df[stat].nlargest(num).min()]
         df = df.sort_values(stat, ascending=False)
+    df.index = rank_column(df[stat])
     return df
 
 
-def get_leaders_by_season(data_batters, stat, worst=False):
+def get_leaders_by_season(stat, worst=False):
     dfs = []
     for season in SEASON_RANGE:
-        df = get_batting_leaders(data_batters, stat, season, worst=worst, num=1)
+        df = get_batting_leaders(stat, season, worst=worst, num=1)
         dfs.append(df)
     return pd.concat(dfs, ignore_index=True)
 
 
 # ── Pitching leaders ─────────────────────────────────────────────────────────
 
-def get_pitching_leaders(data_pitchers, stat, season=None, worst=False, num=10, team=None):
+def get_pitching_leaders(stat, season=None, worst=False, num=10, team=None):
+    import pitching
     meta = PITCHING_STATS[stat]
     ascending = meta['lowest'] ^ worst
-    df = data_pitchers[data_pitchers['IP_true'] >= PIT_SEASON_MIN_IP] if meta['qualified'] else data_pitchers
+    df = pitching.stats[pitching.stats['IP_true'] >= PIT_SEASON_MIN_IP] if meta['qualified'] else pitching.stats
     if season is None:
         df = df[df['stat_type'] == 'season']
     else:
@@ -84,16 +91,19 @@ def get_pitching_leaders(data_pitchers, stat, season=None, worst=False, num=10, 
     else:
         df = df[df[stat] >= df[stat].nlargest(num).min()]
         df = df.sort_values(stat, ascending=False)
+    df.index = rank_column(df[stat])
     return df
 
 
-def get_career_pitching_leaders(data_pitchers, player_info, stat, active=False, worst=False, num=10, team=None):
+def get_career_pitching_leaders(stat, active=False, worst=False, num=10, team=None):
+    import pitching
+    from data import players
     meta = PITCHING_STATS[stat]
     ascending = meta['lowest'] ^ worst
-    df = data_pitchers[data_pitchers['IP_true'] >= PIT_CAREER_MIN_IP] if meta['qualified'] else data_pitchers
+    df = pitching.stats[pitching.stats['IP_true'] >= PIT_CAREER_MIN_IP] if meta['qualified'] else pitching.stats
     df = df[df['Season'] == 'Career']
     if active:
-        df = df[df.set_index(['First Name', 'Last Name']).index.isin(player_info.index)]
+        df = df[df.set_index(['First Name', 'Last Name']).index.isin(players.player_info.index)]
     if team is not None:
         df = df[df['Team'] == team]
     if ascending:
@@ -102,13 +112,14 @@ def get_career_pitching_leaders(data_pitchers, player_info, stat, active=False, 
     else:
         df = df[df[stat] >= df[stat].nlargest(num).min()]
         df = df.sort_values(stat, ascending=False)
+    df.index = rank_column(df[stat])
     return df
 
 
-def get_pitching_leaders_by_season(data_pitchers, stat, worst=False):
+def get_pitching_leaders_by_season(stat, worst=False):
     dfs = []
     for season in SEASON_RANGE:
-        df = get_pitching_leaders(data_pitchers, stat, season, worst=worst, num=1)
+        df = get_pitching_leaders(stat, season, worst=worst, num=1)
         dfs.append(df)
     return pd.concat(dfs, ignore_index=True)
 

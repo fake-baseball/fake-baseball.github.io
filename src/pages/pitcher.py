@@ -7,9 +7,8 @@ from dominate.util import raw
 import pitching
 import leaders
 from data import players
-from leaders import SEASON_THRESHOLDS
 from stats_meta import PITCHING_STATS
-from util import fmt_df, render_stat_table, convert_name, make_doc
+from util import fmt_df, render_stat_table, render_leaders_table, convert_name, make_doc
 
 
 def generate_pitcher_page(first_name, last_name):
@@ -70,7 +69,8 @@ def generate_pitcher_page(first_name, last_name):
             'H', 'RA', 'ER', 'HR', 'BB', 'K', 'HBP', 'WP', 'BF', 'ERA-', 'FIP', 'WHIP',
             'stat_type', 'IP_true',
         ]]
-        _render_table(standard_pitching)
+        render_leaders_table(standard_pitching, leaders.pitching_leaders, PITCHING_STATS,
+                             hidden={'stat_type', 'IP_true'}, col_aliases={'IP': 'IP_true'})
 
         h3("Advanced Pitching")
         render_stat_table(stats[[
@@ -93,44 +93,3 @@ def generate_pitcher_page(first_name, last_name):
     path.write_text(str(doc))
 
 
-def _render_table(df):
-    season_leaders = leaders.pitching_leaders
-    """Render a stat table, bolding season-leader values.
-    Compares raw numeric values for bolding, then displays formatted values via fmt_df.
-    stat_type and IP_true columns are used for logic only and are not displayed.
-    IP is displayed as a string but compared via the hidden IP_true column.
-    """
-    _HIDDEN = {'stat_type', 'IP_true'}
-    display = fmt_df(df)
-    with table():
-        with thead():
-            with tr():
-                for col in df.columns:
-                    if col in _HIDDEN:
-                        continue
-                    th(col)
-        with tbody():
-            for (_, raw_row), (_, disp_row) in zip(df.iterrows(), display.iterrows()):
-                with tr(cls=raw_row['stat_type']):
-                    if raw_row['stat_type'] == 'season':
-                        season = raw_row['Season']
-                        bests  = season_leaders.loc[season]
-                        for key in df.columns:
-                            if key in _HIDDEN:
-                                continue
-                            disp_val = disp_row[key]
-                            cmp_key  = 'IP_true' if key == 'IP' else key
-                            cmp_val  = raw_row['IP_true'] if key == 'IP' else raw_row[key]
-                            if cmp_key in bests.index and cmp_key in PITCHING_STATS:
-                                meta = PITCHING_STATS[cmp_key]
-                                qualifies = not meta['qualified'] or raw_row[meta['qual_col']] >= SEASON_THRESHOLDS[meta['qual_col']]
-                                best    = float(bests[cmp_key])
-                                is_best = qualifies and ((float(cmp_val) <= best) if meta['lowest'] else (float(cmp_val) >= best))
-                                td(b(disp_val)) if is_best else td(disp_val)
-                            else:
-                                td(disp_val)
-                    else:
-                        for key in df.columns:
-                            if key in _HIDDEN:
-                                continue
-                            td(disp_row[key])

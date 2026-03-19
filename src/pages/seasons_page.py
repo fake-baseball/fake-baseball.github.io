@@ -65,26 +65,30 @@ def generate_seasons():
     }, index=sb.index)
     rates = fmt_df(rates)
 
+    def _link_index(df):
+        df = df.copy()
+        df.index = [f'<a href="{i}.html">Season {i}</a>' for i in df.index]
+        return df
+
     # ── Page ──────────────────────────────────────────────────────────────────
 
-    doc = make_doc("Seasons", css='style.css')
+    doc = make_doc("Seasons")
     with doc:
         h1("Seasons")
 
         h2("Counting Stats")
         h3("Offense")
-        raw(off_count.to_html(border=0, index=True))
+        raw(_link_index(off_count).to_html(border=0, index=True, escape=False))
         h3("Defense")
-        raw(def_count.to_html(border=0, index=True))
+        raw(_link_index(def_count).to_html(border=0, index=True, escape=False))
 
         h2("Per-Game Counting")
         h3("Offense")
-        raw(off_pg.to_html(border=0, index=True))
+        raw(_link_index(off_pg).to_html(border=0, index=True, escape=False))
         h3("Defense")
-        raw(def_pg.to_html(border=0, index=True))
+        raw(_link_index(def_pg).to_html(border=0, index=True, escape=False))
 
         h2("Rate Stats")
-        raw(rates.to_html(border=0, index=True))
+        raw(_link_index(rates).to_html(border=0, index=True, escape=False))
 
-
-    Path("docs/seasons.html").write_text(str(doc))
+    Path("docs/seasons/index.html").write_text(str(doc))

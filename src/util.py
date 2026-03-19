@@ -16,6 +16,24 @@ def make_doc(title, css='../style.css'):
     return doc
 
 
+def rank_column(series, ascending=False):
+    """Return a list of 1-based ranks with standard competition ranking (1,1,3,...) for ties."""
+    ranks = []
+    prev_val = None
+    prev_rank = 0
+    for i, val in enumerate(series, 1):
+        if val != prev_val:
+            prev_rank = i
+            prev_val = val
+        ranks.append(prev_rank)
+    return ranks
+
+
+def fmt_rdiff(v):
+    """Format a run differential value, prefixing positive values with '+'."""
+    return f"+{v}" if v > 0 else str(v)
+
+
 def fmt_ip(v):
     """Format a decimal IP value into base-3 baseball notation (e.g. 6.667 -> '6.2')."""
     whole  = int(v)
@@ -68,6 +86,61 @@ def fmt_df(df):
                 lambda v, m=meta: fmt_round(v, m['decimal_places'], m['leading_zero'], m['percentage'])
             )
     return out
+
+
+def linkify_players(df, prefix='../players/'):
+    """Replace First Name / Last Name columns with a single linked Player column."""
+    df = df.copy()
+    df.insert(0, 'Player', df.apply(
+        lambda r: f'<a href="{prefix}{convert_name(r["First Name"], r["Last Name"])}.html">{r["First Name"]} {r["Last Name"]}</a>',
+        axis=1
+    ))
+    return df.drop(columns=['First Name', 'Last Name'])
+
+
+def render_leaders_table(df, season_leaders, stat_meta, hidden=None, col_aliases=None):
+    """Render a stat table with season-leader bolding.
+    df           - DataFrame including stat_type column
+    season_leaders - DataFrame indexed by Season with best value per stat
+    stat_meta    - dict mapping stat name to metadata
+    hidden       - set of columns to hide (default: {'stat_type'})
+    col_aliases  - dict mapping display col to comparison col (e.g. {'IP': 'IP_true'})
+    """
+    from dominate.tags import table, thead, tbody, tr, th, td, b
+    from leaders import SEASON_THRESHOLDS
+    hidden      = hidden or {'stat_type'}
+    col_aliases = col_aliases or {}
+    display = fmt_df(df)
+    t = table(border=0)
+    with t:
+        with thead():
+            with tr():
+                for col in df.columns:
+                    if col not in hidden:
+                        th(col)
+        with tbody():
+            for (_, raw_row), (_, disp_row) in zip(df.iterrows(), display.iterrows()):
+                with tr(cls=raw_row['stat_type']):
+                    if raw_row['stat_type'] == 'season':
+                        bests = season_leaders.loc[raw_row['Season']]
+                        for key in df.columns:
+                            if key in hidden:
+                                continue
+                            disp_val = disp_row[key]
+                            cmp_key  = col_aliases.get(key, key)
+                            cmp_val  = raw_row[cmp_key]
+                            if cmp_key in bests.index and cmp_key in stat_meta:
+                                meta      = stat_meta[cmp_key]
+                                qualifies = not meta['qualified'] or raw_row[meta['qual_col']] >= SEASON_THRESHOLDS[meta['qual_col']]
+                                is_best   = qualifies and ((float(cmp_val) <= float(bests[cmp_key])) if meta['lowest'] else (float(cmp_val) >= float(bests[cmp_key])))
+                                td(b(disp_val)) if is_best else td(disp_val)
+                            else:
+                                td(disp_val)
+                    else:
+                        for key in df.columns:
+                            if key not in hidden:
+                                td(disp_row[key])
+    return t
 
 
 def render_stat_table(df):

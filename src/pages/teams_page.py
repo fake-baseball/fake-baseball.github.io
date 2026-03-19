@@ -27,7 +27,7 @@ def generate_teams_index():
                 with ul():
                     for _, row in div_teams.iterrows():
                         slug = row['team_name'].replace(' ', '')
-                        li(a(row['team_name'], href=f"{slug}.html"))
+                        li(a(row['team_name'], href=f"{slug}/index.html"))
 
     Path("docs/teams").mkdir(parents=True, exist_ok=True)
     Path("docs/teams/index.html").write_text(str(doc))

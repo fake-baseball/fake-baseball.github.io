@@ -10,30 +10,17 @@ from constants import (
     FLD_SEASON_MIN_GF,   FLD_CAREER_MIN_GF,
     PIT_SEASON_MIN_IP,   PIT_CAREER_MIN_IP,
 )
-import batting
-import pitching
-from data import players
 from leaders import (
     get_batting_leaders, get_career_batting_leaders, get_leaders_by_season,
     get_pitching_leaders, get_career_pitching_leaders, get_pitching_leaders_by_season,
 )
 from stats_meta import BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS, PITCHING_STATS
-from util import fmt_round, convert_name, make_doc
+from util import fmt_round, linkify_players, make_doc
 
 
 def generate_leaders():
     # Each entry: (title, slug, suffix, stat, display_col, df)
     pages = []
-
-    def _linkify(df):
-        """Replace First Name / Last Name columns with a single linked Player column."""
-        df = df.copy()
-        df.insert(0, 'Player', df.apply(
-            # XXX manually reconstructing <a> tag
-            lambda r: f'<a href="../players/{convert_name(r["First Name"], r["Last Name"])}.html">{r["First Name"]} {r["Last Name"]}</a>',
-            axis=1
-        ))
-        return df.drop(columns=['First Name', 'Last Name'])
 
     # ── Shared index-row builder ──────────────────────────────────────────────
 
@@ -54,26 +41,24 @@ def generate_leaders():
 
         _index_row(title, slug)
 
-        df = get_batting_leaders(batting.stats, stat, num=100, worst=worst)
-        df = _linkify(df[['First Name', 'Last Name', stat, 'Season', qual_col, 'Team']])
-        df.index = range(1, len(df) + 1)
+        df = get_batting_leaders(stat, num=100, worst=worst)
+        cols = list(dict.fromkeys(['First Name', 'Last Name', stat, 'Season', qual_col, 'Team']))
+        df = linkify_players(df[cols])
         df[stat] = df[stat].map(_fmt)
         pages.append((title, slug, 'season', stat, stat, df))
 
-        df = get_leaders_by_season(batting.stats, stat, worst=worst)
-        df = _linkify(df[['Season', 'First Name', 'Last Name', stat, qual_col, 'Team']].set_index('Season'))
+        df = get_leaders_by_season(stat, worst=worst)
+        df = linkify_players(df[['Season', 'First Name', 'Last Name', stat, qual_col, 'Team']].set_index('Season'))
         df[stat] = df[stat].map(_fmt)
         pages.append((title, slug, 'yearly', stat, stat, df))
 
-        df = get_career_batting_leaders(batting.stats, players.player_info, stat, num=100, worst=worst)
-        df = _linkify(df[['First Name', 'Last Name', stat, qual_col]])
-        df.index = range(1, len(df) + 1)
+        df = get_career_batting_leaders(stat, num=100, worst=worst)
+        df = linkify_players(df[list(dict.fromkeys(['First Name', 'Last Name', stat, qual_col]))])
         df[stat] = df[stat].map(_fmt)
         pages.append((title, slug, 'career', stat, stat, df))
 
-        df = get_career_batting_leaders(batting.stats, players.player_info, stat, active=True, num=100, worst=worst)
-        df = _linkify(df[['First Name', 'Last Name', stat, qual_col]])
-        df.index = range(1, len(df) + 1)
+        df = get_career_batting_leaders(stat, active=True, num=100, worst=worst)
+        df = linkify_players(df[list(dict.fromkeys(['First Name', 'Last Name', stat, qual_col]))])
         df[stat] = df[stat].map(_fmt)
         pages.append((title, slug, 'active', stat, stat, df))
 
@@ -95,35 +80,32 @@ def generate_leaders():
 
         _index_row(title, slug)
 
-        df = get_pitching_leaders(pitching.stats, stat, num=100, worst=worst)
+        df = get_pitching_leaders(stat, num=100, worst=worst)
         cols = (['First Name', 'Last Name', display_col, 'Season', 'Team'] if is_aliased
                 else ['First Name', 'Last Name', stat, 'Season', 'IP', 'Team'])
-        df = _linkify(df[cols])
-        df.index = range(1, len(df) + 1)
+        df = linkify_players(df[cols])
         if not is_aliased:
             df[stat] = df[stat].map(_fmt)
         pages.append((title, slug, 'season', stat, display_col, df))
 
-        df = get_pitching_leaders_by_season(pitching.stats, stat, worst=worst)
+        df = get_pitching_leaders_by_season(stat, worst=worst)
         cols = (['Season', 'First Name', 'Last Name', display_col, 'Team'] if is_aliased
                 else ['Season', 'First Name', 'Last Name', stat, 'IP', 'Team'])
-        df = _linkify(df[cols].set_index('Season'))
+        df = linkify_players(df[cols].set_index('Season'))
         if not is_aliased:
             df[stat] = df[stat].map(_fmt)
         pages.append((title, slug, 'yearly', stat, display_col, df))
 
         career_cols = (['First Name', 'Last Name', display_col] if is_aliased
                        else ['First Name', 'Last Name', stat, 'IP'])
-        df = get_career_pitching_leaders(pitching.stats, players.player_info, stat, num=100, worst=worst)
-        df = _linkify(df[career_cols])
-        df.index = range(1, len(df) + 1)
+        df = get_career_pitching_leaders(stat, num=100, worst=worst)
+        df = linkify_players(df[career_cols])
         if not is_aliased:
             df[stat] = df[stat].map(_fmt)
         pages.append((title, slug, 'career', stat, display_col, df))
 
-        df = get_career_pitching_leaders(pitching.stats, players.player_info, stat, active=True, num=100, worst=worst)
-        df = _linkify(df[career_cols])
-        df.index = range(1, len(df) + 1)
+        df = get_career_pitching_leaders(stat, active=True, num=100, worst=worst)
+        df = linkify_players(df[career_cols])
         if not is_aliased:
             df[stat] = df[stat].map(_fmt)
         pages.append((title, slug, 'active', stat, display_col, df))

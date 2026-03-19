@@ -40,16 +40,20 @@ import leaders
 
 from data.stats    import load_batting, load_pitching
 from data.players  import load_player_info, load_retirements
-from data.teams    import load_teams, load_rotations, load_lineups
+from data.teams    import load_teams, load_rotations, load_lineups, load_standings
+from data          import teams as teams_data
 
 from pages.batter        import generate_batter_page
 from pages.pitcher       import generate_pitcher_page
 from pages.leaders_page  import generate_leaders
 from pages.players_index import generate_players_index
 from pages.seasons_page  import generate_seasons
-from pages.teams_page    import generate_teams_index
+from pages.season_page   import generate_season_page
+from pages.teams_page      import generate_teams_index
+from pages.team_season_page import generate_team_season_page
 from pages.home          import generate_home
 from pages.games_page    import generate_games
+from pages.awards_page   import generate_awards
 
 
 def main():
@@ -59,32 +63,35 @@ def main():
     parser.add_argument("--seasons", action="store_true", help="Build seasons page")
     parser.add_argument("--teams",   action="store_true", help="Build teams index page")
     parser.add_argument("--home",    action="store_true", help="Build home page")
+    parser.add_argument("--awards",  action="store_true", help="Build awards page")
     parser.add_argument("--games",   action="store_true", help="Copy game files to docs/games/")
     args = parser.parse_args()
 
     # If nothing specified, build everything.
-    build_all = not any([args.players, args.leaders, args.seasons, args.teams, args.home, args.games])
+    build_all = not any([args.players, args.leaders, args.seasons, args.teams, args.home, args.games, args.awards])
     do_players = build_all or args.players
     do_leaders = build_all or args.leaders
     do_seasons = build_all or args.seasons
     do_teams   = build_all or args.teams
     do_home    = build_all or args.home
     do_games   = build_all or args.games or do_home
+    do_awards  = build_all or args.awards
 
     # ── Ensure output directories exist ──────────────────────────────────────
     Path("docs/players").mkdir(parents=True, exist_ok=True)
     Path("docs/leaders").mkdir(parents=True, exist_ok=True)
     Path("docs/teams").mkdir(parents=True, exist_ok=True)
+    Path("docs/seasons").mkdir(parents=True, exist_ok=True)
 
     # ── Raw data (needed by most pages) ──────────────────────────────────────
-    need_raw = do_players or do_leaders or do_seasons or do_teams
+    need_raw = do_players or do_leaders or do_seasons or do_teams or do_awards
     if need_raw:
         print("Loading raw data...")
         load_batting()
         load_pitching()
 
     # ── League averages (needed by players, leaders, seasons) ─────────────
-    need_lg = do_players or do_leaders or do_seasons or do_teams
+    need_lg = do_players or do_leaders or do_seasons or do_teams or do_awards
     if need_lg:
         print("Computing league averages...")
         league.compute_league()
@@ -95,8 +102,8 @@ def main():
         print("Loading player/roster info...")
         load_player_info()
 
-    # ── Per-player stats (needed by players, leaders) ─────────────────────
-    need_stats = do_players or do_leaders or do_teams
+    # ── Per-player stats (needed by players, leaders, seasons) ───────────
+    need_stats = do_players or do_leaders or do_seasons or do_teams or do_awards
     if need_stats:
         print("Computing player stats...")
         batting.compute()
@@ -119,17 +126,33 @@ def main():
         print("Generating players index...")
         generate_players_index()
 
+    # ── Team/standings data (needed by seasons and teams) ─────────────────
+    need_teams_data = do_seasons or do_teams
+    if need_teams_data:
+        load_teams()
+        load_standings()
+
     # ── Other pages ───────────────────────────────────────────────────────
     if do_seasons:
+        from constants import SEASON_RANGE
         print("Generating seasons page...")
         generate_seasons()
+        print("Generating individual season pages...")
+        for season_num in SEASON_RANGE:
+            generate_season_page(season_num)
 
     if do_teams:
         print("Generating teams page...")
-        load_teams()
         load_rotations()
         load_lineups()
+        for _, t_row in teams_data.teams.iterrows():
+            Path(f"docs/teams/{t_row['team_name'].replace(' ', '')}").mkdir(exist_ok=True)
         generate_teams_index()
+        print("Generating team-season pages...")
+        team_abbr = teams_data.teams.set_index('team_name')['abbr']
+        for _, ts_row in teams_data.standings[['teamName', 'Season']].drop_duplicates().iterrows():
+            tname, season_num = ts_row['teamName'], ts_row['Season']
+            generate_team_season_page(tname, season_num, team_abbr[tname])
 
     if do_games:
         print("Generating games...")
@@ -138,6 +161,10 @@ def main():
     if do_home:
         print("Generating home page...")
         generate_home()
+
+    if do_awards:
+        print("Generating awards page...")
+        generate_awards()
 
     if do_leaders:
         print("Generating leaders pages...")
