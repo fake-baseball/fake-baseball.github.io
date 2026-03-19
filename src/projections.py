@@ -131,6 +131,7 @@ def compute():
             'fielding':  fielding,
             'arm':       arm,
             'qualified': (first, last) in full_names,
+            'team':      str(pi['team_name']) if 'team_name' in pi.index else '',
             **{f'pa_{s}': season_pa[s] for s in PROJ_SEASONS},
             **{f'x{comp}': model_rates[comp] for comp in COMPONENTS},
             **proj,
@@ -293,14 +294,25 @@ def compute_all():
         except KeyError:
             rpos_per_g = 0.0
         xRpos = rpos_per_g * xGB / num_games
-        xRrep = row['proj_pa'] * lg_rrpa_20
-        xRAA  = xRbat + xRpos
-        xRAR  = xRAA + xRrep
-        row['xWAR'] = xRAR / rpw_20 if rpw_20 > 0 else 0.0
+        row['_xRAA']  = xRbat + xRpos
+        row['_xRrep'] = row['proj_pa'] * lg_rrpa_20
         if row['proj_pa'] > 0 and lg_wrcpa > 0:
             row['xwRC+'] = 100 * (xRbat / row['proj_pa'] + lg_rPA_20) / lg_wrcpa
         else:
             row['xwRC+'] = 0.0
+
+    # Rcorr: target correct total WAR using only rostered players to set the rate
+    from constants import total_WAR as _total_WAR, batter_share
+    rostered       = [r for r in rows if r['team'] != 'FREE AGENT']
+    total_xRAA     = sum(r['_xRAA'] for r in rostered)
+    total_xRrep    = sum(r['_xRrep'] for r in rostered)
+    total_xPA      = sum(r['proj_pa'] for r in rostered)
+    target_xRAA    = _total_WAR * batter_share * rpw_20 - total_xRrep
+    corr_rate      = (target_xRAA - total_xRAA) / total_xPA if total_xPA > 0 else 0.0
+    for row in rows:
+        xRcorr      = corr_rate * row['proj_pa']
+        xRAR        = row['_xRAA'] + xRcorr + row['_xRrep']
+        row['xWAR'] = xRAR / rpw_20 if rpw_20 > 0 else 0.0
 
     _cache = (rows, metrics, pa_model, pa_model_simple)
     return _cache

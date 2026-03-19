@@ -5,6 +5,7 @@ from dominate.tags import *
 import batting as bat_module
 import pitching as pit_module
 import projections as proj_module
+import pit_projections as pit_proj_module
 from data import teams as teams_data
 from data import players
 from stats_meta import BATTING_STATS, BASERUNNING_STATS, PITCHING_STATS
@@ -107,6 +108,64 @@ def _lineup_table(lineup):
     return t
 
 
+_ROTATION_HEADERS = ['#', 'Name', 'Role', 'T', 'Age', 'VEL', 'JNK', 'ACC', 'FLD',
+                     'IP', 'xIP', 'ERA', 'xRA9', 'WHIP', 'xWHIP',
+                     'K/9', 'xK/9', 'BB/9', 'xBB/9', 'WAR', 'xWAR']
+
+# (actual pitching.stats key, proj row key, PITCHING_STATS meta key or None for special)
+_ROTATION_PAIRED = [
+    ('IP_true', 'proj_ip', None),    # special: fmt_ip actual, .1f proj
+    ('ERA',     'xRA9',   'ERA'),
+    ('WHIP',    'xWHIP',  'WHIP'),
+    ('K/9',     'xK9',    'K/9'),
+    ('BB/9',    'xBB9',   'BB/9'),
+    ('WAR',     'xWAR',   'WAR'),
+]
+
+
+def _rotation_table(rotation):
+    def _fmt_pit(meta_key, val):
+        m = PITCHING_STATS[meta_key]
+        return fmt_round(val, m['decimal_places'], m['leading_zero'], m['percentage'])
+
+    proj_rows = pit_proj_module.compute_all()[0]
+    proj_by_player = {(r['first'], r['last']): r for r in proj_rows}
+
+    df = pit_module.stats
+    t = table(border=1)
+    with t:
+        with thead():
+            with tr():
+                for col in _ROTATION_HEADERS:
+                    th(col)
+        with tbody():
+            for _, row in rotation.iterrows():
+                first, last = row['firstName'], row['lastName']
+                pi   = players.player_info.loc[(first, last)] if (first, last) in players.player_info.index else None
+                mask = ((df['First Name'] == first) & (df['Last Name'] == last) &
+                        (df['stat_type'] == 'season') & (df['Season'] == 20))
+                s20  = df[mask].iloc[0] if not df[mask].empty else None
+                proj = proj_by_player.get((first, last))
+                with tr():
+                    td(row['rotation'])
+                    td(f"{first} {last}")
+                    td(pi['role']     if pi is not None else '')
+                    td(pi['throws']   if pi is not None else '')
+                    td(pi['age']      if pi is not None else '')
+                    td(pi['velocity'] if pi is not None else '')
+                    td(pi['junk']     if pi is not None else '')
+                    td(pi['accuracy'] if pi is not None else '')
+                    td(pi['fielding'] if pi is not None else '')
+                    for actual_key, proj_key, meta_key in _ROTATION_PAIRED:
+                        if actual_key == 'IP_true':
+                            td(fmt_ip(s20['IP_true'])       if s20  is not None else '-')
+                            td(f"{proj['proj_ip']:.1f}"     if proj is not None else '-')
+                        else:
+                            td(_fmt_pit(meta_key, s20[actual_key])  if s20  is not None else '-')
+                            td(_fmt_pit(meta_key, proj[proj_key])   if proj is not None else '-')
+    return t
+
+
 def _roster_table(group, cols, link_col='Name'):
     t = table(border=0)
     with t:
@@ -206,6 +265,7 @@ def generate_team_page(team_name, roster, team_info):
                 text = f"{first} {last}"
                 text += f" - {statline}" if statline else " (R)"
                 li(text)
+        _rotation_table(rotation)
         h2("Roster")
         h3("Pitchers")
         _roster_table(pitchers, _PITCHER_COLS)

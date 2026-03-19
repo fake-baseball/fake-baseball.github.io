@@ -130,7 +130,7 @@ def main():
         generate_players_index()
 
     # ── Team/standings data (needed by seasons, teams, and awards) ────────
-    need_teams_data = do_seasons or do_teams or do_awards
+    need_teams_data = do_seasons or do_teams or do_awards or do_projections
     if need_teams_data:
         load_teams()
     if do_seasons or do_teams:
