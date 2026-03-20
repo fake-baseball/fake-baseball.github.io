@@ -1,6 +1,19 @@
 """Formatting helpers shared across page generators."""
+import numpy as np
 import dominate
 from dominate.tags import link
+
+
+def fit_metrics(y, preds):
+    """Return r2 and rmse for a fitted model given actuals y and predictions preds."""
+    residuals = y - preds
+    rmse      = np.sqrt(np.mean(residuals ** 2))
+    ss_res    = np.sum(residuals ** 2)
+    ss_tot    = np.sum((y - y.mean()) ** 2)
+    return {
+        'r2':   1 - ss_res / ss_tot if ss_tot > 0 else 0.0,
+        'rmse': rmse,
+    }
 
 
 def make_doc(title, css='../style.css'):
@@ -36,6 +49,11 @@ def fmt_rdiff(v):
 
 def fmt_ip(v):
     """Format a decimal IP value into base-3 baseball notation (e.g. 6.667 -> '6.2')."""
+    try:
+        if np.isnan(v):
+            return '-'
+    except (TypeError, ValueError):
+        pass
     whole  = int(v)
     thirds = int((v - whole) * 3 + 0.5)
     return f"{whole}.{thirds}"
@@ -44,6 +62,11 @@ def fmt_ip(v):
 def fmt_round(v, digits=3, keep_leading_zero=False, percentage=False):
     """Format a float to a fixed number of decimal places, optionally stripping the leading zero.
     If percentage=True, multiplies by 100 before formatting."""
+    try:
+        if np.isnan(v):
+            return '-'
+    except (TypeError, ValueError):
+        pass
     if percentage:
         v = v * 100
     s = f"{v:.{digits}f}"

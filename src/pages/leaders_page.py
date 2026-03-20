@@ -74,37 +74,50 @@ def generate_leaders():
     # ── Pitching leaders ──────────────────────────────────────────────────────
 
     def _build_pitching(title, slug, stat, meta, worst):
-        _fmt        = lambda v: fmt_round(v, meta['decimal_places'], meta['leading_zero'])
+        _fmt        = lambda v: fmt_round(v, meta['decimal_places'], meta['leading_zero'], meta['percentage'])
         display_col = meta['display_col'] or stat
         is_aliased  = display_col != stat   # True for IP_true → shown as IP
 
         _index_row(title, slug)
 
         df = get_pitching_leaders(stat, num=100, worst=worst)
-        cols = (['First Name', 'Last Name', display_col, 'Season', 'Team'] if is_aliased
-                else ['First Name', 'Last Name', stat, 'Season', 'IP', 'Team'])
+        cols = (['First Name', 'Last Name', 'Role', display_col, 'Season', 'Team'] if is_aliased
+                else ['First Name', 'Last Name', 'Role', stat, 'Season', 'IP', 'Team'])
         df = linkify_players(df[cols])
         if not is_aliased:
             df[stat] = df[stat].map(_fmt)
         pages.append((title, slug, 'season', stat, display_col, df))
 
         df = get_pitching_leaders_by_season(stat, worst=worst)
-        cols = (['Season', 'First Name', 'Last Name', display_col, 'Team'] if is_aliased
-                else ['Season', 'First Name', 'Last Name', stat, 'IP', 'Team'])
+        cols = (['Season', 'First Name', 'Last Name', 'Role', display_col, 'Team'] if is_aliased
+                else ['Season', 'First Name', 'Last Name', 'Role', stat, 'IP', 'Team'])
         df = linkify_players(df[cols].set_index('Season'))
         if not is_aliased:
             df[stat] = df[stat].map(_fmt)
         pages.append((title, slug, 'yearly', stat, display_col, df))
 
-        career_cols = (['First Name', 'Last Name', display_col] if is_aliased
-                       else ['First Name', 'Last Name', stat, 'IP'])
+        career_cols = (['First Name', 'Last Name', 'Role', display_col] if is_aliased
+                       else ['First Name', 'Last Name', 'Role', stat, 'IP'])
+
+        import pitching as _pit
+        season_role = (
+            _pit.stats[_pit.stats['stat_type'] == 'season']
+            .sort_values('Season')
+            .groupby(['First Name', 'Last Name'])['Role']
+            .last()
+        )
+
         df = get_career_pitching_leaders(stat, num=100, worst=worst)
+        df = df.copy()
+        df['Role'] = df.apply(lambda r: season_role.get((r['First Name'], r['Last Name']), r['Role']), axis=1)
         df = linkify_players(df[career_cols])
         if not is_aliased:
             df[stat] = df[stat].map(_fmt)
         pages.append((title, slug, 'career', stat, display_col, df))
 
         df = get_career_pitching_leaders(stat, active=True, num=100, worst=worst)
+        df = df.copy()
+        df['Role'] = df.apply(lambda r: season_role.get((r['First Name'], r['Last Name']), r['Role']), axis=1)
         df = linkify_players(df[career_cols])
         if not is_aliased:
             df[stat] = df[stat].map(_fmt)

@@ -54,21 +54,23 @@ def _pitcher_statline(first, last):
 
 
 _LINEUP_HEADERS = ['#', 'Pos', 'Name', 'B', 'Age', 'POW', 'CON', 'SPD', 'FLD', 'ARM',
-                   'PA', 'xPA', 'AVG', 'xAVG', 'HR', 'xHR', 'OPS', 'xOPS',
-                   'wRC+', 'xwRC+', 'WAR', 'xWAR']
+                   'PA', 'xPA', 'AVG', 'xAVG', 'HR', 'xHR', 'SB', 'xSB', 'OPS', 'xOPS',
+                   'wRC+', 'xwRC+', 'BABIP', 'xBABIP', 'WAR', 'xWAR']
 
 # (actual stat key, proj row key, stat meta key for formatting)
 _LINEUP_PAIRED = [
-    ('PA',   'proj_pa', 'PA'),
-    ('AVG',  'xAVG',   'AVG'),
-    ('HR',   'xHR',    'HR'),
-    ('OPS',  'xOPS',   'OPS'),
-    ('wRC+', 'xwRC+',  'wRC+'),
-    ('WAR',  'xWAR',   'WAR'),
+    ('PA',    'proj_pa',  'PA'),
+    ('AVG',   'xAVG',    'AVG'),
+    ('HR',    'xHR',     'HR'),
+    ('SB',    'xSB',     'SB'),
+    ('OPS',   'xOPS',    'OPS'),
+    ('wRC+',  'xwRC+',   'wRC+'),
+    ('BABIP', 'xBABIP',  'BABIP'),
+    ('WAR',   'xWAR',    'WAR'),
 ]
 
 
-def _lineup_table(lineup):
+def _lineup_table(lineup, bench):
     def _fmt(stat_key, val):
         m = _ALL_BAT[stat_key]
         return fmt_round(val, m['decimal_places'], m['leading_zero'], m['percentage'])
@@ -105,28 +107,76 @@ def _lineup_table(lineup):
                     for actual_key, proj_key, fmt_key in _LINEUP_PAIRED:
                         td(_fmt(fmt_key, s20[actual_key])  if s20  is not None else '-')
                         td(_fmt(fmt_key, proj[proj_key])   if proj is not None else '-')
+            for _, row in bench.iterrows():
+                first, last = row['first_name'], row['last_name']
+                pi   = players.player_info.loc[(first, last)] if (first, last) in players.player_info.index else None
+                mask = ((df['First Name'] == first) & (df['Last Name'] == last) &
+                        (df['stat_type'] == 'season') & (df['Season'] == 20))
+                s20  = df[mask].iloc[0] if not df[mask].empty else None
+                proj = proj_by_player.get((first, last))
+                with tr():
+                    td('BN')
+                    td(row['ppos'])
+                    td(f"{first} {last}")
+                    td(pi['bats']     if pi is not None else '')
+                    td(pi['age']      if pi is not None else '')
+                    td(pi['power']    if pi is not None else '')
+                    td(pi['contact']  if pi is not None else '')
+                    td(pi['speed']    if pi is not None else '')
+                    td(pi['fielding'] if pi is not None else '')
+                    td(pi['arm']      if pi is not None else '')
+                    for actual_key, proj_key, fmt_key in _LINEUP_PAIRED:
+                        td(_fmt(fmt_key, s20[actual_key])  if s20  is not None else '-')
+                        td(_fmt(fmt_key, proj[proj_key])   if proj is not None else '-')
     return t
 
 
 _ROTATION_HEADERS = ['#', 'Name', 'Role', 'T', 'Age', 'VEL', 'JNK', 'ACC', 'FLD',
-                     'IP', 'xIP', 'ERA', 'xRA9', 'WHIP', 'xWHIP',
-                     'K/9', 'xK/9', 'BB/9', 'xBB/9', 'WAR', 'xWAR']
+                     'IP', 'xIP', 'ERA', 'xRA9',
+                     'K%', 'xK%', 'BB%', 'xBB%', 'BABIP', 'xBABIP', 'WAR', 'xWAR']
 
 # (actual pitching.stats key, proj row key, PITCHING_STATS meta key or None for special)
 _ROTATION_PAIRED = [
-    ('IP_true', 'proj_ip', None),    # special: fmt_ip actual, .1f proj
-    ('ERA',     'xRA9',   'ERA'),
-    ('WHIP',    'xWHIP',  'WHIP'),
-    ('K/9',     'xK9',    'K/9'),
-    ('BB/9',    'xBB9',   'BB/9'),
-    ('WAR',     'xWAR',   'WAR'),
+    ('IP_true', 'proj_ip',  None),    # special: fmt_ip actual, .1f proj
+    ('ERA',     'xRA9',    'ERA'),
+    ('K%',      'xK%',     'K%'),
+    ('BB%',     'xBB%',    'BB%'),
+    ('BABIP',   'xBABIP',  'BABIP'),
+    ('WAR',     'xWAR',    'WAR'),
 ]
 
 
-def _rotation_table(rotation):
+_ROLE_ORDER = {'SP': 0, 'SP/RP': 1, 'RP': 2, 'CL': 3}
+
+
+def _rotation_table(rotation, bullpen):
     def _fmt_pit(meta_key, val):
         m = PITCHING_STATS[meta_key]
         return fmt_round(val, m['decimal_places'], m['leading_zero'], m['percentage'])
+
+    def _pit_row(num, first, last):
+        pi   = players.player_info.loc[(first, last)] if (first, last) in players.player_info.index else None
+        mask = ((df['First Name'] == first) & (df['Last Name'] == last) &
+                (df['stat_type'] == 'season') & (df['Season'] == 20))
+        s20  = df[mask].iloc[0] if not df[mask].empty else None
+        proj = proj_by_player.get((first, last))
+        with tr():
+            td(num)
+            td(f"{first} {last}")
+            td(pi['role']     if pi is not None else '')
+            td(pi['throws']   if pi is not None else '')
+            td(pi['age']      if pi is not None else '')
+            td(pi['velocity'] if pi is not None else '')
+            td(pi['junk']     if pi is not None else '')
+            td(pi['accuracy'] if pi is not None else '')
+            td(pi['fielding'] if pi is not None else '')
+            for actual_key, proj_key, meta_key in _ROTATION_PAIRED:
+                if actual_key == 'IP_true':
+                    td(fmt_ip(s20['IP_true'])       if s20  is not None else '-')
+                    td(f"{proj['proj_ip']:.1f}"     if proj is not None else '-')
+                else:
+                    td(_fmt_pit(meta_key, s20[actual_key])  if s20  is not None else '-')
+                    td(_fmt_pit(meta_key, proj[proj_key])   if proj is not None else '-')
 
     proj_rows = pit_proj_module.compute_all()[0]
     proj_by_player = {(r['first'], r['last']): r for r in proj_rows}
@@ -140,29 +190,12 @@ def _rotation_table(rotation):
                     th(col)
         with tbody():
             for _, row in rotation.iterrows():
-                first, last = row['firstName'], row['lastName']
-                pi   = players.player_info.loc[(first, last)] if (first, last) in players.player_info.index else None
-                mask = ((df['First Name'] == first) & (df['Last Name'] == last) &
-                        (df['stat_type'] == 'season') & (df['Season'] == 20))
-                s20  = df[mask].iloc[0] if not df[mask].empty else None
-                proj = proj_by_player.get((first, last))
-                with tr():
-                    td(row['rotation'])
-                    td(f"{first} {last}")
-                    td(pi['role']     if pi is not None else '')
-                    td(pi['throws']   if pi is not None else '')
-                    td(pi['age']      if pi is not None else '')
-                    td(pi['velocity'] if pi is not None else '')
-                    td(pi['junk']     if pi is not None else '')
-                    td(pi['accuracy'] if pi is not None else '')
-                    td(pi['fielding'] if pi is not None else '')
-                    for actual_key, proj_key, meta_key in _ROTATION_PAIRED:
-                        if actual_key == 'IP_true':
-                            td(fmt_ip(s20['IP_true'])       if s20  is not None else '-')
-                            td(f"{proj['proj_ip']:.1f}"     if proj is not None else '-')
-                        else:
-                            td(_fmt_pit(meta_key, s20[actual_key])  if s20  is not None else '-')
-                            td(_fmt_pit(meta_key, proj[proj_key])   if proj is not None else '-')
+                _pit_row(row['rotation'], row['firstName'], row['lastName'])
+            bp_sorted = bullpen.sort_values(
+                'role', key=lambda s: s.map(lambda r: _ROLE_ORDER.get(r, 99))
+            )
+            for _, row in bp_sorted.iterrows():
+                _pit_row('BP', row['first_name'], row['last_name'])
     return t
 
 
@@ -219,6 +252,19 @@ def generate_team_page(team_name, roster, team_info):
     rotation = teams_data.rotations[teams_data.rotations['teamName'] == team_name].sort_values('rotation')
     lineup   = teams_data.lineups[teams_data.lineups['teamName'] == team_name].sort_values('battingOrder')
 
+    lineup_names   = set(zip(lineup['firstName'], lineup['lastName']))
+    rotation_names = set(zip(rotation['firstName'], rotation['lastName']))
+
+    bench = roster[
+        (roster['ppos'] != 'P') &
+        ~roster.apply(lambda r: (r['first_name'], r['last_name']) in lineup_names, axis=1)
+    ].sort_values(['last_name', 'first_name'])
+
+    bullpen = roster[
+        (roster['ppos'] == 'P') &
+        ~roster.apply(lambda r: (r['first_name'], r['last_name']) in rotation_names, axis=1)
+    ]
+
     doc = make_doc(team_name, css='../../style.css')
     with doc:
         h1(team_name)
@@ -256,7 +302,7 @@ def generate_team_page(team_name, roster, team_info):
                         th(stat)
                         for _, _, _, stats in players_data:
                             td(stats[stat] if stats else '(R)')
-        _lineup_table(lineup)
+        _lineup_table(lineup, bench)
         h3("Rotation")
         with ol():
             for _, row in rotation.iterrows():
@@ -265,7 +311,7 @@ def generate_team_page(team_name, roster, team_info):
                 text = f"{first} {last}"
                 text += f" - {statline}" if statline else " (R)"
                 li(text)
-        _rotation_table(rotation)
+        _rotation_table(rotation, bullpen)
         h2("Roster")
         h3("Pitchers")
         _roster_table(pitchers, _PITCHER_COLS)

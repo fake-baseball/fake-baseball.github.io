@@ -544,14 +544,14 @@ PITCHING_STATS = {
         'description': '',
         'qualified': True, 'lowest': True,
         'decimal_places': 3, 'leading_zero': False,
-        'slug': 'p_babip',
+        'slug': 'p_babip', 'slug_worst': True,
     },
     'WIN%':   {
         'name': 'Win Percentage',
         'description': '',
         'qualified': True,
         'decimal_places': 1, 'percentage': True,
-        'slug': 'p_win_pct',
+        'slug': 'p_win_pct', 'slug_worst': True,
     },
     'SV%':    {
         'name': 'Save Percentage',

@@ -1,14 +1,70 @@
 """Generate an HTML page for a single pitcher."""
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
 from dominate.tags import *
 from dominate.util import raw
 
 import pitching
 import leaders
+import pit_projections as pit_proj_module
 from data import players
+from data import teams as teams_data
 from stats_meta import PITCHING_STATS
 from util import fmt_df, render_stat_table, render_leaders_table, convert_name, make_doc
+
+
+def _pit_proj_row(first, last, cols):
+    """Return a single-row DataFrame for the projected season, or None."""
+    rows = pit_proj_module.compute_all()[0]
+    proj = next((r for r in rows if r['first'] == first and r['last'] == last), None)
+    if proj is None:
+        return None
+
+    ip   = proj['proj_ip']
+    xk   = proj['xK']
+    xbb  = proj['xBB']
+    xhbp = proj['xHBP']
+    xhr  = proj['xHR']
+    xh   = proj['xH']
+
+    out_rate = 1.0 - proj['H'] - proj['BB'] - proj['HBP']
+    xbf  = int(round(ip * 3.0 / out_rate)) if out_rate > 0 else np.nan
+    xbip = (xbf - xk - xbb - xhbp - xhr) if not np.isnan(float(xbf)) else np.nan
+    xra  = proj['xRA9'] * ip / 9.0 if ip > 0 else 0.0
+
+    pi_row = players.player_info.loc[(first, last)] if (first, last) in players.player_info.index else None
+    if pi_row is not None and teams_data.teams is not None:
+        abbr_map = teams_data.teams.set_index('team_name')['abbr']
+        team_abbr = abbr_map.get(pi_row['team_name'], '')
+    else:
+        team_abbr = ''
+    d = {col: np.nan for col in cols}
+    d.update({
+        'Season': 'Proj', 'stat_type': 'projected',
+        'Age':  pi_row['age'] if pi_row is not None else np.nan,
+        'Team': team_abbr,
+        'W': proj['xW'], 'L': proj['xL'],
+        'WIN%': proj['xW'] / (proj['xW'] + proj['xL']) if (proj['xW'] + proj['xL']) > 0 else np.nan,
+        'GP': proj['xGP'], 'GS': proj['xGS'], 'SV': proj['xSV'],
+        'IP': round(ip, 1), 'IP_true': ip,
+        'H': xh, 'HR': xhr, 'BB': xbb, 'K': xk, 'HBP': xhbp,
+        'BF': xbf, 'BIP': xbip, 'RA': xra,
+        'ER': proj['xER'], 'ERA': proj['xERA'], 'ERA-': proj['xERA-'],
+        'FIP': proj['xFIP'], 'WHIP': proj['xWHIP'],
+        'RA9': proj['xRA9'], 'BABIP': proj['xBABIP'],
+        'K%': proj['xK%'], 'BB%': proj['xBB%'],
+        'WAR': proj['xWAR'],
+    })
+    if ip > 0:
+        d['H/9']  = xh  / ip * 9
+        d['HR/9'] = xhr / ip * 9
+        d['K/9']  = xk  / ip * 9
+        d['BB/9'] = xbb / ip * 9
+        if xbb > 0:
+            d['K/BB'] = xk / xbb
+    return pd.DataFrame([d])
 
 
 def generate_pitcher_page(first_name, last_name):
@@ -61,6 +117,14 @@ def generate_pitcher_page(first_name, last_name):
             (pitching.stats['Last Name']  == last_name) &
             (pitching.stats['First Name'] == first_name)
         ].copy()
+
+        if active:
+            proj_row = _pit_proj_row(first_name, last_name, stats.columns)
+            if proj_row is not None:
+                season = stats[stats['stat_type'] == 'season']
+                career = stats[stats['stat_type'] == 'career']
+                team   = stats[stats['stat_type'] == 'team']
+                stats  = pd.concat([season, proj_row, career, team], ignore_index=True)
 
         h3("Standard Pitching")
         standard_pitching = stats[[

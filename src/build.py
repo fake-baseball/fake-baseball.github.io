@@ -115,6 +115,11 @@ def main():
         print("Loading retirements...")
         load_retirements()
 
+    # ── Team/standings data (needed by seasons, teams, awards, and players) ─
+    need_teams_data = do_seasons or do_teams or do_awards or do_projections or do_players
+    if need_teams_data:
+        load_teams()
+
     # ── Player pages + index ──────────────────────────────────────────────
     if do_players:
         leaders.compute_season_leaders()
@@ -128,11 +133,6 @@ def main():
 
         print("Generating players index...")
         generate_players_index()
-
-    # ── Team/standings data (needed by seasons, teams, and awards) ────────
-    need_teams_data = do_seasons or do_teams or do_awards or do_projections
-    if need_teams_data:
-        load_teams()
     if do_seasons or do_teams:
         load_standings()
 

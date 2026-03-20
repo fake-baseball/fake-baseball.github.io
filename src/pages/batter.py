@@ -1,16 +1,77 @@
 """Generate an HTML page for a single position player."""
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
 from dominate.tags import *
 from dominate.util import raw
 
 import batting
 import leaders
+import projections as proj_module
 from data import players
+from data import teams as teams_data
 from stats_meta import BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS
 from util import fmt_df, render_stat_table, render_leaders_table, convert_name, make_doc
 
 _ALL_BAT = {**BATTING_STATS, **BASERUNNING_STATS, **FIELDING_STATS}
+
+
+def _bat_proj_row(first, last, cols):
+    """Return a single-row DataFrame for the projected season, or None."""
+    rows = proj_module.compute_all()[0]
+    proj = next((r for r in rows if r['first'] == first and r['last'] == last), None)
+    if proj is None:
+        return None
+
+    pa    = proj['proj_pa']
+    bb    = int(round(pa * proj['BB']))
+    hbp   = int(round(pa * proj['HBP']))
+    oneb  = int(round(pa * proj['1B']))
+    twob  = int(round(pa * proj['2B']))
+    threeb = int(round(pa * proj['3B']))
+    hr    = proj['xHR']
+    k     = proj['xK']
+    sb    = proj['xSB']
+    cs    = proj['xCS']
+    h     = oneb + twob + threeb + hr
+    ab    = pa - bb - hbp
+    tb    = oneb + 2*twob + 3*threeb + 4*hr
+    bip   = ab - k
+    xbh   = twob + threeb + hr
+    sbatt = sb + cs
+
+    pi_row = players.player_info.loc[(first, last)] if (first, last) in players.player_info.index else None
+    if pi_row is not None and teams_data.teams is not None:
+        abbr_map = teams_data.teams.set_index('team_name')['abbr']
+        team_abbr = abbr_map.get(pi_row['team_name'], '')
+    else:
+        team_abbr = ''
+    d = {col: np.nan for col in cols}
+    d.update({
+        'Season': 'Proj', 'stat_type': 'projected',
+        'Age':  pi_row['age'] if pi_row is not None else np.nan,
+        'Team': team_abbr,
+        'PA': pa, 'AB': ab, 'BB': bb, 'HBP': hbp,
+        '2B': twob, '3B': threeb, 'HR': hr, 'H': h, 'TB': tb,
+        'K': k, 'SB': sb, 'CS': cs, 'BIP': bip, 'XBH': xbh,
+        'GB': proj['xGB'], 'R': proj['xR'], 'RBI': proj['xRBI'],
+        'AVG': proj['xAVG'], 'OBP': proj['xOBP'], 'SLG': proj['xSLG'],
+        'OPS': proj['xOPS'], 'OPS+': proj['xOPS+'], 'wOBA': proj['xwOBA'], 'wRC+': proj['xwRC+'],
+        'BABIP': proj['xBABIP'], 'WAR': proj['xWAR'],
+        'ISO': proj['xSLG'] - proj['xAVG'],
+        'HR%': proj['HR'], 'K%': proj['K'], 'BB%': proj['BB'],
+        'Rbr': proj['xRbr'],
+    })
+    if sbatt > 0:
+        d['SB%']    = sb / sbatt
+        d['SbAtt%'] = sbatt / oneb if oneb > 0 else np.nan
+    if h > 0:
+        d['XBH%'] = xbh / h
+    if pi_row is not None:
+        d['PP'] = pi_row['ppos']
+        d['2P'] = pi_row['spos']
+    return pd.DataFrame([d])
 
 
 def generate_batter_page(first_name, last_name):
@@ -70,6 +131,14 @@ def generate_batter_page(first_name, last_name):
             (batting.stats['First Name'] == first_name) &
             (batting.stats['Last Name']  == last_name)
         ].copy()
+
+        if active:
+            proj_row = _bat_proj_row(first_name, last_name, stats.columns)
+            if proj_row is not None:
+                season = stats[stats['stat_type'] == 'season']
+                career = stats[stats['stat_type'] == 'career']
+                team   = stats[stats['stat_type'] == 'team']
+                stats  = pd.concat([season, proj_row, career, team], ignore_index=True)
 
         h3("Standard Batting")
         standard_batting = stats[[

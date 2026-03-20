@@ -5,10 +5,12 @@ from dominate.tags import *
 
 import projections as proj_module
 import pit_projections as pit_proj_module
+import batting as bat_module
+import pitching as pit_module
 from data import players
 from data import teams as teams_data
 from util import make_doc, player_link, fmt_round
-from stats_meta import BATTING_STATS
+from stats_meta import BATTING_STATS, PITCHING_STATS
 
 _SKILL_LABELS     = {'power': 'POW', 'contact': 'CON', 'speed': 'SPD', 'fielding': 'FLD', 'arm': 'ARM'}
 _PIT_SKILL_LABELS = {'velocity': 'VEL', 'junk': 'JNK', 'accuracy': 'ACC'}
@@ -37,7 +39,7 @@ def _proj_table(rows, show_model=False, show_proj_pa=False, show_season_pa=True,
                     th('xPA5')
                     for comp in proj_module.COMPONENTS:
                         th(f'x{comp}')
-                    for stat in ['xAVG', 'xOBP', 'xSLG', 'xOPS', 'xwRC+', 'xwOBA']:
+                    for stat in ['xAVG', 'xOBP', 'xSLG', 'xOPS', 'xwRC+', 'xwOBA', 'xBABIP']:
                         th(stat)
                     th('xWAR')
         with tbody():
@@ -63,10 +65,11 @@ def _proj_table(rows, show_model=False, show_proj_pa=False, show_season_pa=True,
                         td(row['proj_pa'])
                         for comp in proj_module.COMPONENTS:
                             td(int(round(row['proj_pa'] * row[comp])))
-                        for stat, key in [('xAVG', 'xAVG'), ('xOBP', 'xOBP'), ('xSLG', 'xSLG'), ('xOPS', 'xOPS'), ('xwRC+', 'xwRC+'), ('xwOBA', 'xwOBA')]:
+                        for stat, key in [('xAVG', 'xAVG'), ('xOBP', 'xOBP'), ('xSLG', 'xSLG'), ('xOPS', 'xOPS'), ('xwRC+', 'xwRC+'), ('xwOBA', 'xwOBA'), ('xBABIP', 'xBABIP')]:
                             m = BATTING_STATS[stat.lstrip('x')]
                             td(fmt_round(row[key], m['decimal_places'], m['leading_zero'], m['percentage']))
-                        td(fmt_round(row['xWAR'], 1, True, False))
+                        m = BATTING_STATS['WAR']
+                        td(fmt_round(row['xWAR'], m['decimal_places'], m['leading_zero'], False))
 
 
 def _team_summary_table(team_rows):
@@ -130,16 +133,20 @@ def _pit_qual_table(pit_rows):
 
 def _pit_all_table(pit_rows):
     """Table for all pitchers: skills, role, projected counting/rate stats, xWAR."""
+    _fmt = {s: PITCHING_STATS[s] for s in ('ERA', 'RA9', 'FIP', 'WHIP', 'K%', 'BB%', 'BABIP', 'WAR')}
     with table(border=0):
         with thead():
             with tr():
                 for col in ['Player', 'VEL', 'JNK', 'ACC', 'Role', 'xIP',
                             'xK', 'xBB', 'xHR', 'xH',
-                            'xRA9', 'xFIP', 'xWHIP', 'xK/9', 'xBB/9', 'xHR/9', 'xWAR']:
+                            'xRA9', 'xERA', 'xFIP', 'xWHIP', 'xK%', 'xBB%', 'xBABIP', 'xWAR']:
                     th(col)
         with tbody():
             for row in pit_rows:
                 first, last = row['first'], row['last']
+                def _f(stat, val):
+                    m = _fmt[stat]
+                    return fmt_round(val, m['decimal_places'], m['leading_zero'], False)
                 with tr():
                     td(player_link(first, last, prefix='players/'))
                     td(row['velocity'])
@@ -151,41 +158,67 @@ def _pit_all_table(pit_rows):
                     td(row['xBB'])
                     td(row['xHR'])
                     td(row['xH'])
-                    td(f"{row['xRA9']:.2f}")
-                    td(f"{row['xFIP']:.2f}")
-                    td(f"{row['xWHIP']:.2f}")
-                    td(f"{row['xK9']:.1f}")
-                    td(f"{row['xBB9']:.1f}")
-                    td(f"{row['xHR9']:.1f}")
-                    td(f"{row['xWAR']:.1f}")
+                    td(_f('RA9',  row['xRA9']))
+                    td(_f('ERA',  row['xERA']))
+                    td(_f('FIP',  row['xFIP']))
+                    td(_f('WHIP', row['xWHIP']))
+                    td(_f('K%',  row['xK%']))
+                    td(_f('BB%', row['xBB%']))
+                    td(_f('BABIP', row['xBABIP']))
+                    td(_f('WAR',   row['xWAR']))
 
 
 def _pit_team_summary_table(team_rows):
     """Render one row per team: summed xIP/xWAR, IP-weighted rate stats."""
+    def _f(stat, val):
+        m = PITCHING_STATS[stat]
+        return fmt_round(val, m['decimal_places'], m['leading_zero'], False)
     with table(border=0):
         with thead():
             with tr():
-                for col in ['Team', 'xIP', 'xRA9', 'xFIP', 'xWHIP', 'xK/9', 'xWAR']:
+                for col in ['Team', 'xIP', 'xRA9', 'xERA', 'xFIP', 'xK%', 'xBB%', 'xWAR']:
                     th(col)
         with tbody():
             for tname, trows in team_rows:
                 total_ip  = sum(r['proj_ip'] for r in trows)
                 total_war = sum(r['xWAR']    for r in trows)
                 if total_ip > 0:
-                    w_ra9  = sum(r['xRA9']  * r['proj_ip'] for r in trows) / total_ip
-                    w_fip  = sum(r['xFIP']  * r['proj_ip'] for r in trows) / total_ip
-                    w_whip = sum(r['xWHIP'] * r['proj_ip'] for r in trows) / total_ip
-                    w_k9   = sum(r['xK9']   * r['proj_ip'] for r in trows) / total_ip
+                    w_ra9   = sum(r['xRA9']  * r['proj_ip'] for r in trows) / total_ip
+                    w_era   = sum(r['xERA']  * r['proj_ip'] for r in trows) / total_ip
+                    w_fip   = sum(r['xFIP']  * r['proj_ip'] for r in trows) / total_ip
+                    w_kpct  = sum(r['xK%']   * r['proj_ip'] for r in trows) / total_ip
+                    w_bbpct = sum(r['xBB%']  * r['proj_ip'] for r in trows) / total_ip
                 else:
-                    w_ra9 = w_fip = w_whip = w_k9 = 0.0
+                    w_ra9 = w_era = w_fip = w_kpct = w_bbpct = 0.0
                 with tr():
                     td(tname)
                     td(f"{total_ip:.1f}")
-                    td(f"{w_ra9:.2f}")
-                    td(f"{w_fip:.2f}")
-                    td(f"{w_whip:.2f}")
-                    td(f"{w_k9:.1f}")
-                    td(f"{total_war:.1f}")
+                    td(_f('RA9',  w_ra9))
+                    td(_f('ERA',  w_era))
+                    td(_f('FIP',  w_fip))
+                    td(_f('K%',   w_kpct))
+                    td(_f('BB%',  w_bbpct))
+                    td(_f('WAR',  total_war))
+
+
+def _war_delta_table(deltas):
+    """Render a table of (first, last, s20_war, xwar, delta) rows."""
+    m = BATTING_STATS['WAR']
+    def _fw(v):
+        return fmt_round(v, m['decimal_places'], m['leading_zero'], False)
+    with table(border=0):
+        with thead():
+            with tr():
+                for col in ['Player', 'S20 WAR', 'xWAR', 'Delta']:
+                    th(col)
+        with tbody():
+            for first, last, s20_war, xwar, delta in deltas:
+                with tr():
+                    td(player_link(first, last, prefix='players/'))
+                    td(_fw(s20_war))
+                    td(_fw(xwar))
+                    sign = '+' if delta >= 0 else ''
+                    td(f"{sign}{_fw(delta)}")
 
 
 from constants import replacement_level
@@ -194,7 +227,7 @@ _REPL_WINS   = replacement_level * _GAMES
 
 
 def generate_projections():
-    rows, metrics, pa_model, pa_model_simple = proj_module.compute_all()
+    rows, metrics, pa_model, pa_model_simple, rbi_metric = proj_module.compute_all()
     pit_rows, comp_metrics, ra9_metric, ip_models = pit_proj_module.compute_all()
 
     qualified = [r for r in rows if     r['qualified']]
@@ -270,15 +303,43 @@ def generate_projections():
                         td(t['wins'])
                         td(t['losses'])
 
-        h2(f"Qualified ({len(qualified)})")
+        # ── Batting ───────────────────────────────────────────────────────────
+        h2("Batting")
+
+        h3(f"Qualified ({len(qualified)})")
         p(f"Players with qualified PA in all of seasons "
           f"{', '.join(str(s) for s in proj_module.PROJ_SEASONS)}.")
         _proj_table(qualified, show_model=True)
 
-        h2(f"All Players ({len(rows)})")
+        h3(f"All Players ({len(rows)})")
         _proj_table(sorted(rows, key=lambda r: r['xWAR'], reverse=True), show_season_pa=False, show_proj_pa=False, show_model=False, show_counts=True)
 
-        h2("PA Model (PA ~ POW + CON + SPD + FLD + ARM)")
+        rookies = [r for r in rows if sum(r[f'pa_{s}'] for s in proj_module.PROJ_SEASONS) == 0]
+        h3(f"Rookies ({len(rookies)})")
+        _proj_table(sorted(rookies, key=lambda r: r['xWAR'], reverse=True), show_season_pa=False, show_proj_pa=False, show_model=False, show_counts=True)
+
+        h3("Team Projections")
+        _team_summary_table(team_rows_sorted)
+
+        # WAR delta: xWAR vs Season 20 WAR
+        bat_s20 = bat_module.stats[
+            (bat_module.stats['Season'] == 20) & (bat_module.stats['stat_type'] == 'season')
+        ].set_index(['First Name', 'Last Name'])
+        bat_deltas = []
+        for r in rows:
+            key = (r['first'], r['last'])
+            if key in bat_s20.index:
+                s20_war = float(bat_s20.loc[key, 'WAR'])
+                bat_deltas.append((r['first'], r['last'], s20_war, r['xWAR'], r['xWAR'] - s20_war))
+        bat_deltas.sort(key=lambda x: x[4], reverse=True)
+
+        h3("WAR Delta (xWAR - S20 WAR)")
+        p("Bounce-back candidates (top 10):")
+        _war_delta_table(bat_deltas[:10])
+        p("Regression candidates (bottom 10):")
+        _war_delta_table(bat_deltas[-10:][::-1])
+
+        h3("PA Model (PA ~ POW + CON + SPD + FLD + ARM)")
         p(f"Fit on {pa_model['n']} active position players using Season 20 data.")
         with table(border=0):
             with thead():
@@ -293,7 +354,7 @@ def generate_projections():
                         td(f"{pa_model['coefs'][f]:.4f}")
                     td(f"{pa_model['intercept']:.2f}")
 
-        h2("Component Rate Model Fit")
+        h3("Component Rate Model")
         with table(border=0):
             with thead():
                 with tr():
@@ -310,20 +371,43 @@ def generate_projections():
                         td(f"{m['coef_speed']:.6f}")
                         td(f"{m['intercept']:.4f}")
 
-        # ── Pitcher Projections ───────────────────────────────────────────────
+        # ── Pitching ──────────────────────────────────────────────────────────
+        h2("Pitching")
 
-        h2(f"Pitcher Projections (Qualified)")
+        h3(f"Qualified ({len(pit_qualified)})")
         p(f"Pitchers with qualified IP in all of seasons "
           f"{', '.join(str(s) for s in pit_proj_module.PROJ_SEASONS)}.")
         _pit_qual_table(pit_qualified)
 
-        h2(f"All Pitchers ({len(pit_rows)})")
+        h3(f"All Pitchers ({len(pit_rows)})")
         _pit_all_table(sorted(pit_rows, key=lambda r: r['xWAR'], reverse=True))
 
-        h2("Pitcher Team Projections")
+        pit_rookies = [r for r in pit_rows if sum(r[f'ip_{s}'] for s in pit_proj_module.PROJ_SEASONS) == 0]
+        h3(f"Rookies ({len(pit_rookies)})")
+        _pit_all_table(sorted(pit_rookies, key=lambda r: r['xWAR'], reverse=True))
+
+        h3("Team Projections")
         _pit_team_summary_table(pit_team_rows_sorted)
 
-        h2("Pitcher IP/Appearance Model (IP/app ~ VEL + JNK + ACC)")
+        # WAR delta: xWAR vs Season 20 WAR
+        pit_s20 = pit_module.stats[
+            (pit_module.stats['Season'] == 20) & (pit_module.stats['stat_type'] == 'season')
+        ].set_index(['First Name', 'Last Name'])
+        pit_deltas = []
+        for r in pit_rows:
+            key = (r['first'], r['last'])
+            if key in pit_s20.index:
+                s20_war = float(pit_s20.loc[key, 'WAR'])
+                pit_deltas.append((r['first'], r['last'], s20_war, r['xWAR'], r['xWAR'] - s20_war))
+        pit_deltas.sort(key=lambda x: x[4], reverse=True)
+
+        h3("WAR Delta (xWAR - S20 WAR)")
+        p("Bounce-back candidates (top 10):")
+        _war_delta_table(pit_deltas[:10])
+        p("Regression candidates (bottom 10):")
+        _war_delta_table(pit_deltas[-10:][::-1])
+
+        h3("IP/Appearance Model (IP/app ~ VEL + JNK + ACC)")
         p(f"SP: predicted IP/GS x {pit_proj_module.FULL_SEASON_APP['SP']} GS. "
           f"RP/CL: predicted IP/GR x {pit_proj_module.FULL_SEASON_APP['RP']} GR. "
           f"SP/RP: fixed at {pit_proj_module.SPRP_FIXED_IP:.0f} IP (deployment-driven role). "
@@ -346,7 +430,7 @@ def generate_projections():
                         td(f"{m['coefs']['accuracy']:.4f}")
                         td(f"{m['intercept']:.3f}")
 
-        h2("Pitcher Component Rate Model Fit")
+        h3("Component Rate Model")
         with table(border=0):
             with thead():
                 with tr():
@@ -363,7 +447,7 @@ def generate_projections():
                         td(f"{m['coef_accuracy']:.6f}")
                         td(f"{m['intercept']:.4f}")
 
-        h2("Pitcher RA9 Model Fit (RA9 ~ component rates)")
+        h3("RA9 Model (RA9 ~ component rates)")
         with table(border=0):
             with thead():
                 with tr():
