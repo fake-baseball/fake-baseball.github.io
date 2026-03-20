@@ -12,9 +12,10 @@ from sklearn.linear_model import LinearRegression
 import batting as bat_module
 import league as lg
 from data import players
+from data import teams as teams_data
 from constants import (BAT_SEASON_MIN_PA, scale_wOBA, num_games,
                        PROJ_SEASONS, PROJ_WEIGHTS as WEIGHTS, PROJ_WEIGHT_TOTAL as WEIGHT_TOTAL,
-                       total_WAR, batter_share, runs_SB, runs_CS)
+                       total_WAR, batter_share, runs_SB, runs_CS, park_factors)
 from formulas import compute_TB, compute_AVG, compute_OBP, compute_SLG, compute_OPS, compute_wOBA
 from util import fit_metrics
 COMPONENTS   = ['BB', 'HBP', '1B', '2B', '3B', 'HR', 'K', 'SB', 'CS']
@@ -270,15 +271,19 @@ def compute_all():
     ]
     pa_per_gb = (s20['PA'] / s20['GB']).mean()
 
+    abbr_map = teams_data.teams.set_index('team_name')['abbr'] if teams_data.teams is not None else {}
+
     for row in rows:
         first, last = row['first'], row['last']
         pi = players.player_info.loc[(first, last)]
         pp = pi['ppos']
         sp = pi['spos']
-        xRbat = ((row['xwOBA'] - lg_wOBA_20) / scale_wOBA) * row['proj_pa']
+        team_abbr = abbr_map.get(row['team'], '')
+        pf    = (1 + park_factors.get(team_abbr, 1.0)) / 2
+        xRbat = ((row['xwOBA'] - lg_wOBA_20 * pf) / scale_wOBA) * row['proj_pa']
         xGB   = row['proj_pa'] / pa_per_gb if pa_per_gb > 0 else 0.0
         row['xGB'] = max(0, min(num_games, int(round(xGB))))
-        row['xOPS+'] = 100 * ((row['xOBP'] / lg_obp_20) + (row['xSLG'] / lg_slg_20) - 1) if lg_obp_20 > 0 and lg_slg_20 > 0 else 100.0
+        row['xOPS+'] = 100 * ((row['xOBP'] / lg_obp_20) + (row['xSLG'] / lg_slg_20) - 1) / pf if lg_obp_20 > 0 and lg_slg_20 > 0 else 100.0
         try:
             rpos_per_g = lg.pos_adjustment.loc[(pp, sp), 'Rpos']
         except KeyError:
@@ -328,41 +333,26 @@ def compute_all():
         'model': rbi_model,
     }
 
-    # ── Projected R via blended RC% × projected non-HR OB events ─────────────
+    # ── Projected R via league-average RC% × projected non-HR OB events ───────
+    # RC% = (R - HR) / (H - HR + BB + HBP): context-driven, not a player skill,
+    # so we use the weighted league average rather than individual player history.
     df_proj = bat_module.stats[
         (bat_module.stats['Season'].isin(PROJ_SEASONS)) &
         (bat_module.stats['stat_type'] == 'season')
     ]
-    lg_rc_pct = {}   # RC% = (R - HR) / (H - HR + BB + HBP)
+    lg_rc_pct_total = 0.0
     for s in PROJ_SEASONS:
         s_df            = df_proj[df_proj['Season'] == s]
         total_non_hr_ob = (s_df['H'] - s_df['HR'] + s_df['BB'] + s_df['HBP']).sum()
-        lg_rc_pct[s]    = (s_df['R'] - s_df['HR']).sum() / total_non_hr_ob if total_non_hr_ob > 0 else 0.0
+        lg_rc_pct_s     = (s_df['R'] - s_df['HR']).sum() / total_non_hr_ob if total_non_hr_ob > 0 else 0.0
+        lg_rc_pct_total += WEIGHTS[s] * lg_rc_pct_s
+    lg_rc_pct = lg_rc_pct_total / WEIGHT_TOTAL
 
     for row in rows:
-        first, last = row['first'], row['last']
-        rc_total = 0.0
-        for s in PROJ_SEASONS:
-            sr = df_proj[
-                (df_proj['First Name'] == first) &
-                (df_proj['Last Name']  == last) &
-                (df_proj['Season']     == s)
-            ]
-            pa_s = float(sr.iloc[0]['PA']) if not sr.empty else 0.0
-            if pa_s > 0:
-                non_hr_ob_s = (float(sr.iloc[0]['H'])  - float(sr.iloc[0]['HR'])
-                               + float(sr.iloc[0]['BB']) + float(sr.iloc[0]['HBP']))
-                rc_pct_s    = ((float(sr.iloc[0]['R']) - float(sr.iloc[0]['HR']))
-                               / non_hr_ob_s if non_hr_ob_s > 0 else lg_rc_pct[s])
-            else:
-                rc_pct_s = lg_rc_pct[s]
-            rc_total += WEIGHTS[s] * rc_pct_s
-
-        blended_rc_pct = rc_total / WEIGHT_TOTAL
         proj_non_hr_ob = row['proj_pa'] * (
             row['1B'] + row['2B'] + row['3B'] + row['BB'] + row['HBP']
         )
-        row['xR'] = int(round(row['xHR'] + proj_non_hr_ob * blended_rc_pct))
+        row['xR'] = int(round(row['xHR'] + proj_non_hr_ob * lg_rc_pct))
 
         # xRBI: OLS on blended per-PA component rates (BB+HBP combined)
         X_pred        = [[row['1B'], row['2B'], row['3B'], row['HR'], row['BB'] + row['HBP']]]

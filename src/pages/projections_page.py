@@ -463,4 +463,150 @@ def generate_projections():
                         td(f"{ra9_metric['coefs'][comp]:.4f}")
                     td(f"{ra9_metric['intercept']:.4f}")
 
+        _methodology_section()
+
     Path("docs/projections.html").write_text(str(doc))
+
+
+def _methodology_section():
+    h2("Methodology")
+
+    # ── General approach ──────────────────────────────────────────────────────
+    h3("General Approach")
+    p("""Projections use a Marcel-style weighted blend of the three most recent
+      seasons (weights 5/4/3, most recent to oldest). Each player's per-PA or
+      per-BF component rates are blended across seasons. When a player did not
+      reach the qualification threshold in a given season, the missing data is
+      filled using a skill-based regression model trained on players who did
+      qualify in all three seasons. The blended rates are then used to derive
+      all projected stats.""")
+    p("""Playing time (xPA for batters, xIP for pitchers) is projected
+      separately using a linear regression on skill ratings. The two projections
+      are then combined: counting stats equal the playing-time projection
+      multiplied by the blended rate.""")
+    p("""WAR is projected using the same formula as actual WAR, with projected
+      component inputs substituted for observed ones. A zero-sum correction
+      targets the expected total league WAR split between batters and pitchers.""")
+
+    # ── Batting ───────────────────────────────────────────────────────────────
+    h3("Batting Stats")
+
+    def _stat(name, desc):
+        with p():
+            b(f"{name}: ")
+            span(desc)
+
+    _stat("xPA", "Projected plate appearances. Predicted by OLS regression on "
+          "POW + CON + SPD + FLD + ARM skill ratings, fit on Season 20 data. "
+          "Capped at 300.")
+    _stat("Component rates (1B, 2B, 3B, HR, K, BB, HBP, SB, CS per PA)",
+          "Blended 5/4/3 from the player's actual per-PA rates in each projection "
+          "season. For seasons where the player did not reach the PA minimum, "
+          "the missing rate is filled by blending actual data with a "
+          "skill-model prediction (POW, CON, SPD) trained on qualified players.")
+    _stat("xAVG / xOBP / xSLG / xOPS",
+          "Derived from the blended component rates using the standard formulas. "
+          "No separate historical blend; these are always computed from xStats.")
+    _stat("xwOBA",
+          "Weighted on-base average derived from projected component rates using "
+          "the league wOBA weights.")
+    _stat("xBABIP",
+          "Projected BABIP derived from the projected non-HR hit rate divided by "
+          "the projected ball-in-play rate.")
+    _stat("xOPS+",
+          "Park-adjusted OPS index: 100 x ((xOBP / lg_OBP) + (xSLG / lg_SLG) - 1) / pf, "
+          "where league averages are the weighted blend across projection seasons "
+          "and pf = (1 + team_park_factor) / 2.")
+    _stat("xwRC+",
+          "Park-adjusted weighted runs created index. xRbat is computed with the "
+          "player's team park factor (same formula as actual wRC+), then "
+          "scaled to 100 x league average.")
+    _stat("xGB",
+          "Projected games batted = xPA / league-average PA-per-game (from Season 20), "
+          "rounded to an integer and capped at 0-80.")
+    _stat("xHR / xK / xSB / xCS",
+          "Counting stats = round(xPA x blended rate).")
+    _stat("xR",
+          "Projected runs scored. Separated into two components: (1) xHR, which "
+          "are guaranteed runs, and (2) projected non-HR on-base events "
+          "(x1B + x2B + x3B + xBB + xHBP) multiplied by the league-average "
+          "RC% (Run Conversion Rate = (R - HR) / (H - HR + BB + HBP)), blended "
+          "5/4/3 across projection seasons. Individual RC% is not used because "
+          "it reflects lineup context, not player skill.")
+    _stat("xRBI",
+          "Projected runs batted in. Estimated by an OLS regression: "
+          "RBI/PA ~ 1B_rate + 2B_rate + 3B_rate + HR_rate + (BB+HBP)_rate, "
+          "fit on all qualified batter-seasons across the full history. "
+          "BB and HBP are combined because both reach base without contact and "
+          "almost never produce a direct RBI. The model is applied to each "
+          "player's blended component rates.")
+    _stat("xWAR",
+          "Projected Wins Above Replacement. Combines xRbat (from xwOBA), "
+          "xRbr (baserunning, from blended SB/CS rates vs. league), xRpos "
+          "(positional adjustment), xRrep (replacement credit from xPA), "
+          "and a league-wide zero-sum correction. Divided by runs-per-win.")
+    _stat("xRbr",
+          "Projected baserunning runs above average. Derived from blended SB "
+          "and CS rates vs. the league-average stolen-base run value (wSB).")
+
+    # ── Pitching ──────────────────────────────────────────────────────────────
+    h3("Pitching Stats")
+
+    _stat("xIP",
+          "Projected innings pitched. For SP and RP/CL: a linear regression "
+          "predicts IP/appearance from VEL + JNK + ACC, blended 5/4/3 with "
+          "actual IP/appearance history, then multiplied by a full-season "
+          "appearance count (20 GS for SP, 40 GR for RP/CL). "
+          "SP/RP is assigned a fixed 65 IP (deployment-driven role).")
+    _stat("xGS / xGP",
+          "Projected games started (SP: 20, others: 0) and games pitched "
+          "(SP: 20, RP/CL/SP-RP: 40).")
+    _stat("Component rates (K, BB, HBP, HR, H per BF)",
+          "Blended 5/4/3 from actual per-BF rates. Missing seasons are filled "
+          "by blending with skill-model predictions (VEL, JNK, ACC) trained on "
+          "pitchers qualified in all three projection seasons.")
+    _stat("xBF",
+          "Projected batters faced = xIP x (3 / out_rate), where "
+          "out_rate = 1 - H_rate - BB_rate - HBP_rate. Derived per-pitcher "
+          "rather than using the league average, so strikeout pitchers are not "
+          "overcounted.")
+    _stat("xK / xBB / xHR / xH",
+          "Counting stats = round(xBF x blended rate).")
+    _stat("xRA9",
+          "Projected runs allowed per 9 innings. Estimated by an OLS regression "
+          "on the five component rates (K, BB, HBP, HR, H per BF), fit on all "
+          "qualified pitcher-seasons across the full history.")
+    _stat("xERA",
+          "Projected earned run average = xRA9 x league-average ER/RA ratio. "
+          "The ER/RA ratio reflects scorer discretion and defense rather than "
+          "pitcher skill, so the weighted league average across projection seasons "
+          "is used for all pitchers.")
+    _stat("xERA-",
+          "ERA index: 100 x (xERA / lg_ERA), where lg_ERA is the "
+          "weighted-average league ERA across projection seasons. Lower is better.")
+    _stat("xFIP",
+          "Fielding-independent pitching derived from projected components: "
+          "(13 x xHR + 3 x (xBB + xHBP) - 2 x xK) / xIP + cFIP.")
+    _stat("xWHIP",
+          "Projected walks plus hits per inning = (BB_rate + H_rate) x proj_BF_per_IP.")
+    _stat("xK% / xBB%",
+          "Blended K and BB rates per BF (same rates used in xBF and counting stat calculations).")
+    _stat("xBABIP",
+          "Projected BABIP derived from projected non-HR hit rate divided by "
+          "projected ball-in-play rate.")
+    _stat("xW / xL",
+          "Projected wins and losses. Individual W/L history has near-zero "
+          "year-over-year reproducibility (r~0.07-0.16), so xRA9 is used instead. "
+          "SP W/GS and L/GS are predicted by OLS on xRA9 (R2=0.33 and 0.27). "
+          "RP/CL L/GR is predicted by OLS on xRA9 (R2=0.12). "
+          "RP W/GR uses league average (R2=0.04, negligible spread). "
+          "Starters are assigned 0 saves.")
+    _stat("xSV",
+          "Projected saves. CL SV/GR is predicted by OLS on xRA9 (r=-0.46 "
+          "cross-sectionally). RP/SP-RP SV/GR uses league average (role-dependent, "
+          "not skill-driven). Starters are assigned 0.")
+    _stat("xWAR",
+          "Projected Wins Above Replacement. Combines xRAA (defense-adjusted, "
+          "park-adjusted runs above average vs. role-specific replacement RA9), "
+          "xRlev (leverage bonus for saves), xRrep (replacement credit from xIP), "
+          "and a league-wide zero-sum correction. Divided by runs-per-win.")
