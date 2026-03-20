@@ -12,14 +12,53 @@ import projections as proj_module
 from data import players
 from data import teams as teams_data
 from stats_meta import BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS
-from util import fmt_df, render_stat_table, render_leaders_table, convert_name, make_doc
+from util import fmt_df, fmt_round, render_stat_table, render_leaders_table, convert_name, make_doc
 
 _ALL_BAT = {**BATTING_STATS, **BASERUNNING_STATS, **FIELDING_STATS}
+
+_SUMMARY_COLS = [
+    ('WAR', 'WAR'), ('AB', 'AB'), ('H', 'H'), ('HR', 'HR'),
+    ('BA',  'AVG'), ('R',  'R'),  ('RBI', 'RBI'), ('SB', 'SB'),
+    ('OBP', 'OBP'), ('SLG', 'SLG'), ('OPS', 'OPS'), ('OPS+', 'OPS+'),
+]
+
+
+def _summary_table(stats, proj_row):
+    """Render BB-ref style summary strip: Season 20, Projected, Career."""
+    def _fmt(col, val):
+        meta = _ALL_BAT.get(col)
+        if meta is None or (isinstance(val, float) and np.isnan(val)):
+            return '-'
+        return fmt_round(val, meta['decimal_places'], meta['leading_zero'], meta['percentage'])
+
+    s20    = stats[(stats['Season'] == 20) & (stats['stat_type'] == 'season')]
+    career = stats[stats['stat_type'] == 'career']
+
+    rows_data = []
+    if not s20.empty:
+        rows_data.append(('Season 20', s20.iloc[0]))
+    if proj_row is not None:
+        rows_data.append(('Projected', proj_row.iloc[0]))
+    if not career.empty:
+        rows_data.append(('Career', career.iloc[0]))
+
+    with table(cls='summary'):
+        with thead():
+            with tr():
+                th('')
+                for disp, _ in _SUMMARY_COLS:
+                    th(disp)
+        with tbody():
+            for label, row in rows_data:
+                with tr():
+                    td(label)
+                    for _, col in _SUMMARY_COLS:
+                        td(_fmt(col, row[col]))
 
 
 def _bat_proj_row(first, last, cols):
     """Return a single-row DataFrame for the projected season, or None."""
-    rows = proj_module.compute_all()[0]
+    rows = proj_module.compute_all()
     proj = next((r for r in rows if r['first'] == first and r['last'] == last), None)
     if proj is None:
         return None
@@ -62,7 +101,18 @@ def _bat_proj_row(first, last, cols):
         'ISO': proj['xSLG'] - proj['xAVG'],
         'HR%': proj['HR'], 'K%': proj['K'], 'BB%': proj['BB'],
         'Rbr': proj['xRbr'],
+        'wRC': proj['xwRC'],
+        'Rbat': proj['xRbat'], 'Rpos': proj['xRpos'],
+        'Rcorr': proj['xRcorr'], 'Rrep': proj['xRrep'],
+        'RAA': proj['xRAA'], 'RAR': proj['xRAR'],
+        'WAA': proj['xWAA'],
     })
+    ob = h + bb + hbp
+    if ob > 0:
+        d['RS%'] = proj['xR'] / ob
+    non_hr_ob = h - hr + bb + hbp
+    if non_hr_ob > 0:
+        d['RC%'] = (proj['xR'] - hr) / non_hr_ob
     if sbatt > 0:
         d['SB%']    = sb / sbatt
         d['SbAtt%'] = sbatt / oneb if oneb > 0 else np.nan
@@ -125,20 +175,22 @@ def generate_batter_page(first_name, last_name):
             p(f"Retirement Age: {retirement_age}")
 
         hr()
-        h2("Stats")
 
         stats = batting.stats[
             (batting.stats['First Name'] == first_name) &
             (batting.stats['Last Name']  == last_name)
         ].copy()
 
-        if active:
-            proj_row = _bat_proj_row(first_name, last_name, stats.columns)
-            if proj_row is not None:
-                season = stats[stats['stat_type'] == 'season']
-                career = stats[stats['stat_type'] == 'career']
-                team   = stats[stats['stat_type'] == 'team']
-                stats  = pd.concat([season, proj_row, career, team], ignore_index=True)
+        proj_row = _bat_proj_row(first_name, last_name, stats.columns) if active else None
+        _summary_table(stats, proj_row)
+
+        if active and proj_row is not None:
+            season = stats[stats['stat_type'] == 'season']
+            career = stats[stats['stat_type'] == 'career']
+            team   = stats[stats['stat_type'] == 'team']
+            stats  = pd.concat([season, proj_row, career, team], ignore_index=True)
+
+        h2("Stats")
 
         h3("Standard Batting")
         standard_batting = stats[[

@@ -12,12 +12,54 @@ import pit_projections as pit_proj_module
 from data import players
 from data import teams as teams_data
 from stats_meta import PITCHING_STATS
-from util import fmt_df, render_stat_table, render_leaders_table, convert_name, make_doc
+
+_PIT_SUMMARY_COLS = [
+    ('WAR',   'WAR'),  ('W',    'W'),   ('L',  'L'),   ('ERA', 'ERA'),
+    ('ERA-',  'ERA-'), ('G',    'GP'),  ('GS', 'GS'),  ('SV',  'SV'),
+    ('IP',    'IP_true'), ('BB', 'BB'), ('SO', 'K'),   ('WHIP', 'WHIP'),
+]
+
+
+def _pit_summary_table(stats, proj_row):
+    """Render BB-ref style summary strip: Season 20, Projected, Career."""
+    def _fmt(col, val):
+        meta = PITCHING_STATS.get(col)
+        if meta is None or (isinstance(val, float) and np.isnan(val)):
+            return '-'
+        if col == 'IP_true':
+            from util import fmt_ip
+            return fmt_ip(val)
+        return fmt_round(val, meta['decimal_places'], meta['leading_zero'], meta['percentage'])
+
+    s20    = stats[(stats['Season'] == 20) & (stats['stat_type'] == 'season')]
+    career = stats[stats['stat_type'] == 'career']
+
+    rows_data = []
+    if not s20.empty:
+        rows_data.append(('Season 20', s20.iloc[0]))
+    if proj_row is not None:
+        rows_data.append(('Projected', proj_row.iloc[0]))
+    if not career.empty:
+        rows_data.append(('Career', career.iloc[0]))
+
+    with table(cls='summary'):
+        with thead():
+            with tr():
+                th('')
+                for disp, _ in _PIT_SUMMARY_COLS:
+                    th(disp)
+        with tbody():
+            for label, row in rows_data:
+                with tr():
+                    td(label)
+                    for _, col in _PIT_SUMMARY_COLS:
+                        td(_fmt(col, row[col]))
+from util import fmt_df, fmt_round, render_stat_table, render_leaders_table, convert_name, make_doc
 
 
 def _pit_proj_row(first, last, cols):
     """Return a single-row DataFrame for the projected season, or None."""
-    rows = pit_proj_module.compute_all()[0]
+    rows = pit_proj_module.compute_all()
     proj = next((r for r in rows if r['first'] == first and r['last'] == last), None)
     if proj is None:
         return None
@@ -56,6 +98,10 @@ def _pit_proj_row(first, last, cols):
         'RA9': proj['xRA9'], 'BABIP': proj['xBABIP'],
         'K%': proj['xK%'], 'BB%': proj['xBB%'],
         'WAR': proj['xWAR'],
+        'BAA': proj['xBAA'], 'OBPA': proj['xOBPA'],
+        'Rdef': proj['xRdef'], 'Rlev': proj['xRlev'], 'Rcorr': proj['xRcorr'],
+        'RAA': proj['xRAA'], 'RAAlev': proj['xRAAlev'], 'WAA': proj['xWAA'],
+        'Rrep': proj['xRrep'], 'RAR': proj['xRAR'],
     })
     if ip > 0:
         d['H/9']  = xh  / ip * 9
@@ -111,20 +157,22 @@ def generate_pitcher_page(first_name, last_name):
             p(f"Retirement Age: {retirement_age}")
 
         hr()
-        h2("Stats")
 
         stats = pitching.stats[
             (pitching.stats['Last Name']  == last_name) &
             (pitching.stats['First Name'] == first_name)
         ].copy()
 
-        if active:
-            proj_row = _pit_proj_row(first_name, last_name, stats.columns)
-            if proj_row is not None:
-                season = stats[stats['stat_type'] == 'season']
-                career = stats[stats['stat_type'] == 'career']
-                team   = stats[stats['stat_type'] == 'team']
-                stats  = pd.concat([season, proj_row, career, team], ignore_index=True)
+        proj_row = _pit_proj_row(first_name, last_name, stats.columns) if active else None
+        _pit_summary_table(stats, proj_row)
+
+        if active and proj_row is not None:
+            season = stats[stats['stat_type'] == 'season']
+            career = stats[stats['stat_type'] == 'career']
+            team   = stats[stats['stat_type'] == 'team']
+            stats  = pd.concat([season, proj_row, career, team], ignore_index=True)
+
+        h2("Stats")
 
         h3("Standard Pitching")
         standard_pitching = stats[[

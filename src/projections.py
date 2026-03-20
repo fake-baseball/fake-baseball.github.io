@@ -17,7 +17,6 @@ from constants import (BAT_SEASON_MIN_PA, scale_wOBA, num_games,
                        PROJ_SEASONS, PROJ_WEIGHTS as WEIGHTS, PROJ_WEIGHT_TOTAL as WEIGHT_TOTAL,
                        total_WAR, batter_share, runs_SB, runs_CS, park_factors)
 from formulas import compute_TB, compute_AVG, compute_OBP, compute_SLG, compute_OPS, compute_wOBA
-from util import fit_metrics
 COMPONENTS   = ['BB', 'HBP', '1B', '2B', '3B', 'HR', 'K', 'SB', 'CS']
 SKILLS       = ['power', 'contact', 'speed', 'fielding', 'arm']
 
@@ -65,20 +64,9 @@ def compute():
 
     X_train = np.array([[r['power'], r['contact'], r['speed']] for r in train_rows], dtype=float)
     models  = {}
-    metrics = []
     for comp in COMPONENTS:
-        y     = np.array([r[comp] for r in train_rows], dtype=float)
-        model = LinearRegression().fit(X_train, y)
-        models[comp] = model
-        fm = fit_metrics(y, model.predict(X_train))
-        metrics.append({
-            'stat':         comp,
-            **fm,
-            'coef_power':   model.coef_[0],
-            'coef_contact': model.coef_[1],
-            'coef_speed':   model.coef_[2],
-            'intercept':    model.intercept_,
-        })
+        y            = np.array([r[comp] for r in train_rows], dtype=float)
+        models[comp] = LinearRegression().fit(X_train, y)
 
     # ── Step 2: Project all active players ────────────────────────────────────
 
@@ -125,7 +113,6 @@ def compute():
             'speed':     speed,
             'fielding':  fielding,
             'arm':       arm,
-            'qualified': (first, last) in full_names,
             'team':      str(pi['team_name']) if 'team_name' in pi.index else '',
             **{f'pa_{s}': season_pa[s] for s in PROJ_SEASONS},
             **{f'x{comp}': model_rates[comp] for comp in COMPONENTS},
@@ -133,11 +120,10 @@ def compute():
         })
 
     rows.sort(key=lambda r: (r['last'], r['first']))
-    return rows, metrics
+    return rows
 
 
-PA_FEATURES        = ['power', 'contact', 'speed', 'fielding', 'arm']
-PA_FEATURES_SIMPLE = ['power', 'contact', 'speed']
+PA_FEATURES = ['power', 'contact', 'speed', 'fielding', 'arm']
 PA_MAX             = 300
 
 
@@ -160,46 +146,7 @@ def fit_pa_model():
     X = merged[PA_FEATURES].values.astype(float)
     y = merged['PA'].values.astype(float)
 
-    model = LinearRegression().fit(X, y)
-    fm    = fit_metrics(y, model.predict(X))
-    return {
-        'model':     model,
-        **fm,
-        'coefs':     dict(zip(PA_FEATURES, model.coef_)),
-        'intercept': model.intercept_,
-        'n':         len(merged),
-    }
-
-
-def fit_pa_model_simple():
-    """Fit PA ~ (POW + CON + SPD) / 3 for active position players using Season 20 data.
-
-    Returns dict with keys: model, r2, rmse, slope, intercept, n.
-    """
-    s20 = bat_module.stats[
-        (bat_module.stats['Season'] == 20) &
-        (bat_module.stats['stat_type'] == 'season') &
-        (bat_module.stats['PA'] > 0)
-    ].copy()
-
-    pi = players.player_info.reset_index()
-    pi = pi[pi['ppos'] != 'P'][['first_name', 'last_name'] + PA_FEATURES_SIMPLE]
-    merged = s20.merge(pi, left_on=['First Name', 'Last Name'],
-                           right_on=['first_name', 'last_name'])
-    merged['skill_score'] = merged[PA_FEATURES_SIMPLE].mean(axis=1)
-
-    X = merged[['skill_score']].values.astype(float)
-    y = merged['PA'].values.astype(float)
-
-    model = LinearRegression().fit(X, y)
-    fm    = fit_metrics(y, model.predict(X))
-    return {
-        'model':     model,
-        **fm,
-        'slope':     model.coef_[0],
-        'intercept': model.intercept_,
-        'n':         len(merged),
-    }
+    return LinearRegression().fit(X, y)
 
 
 _cache = None
@@ -209,24 +156,17 @@ def compute_all():
     """Full projection computation: blended rates + PA model + derived stats.
 
     Returns list of enriched row dicts (sorted by last/first).
-    Also returns metrics from compute() as second element of tuple.
     Results are cached after first call.
     """
     global _cache
     if _cache is not None:
         return _cache
 
-    rows, metrics = compute()
-    pa_model        = fit_pa_model()
-    pa_model_simple = fit_pa_model_simple()
-    pa_reg          = pa_model['model']
-    pa_reg_simple   = pa_model_simple['model']
+    rows   = compute()
+    pa_reg = fit_pa_model()
 
     for row in rows:
-        X        = [[row[f] for f in PA_FEATURES]]
-        X_simple = [[(row['power'] + row['contact'] + row['speed']) / 3]]
-        row['proj_pa']        = min(PA_MAX, max(0, int(round(pa_reg.predict(X)[0]))))
-        row['proj_pa_simple'] = min(PA_MAX, max(0, int(round(pa_reg_simple.predict(X_simple)[0]))))
+        row['proj_pa'] = min(PA_MAX, max(0, int(round(pa_reg.predict([[row[f] for f in PA_FEATURES]])[0]))))
 
         d = {
             'BB': row['BB'], 'HBP': row['HBP'],
@@ -291,13 +231,17 @@ def compute_all():
         xRpos = rpos_per_g * xGB / num_games
         xRbr  = (row['SB'] * runs_SB + row['CS'] * runs_CS
                  - lg_wSB * (row['1B'] + row['BB'] + row['HBP'])) * row['proj_pa']
+        row['xRbat']  = xRbat
+        row['xRpos']  = xRpos
         row['xRbr']   = xRbr
         row['_xRAA']  = xRbat + xRbr + xRpos
         row['_xRrep'] = row['proj_pa'] * lg_rrpa_20
         if row['proj_pa'] > 0 and lg_wrcpa > 0:
             row['xwRC+'] = 100 * (xRbat / row['proj_pa'] + lg_rPA_20) / lg_wrcpa
+            row['xwRC']  = (xRbat + lg_rPA_20 * row['proj_pa'])
         else:
             row['xwRC+'] = 0.0
+            row['xwRC']  = 0.0
 
     # Rcorr: target correct total WAR using only rostered players to set the rate
     rostered       = [r for r in rows if r['team'] != 'FREE AGENT']
@@ -307,9 +251,15 @@ def compute_all():
     target_xRAA    = total_WAR * batter_share * rpw_20 - total_xRrep
     corr_rate      = (target_xRAA - total_xRAA) / total_xPA if total_xPA > 0 else 0.0
     for row in rows:
-        xRcorr      = corr_rate * row['proj_pa']
-        xRAR        = row['_xRAA'] + xRcorr + row['_xRrep']
-        row['xWAR'] = xRAR / rpw_20 if rpw_20 > 0 else 0.0
+        xRcorr        = corr_rate * row['proj_pa']
+        xRAA          = row['_xRAA'] + xRcorr
+        xRAR          = xRAA + row['_xRrep']
+        row['xRcorr'] = xRcorr
+        row['xRrep']  = row['_xRrep']
+        row['xRAA']   = xRAA
+        row['xRAR']   = xRAR
+        row['xWAA']   = xRAA / rpw_20 if rpw_20 > 0 else 0.0
+        row['xWAR']   = xRAR / rpw_20 if rpw_20 > 0 else 0.0
 
     # ── Fit OLS: RBI/PA ~ 1B_rate + 2B_rate + 3B_rate + HR_rate + (BB+HBP)_rate
     # BB and HBP are combined: both put the batter on base with no contact and
@@ -325,13 +275,6 @@ def compute_all():
     X_rbi     = df_all[[f'{feat}_rate' for feat in RBI_FEATURES]].values.astype(float)
     y_rbi     = (df_all['RBI'] / df_all['PA']).values.astype(float)
     rbi_model = LinearRegression().fit(X_rbi, y_rbi)
-    rbi_fm    = fit_metrics(y_rbi, rbi_model.predict(X_rbi))
-    rbi_metric = {
-        **rbi_fm,
-        'coefs': dict(zip(RBI_FEATURES, rbi_model.coef_)),
-        'intercept': rbi_model.intercept_,
-        'model': rbi_model,
-    }
 
     # ── Projected R via league-average RC% × projected non-HR OB events ───────
     # RC% = (R - HR) / (H - HR + BB + HBP): context-driven, not a player skill,
@@ -359,5 +302,5 @@ def compute_all():
         rbi_rate_pred = max(0.0, rbi_model.predict(X_pred)[0])
         row['xRBI']   = int(round(row['proj_pa'] * rbi_rate_pred))
 
-    _cache = (rows, metrics, pa_model, pa_model_simple, rbi_metric)
+    _cache = rows
     return _cache

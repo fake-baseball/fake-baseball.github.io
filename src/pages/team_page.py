@@ -75,7 +75,7 @@ def _lineup_table(lineup, bench):
         m = _ALL_BAT[stat_key]
         return fmt_round(val, m['decimal_places'], m['leading_zero'], m['percentage'])
 
-    proj_rows = proj_module.compute_all()[0]
+    proj_rows = proj_module.compute_all()
     proj_by_player = {(r['first'], r['last']): r for r in proj_rows}
 
     df = bat_module.stats
@@ -178,7 +178,7 @@ def _rotation_table(rotation, bullpen):
                     td(_fmt_pit(meta_key, s20[actual_key])  if s20  is not None else '-')
                     td(_fmt_pit(meta_key, proj[proj_key])   if proj is not None else '-')
 
-    proj_rows = pit_proj_module.compute_all()[0]
+    proj_rows = pit_proj_module.compute_all()
     proj_by_player = {(r['first'], r['last']): r for r in proj_rows}
 
     df = pit_module.stats

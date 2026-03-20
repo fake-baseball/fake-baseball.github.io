@@ -16,7 +16,6 @@ from data import players
 from constants import (PIT_SEASON_MIN_IP,
                        PROJ_SEASONS, PROJ_WEIGHTS as WEIGHTS, PROJ_WEIGHT_TOTAL as WEIGHT_TOTAL,
                        total_WAR, batter_share)
-from util import fit_metrics
 COMPONENTS   = ['K', 'BB', 'HBP', 'HR', 'H']   # per-BF rates
 SKILLS          = ['velocity', 'junk', 'accuracy']
 IP_FEATURES     = ['velocity', 'junk', 'accuracy']
@@ -79,22 +78,11 @@ def compute():
             **blended,
         })
 
-    X_train = np.array([[r['velocity'], r['junk'], r['accuracy']] for r in train_rows], dtype=float)
-    comp_models  = {}
-    comp_metrics = []
+    X_train     = np.array([[r['velocity'], r['junk'], r['accuracy']] for r in train_rows], dtype=float)
+    comp_models = {}
     for comp in COMPONENTS:
-        y     = np.array([r[comp] for r in train_rows], dtype=float)
-        model = LinearRegression().fit(X_train, y)
-        comp_models[comp] = model
-        fm = fit_metrics(y, model.predict(X_train))
-        comp_metrics.append({
-            'stat':          comp,
-            **fm,
-            'coef_velocity': model.coef_[0],
-            'coef_junk':     model.coef_[1],
-            'coef_accuracy': model.coef_[2],
-            'intercept':     model.intercept_,
-        })
+        y                 = np.array([r[comp] for r in train_rows], dtype=float)
+        comp_models[comp] = LinearRegression().fit(X_train, y)
 
     # ── Step 2: Fit RA9 regression on all individual qualified pitcher-seasons ──
 
@@ -104,10 +92,7 @@ def compute():
 
     ra9_model  = LinearRegression().fit(X_ra9, y_ra9)
     ra9_metric = {
-        **fit_metrics(y_ra9, ra9_model.predict(X_ra9)),
-        'coefs':       dict(zip(COMPONENTS, ra9_model.coef_)),
-        'intercept':   ra9_model.intercept_,
-        'model':       ra9_model,
+        'model':        ra9_model,
         'lg_bf_per_ip': lg_bf_per_ip,
     }
 
@@ -158,7 +143,6 @@ def compute():
             'junk':      junk,
             'accuracy':  accuracy,
             'role':      role,
-            'qualified': (first, last) in full_names,
             'team':      str(pi['team_name']) if 'team_name' in pi.index else '',
             **{f'ip_{s}':  season_ip[s]  for s in PROJ_SEASONS},
             **{f'app_{s}': season_app[s] for s in PROJ_SEASONS},
@@ -167,7 +151,7 @@ def compute():
         })
 
     rows.sort(key=lambda r: (r['last'], r['first']))
-    return rows, comp_metrics, ra9_metric
+    return rows, ra9_metric
 
 
 def fit_ip_model():
@@ -196,15 +180,7 @@ def fit_ip_model():
         sub['ip_per_app'] = sub['IP_true'] / sub[app_col]
         X = sub[IP_FEATURES].values.astype(float)
         y = sub['ip_per_app'].values.astype(float)
-        model = LinearRegression().fit(X, y)
-        fm    = fit_metrics(y, model.predict(X))
-        results[group] = {
-            'model':     model,
-            **fm,
-            'coefs':     dict(zip(IP_FEATURES, model.coef_)),
-            'intercept': model.intercept_,
-            'n':         len(sub),
-        }
+        results[group] = LinearRegression().fit(X, y)
     return results
 
 
@@ -214,14 +190,14 @@ _cache = None
 def compute_all():
     """Full projection computation: blended rates + IP model + derived stats.
 
-    Returns (rows, comp_metrics, ra9_metric, ip_model). Results are cached after first call.
+    Returns list of enriched row dicts. Results are cached after first call.
     """
     global _cache
     if _cache is not None:
         return _cache
 
-    rows, comp_metrics, ra9_metric = compute()
-    ip_models = fit_ip_model()
+    rows, ra9_metric = compute()
+    ip_models        = fit_ip_model()
 
     # League context: 5/4/3 weighted averages across PROJ_SEASONS
     rpw = sum(WEIGHTS[s] * lg.season_batting.loc[s, 'R/W'] for s in PROJ_SEASONS) / WEIGHT_TOTAL
@@ -262,7 +238,7 @@ def compute_all():
         else:
             rg             = _role_group(role)
             X_ip           = [[row['velocity'], row['junk'], row['accuracy']]]
-            model_ip_per_app = ip_models[rg]['model'].predict(X_ip)[0]
+            model_ip_per_app = ip_models[rg].predict(X_ip)[0]
             apps           = FULL_SEASON_APP.get(role, 40)
             ip_cap         = IP_MAX.get(role, 80)
 
@@ -321,12 +297,13 @@ def compute_all():
         bip_rate     = 1.0 - K_rate - BB_rate - HBP_rate - HR_rate
         row['xBABIP'] = (H_rate - HR_rate) / bip_rate if bip_rate > 0 else 0.0
 
-        # xRAA (pre-correction)
-        is_starter        = (role == 'SP')
-        lg_ra9_role       = lg_ra9_sp if is_starter else lg_ra9_rp
-        rw_ip_role        = lg_rw_ip.get(role, lg_rw_ip['RP'])
-        row['_xRAA']      = (lg_ra9_role - row['xRA9']) / 9 * row['proj_ip']
-        row['_xRrep']     = row['proj_ip'] * rw_ip_role * rpw
+        # xRAA (pre-correction) and xRlev
+        is_starter    = (role == 'SP')
+        lg_ra9_role   = lg_ra9_sp if is_starter else lg_ra9_rp
+        rw_ip_role    = lg_rw_ip.get(role, lg_rw_ip['RP'])
+        row['_xRAA']  = (lg_ra9_role - row['xRA9']) / 9 * row['proj_ip']
+        row['_xRrep'] = row['proj_ip'] * rw_ip_role * rpw
+
         row['_rw_ip_role'] = rw_ip_role
 
     # Rcorr: target correct total WAR using only rostered players to set the rate
@@ -337,9 +314,9 @@ def compute_all():
     target_xRAA    = total_WAR * (1 - batter_share) * rpw - total_xRrep
     corr_rate      = (target_xRAA - total_xRAA) / total_xIP if total_xIP > 0 else 0.0
     for row in rows:
-        xRcorr      = corr_rate * row['proj_ip']
-        xRAR        = row['_xRAA'] + xRcorr + row['_xRrep']
-        row['xWAR'] = xRAR / rpw if rpw > 0 else 0.0
+        xRcorr        = corr_rate * row['proj_ip']
+        row['_xRcorr'] = xRcorr
+        row['_xRAA_corr'] = row['_xRAA'] + xRcorr   # RAA before Rlev
 
     # ── W, L, SV models fit on all historical seasons ─────────────────────────
     # W/L individual history has near-zero year-over-year reproducibility (r~0.07-0.16).
@@ -396,5 +373,56 @@ def compute_all():
         row['xGS'] = apps if role == 'SP' else 0
         row['xGP'] = apps
 
-    _cache = (rows, comp_metrics, ra9_metric, ip_models)
+    # ── Final pass: Rlev and all exposed WAR components ───────────────────────
+    # Precompute blended R_sv / R_no_SV by role group
+    lev_rates = {}
+    for lev_role in ('SP', 'RP', 'SP/RP'):
+        r_sv_total = r_no_sv_total = 0.0
+        for s in PROJ_SEASONS:
+            try:
+                lev = lg.role_leverage.loc[(s, lev_role)]
+                r_sv_total    += WEIGHTS[s] * lev['R_sv']
+                r_no_sv_total += WEIGHTS[s] * lev['R_no_SV']
+            except KeyError:
+                pass
+        lev_rates[lev_role] = (r_sv_total / WEIGHT_TOTAL, r_no_sv_total / WEIGHT_TOTAL)
+    lev_rates['CL'] = lev_rates['RP']
+
+    for row in rows:
+        role       = row['role']
+        is_starter = (role == 'SP')
+        r_sv, r_no_sv = lev_rates.get(role, lev_rates['RP'])
+        xSV_f = row['xSV']
+        xGR_f = row['xGP'] if not is_starter else 0
+        xRlev    = xSV_f * r_sv + (xGR_f - xSV_f) * r_no_sv
+        xRAA     = row['_xRAA_corr']
+        xRAAlev  = xRAA + xRlev
+        xRrep    = row['_xRrep']
+        xRAR     = xRAAlev + xRrep
+
+        # BAA and OBPA from projected rates
+        xBF      = row['proj_ip'] * (row.get('_proj_bf_per_ip', 1.0) if '_proj_bf_per_ip' in row else 1.0)
+        H_rate   = row['H']
+        BB_rate  = row['BB']
+        HBP_rate = row['HBP']
+        HR_rate  = row['HR']
+        out_rate = 1.0 - H_rate - BB_rate - HBP_rate
+        bf_per_ip = 3.0 / out_rate if out_rate > 0 else 4.0
+        xBF      = row['proj_ip'] * bf_per_ip
+        xBAA     = (H_rate * xBF) / (xBF - BB_rate * xBF - HBP_rate * xBF) if (xBF * (1 - BB_rate - HBP_rate)) > 0 else 0.0
+        xOBPA    = H_rate + BB_rate + HBP_rate
+
+        row['xRlev']   = xRlev
+        row['xRcorr']  = row['_xRcorr']
+        row['xRdef']   = 0.0
+        row['xRrep']   = xRrep
+        row['xRAA']    = xRAA
+        row['xRAAlev'] = xRAAlev
+        row['xWAA']    = xRAAlev / rpw if rpw > 0 else 0.0
+        row['xRAR']    = xRAR
+        row['xWAR']    = xRAR / rpw if rpw > 0 else 0.0
+        row['xBAA']    = xBAA
+        row['xOBPA']   = xOBPA
+
+    _cache = rows
     return _cache
