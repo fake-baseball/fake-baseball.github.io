@@ -77,8 +77,8 @@ def per_game_df(df):
     """Return a copy of df with counting stats divided by G (games).
     Rate stats (decimal_places > 0) are left unchanged. Counting stats
     (decimal_places == 0, plus IP_true) are divided by G and shown to 2 dp."""
-    from stats_meta import BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS, PITCHING_STATS
-    all_stats = {**BATTING_STATS, **BASERUNNING_STATS, **FIELDING_STATS, **PITCHING_STATS}
+    from stats_meta import ALL_STATS
+    all_stats = ALL_STATS
 
     g = df['G']
     out = df.copy()
@@ -94,8 +94,8 @@ def per_game_df(df):
 def fmt_df(df):
     """Return a display copy of df with stats_meta-registered columns formatted as strings.
     The original DataFrame is not modified, preserving numeric types for calculations."""
-    from stats_meta import BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS, PITCHING_STATS
-    all_stats = {**BATTING_STATS, **BASERUNNING_STATS, **FIELDING_STATS, **PITCHING_STATS}
+    from stats_meta import ALL_STATS
+    all_stats = ALL_STATS
 
     out = df.copy()
     for col in out.columns:
@@ -127,8 +127,7 @@ def render_table(df, *, prefix='', hidden=None, row_class=None, cell_style=None,
     import numpy as np
     from dominate.tags import table, thead, tbody, tr, th, td
     from dominate.tags import b as bold_tag, i as italic_tag, a as anchor_tag
-    from stats_meta import (BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS,
-                            PITCHING_STATS, COLUMN_META)
+    from stats_meta import ALL_STATS, COLUMN_META
     import leaders as leaders_mod
     from data import teams as teams_data
     from leaders import SEASON_THRESHOLDS
@@ -136,11 +135,9 @@ def render_table(df, *, prefix='', hidden=None, row_class=None, cell_style=None,
     _always_hidden = {'stat_type', 'First Name', 'Last Name'}
     _hidden = _always_hidden | (set(hidden) if hidden else set())
 
-    _all_stat_meta = {**BATTING_STATS, **BASERUNNING_STATS, **FIELDING_STATS, **PITCHING_STATS}
-
     def _resolve_meta(col):
-        if col in _all_stat_meta:
-            return _all_stat_meta[col]
+        if col in ALL_STATS:
+            return ALL_STATS[col]
         if col in COLUMN_META:
             return COLUMN_META[col]
         return {'name': col, 'type': 'text', 'align': 'right'}

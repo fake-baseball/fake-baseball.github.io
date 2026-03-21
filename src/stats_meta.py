@@ -735,3 +735,5 @@ COLUMN_META = {
     'junk':     {'name': 'JNK',      'type': 'integer', 'align': 'right'},
     'accuracy': {'name': 'ACC',      'type': 'integer', 'align': 'right'},
 }
+
+ALL_STATS = {**BATTING_STATS, **BASERUNNING_STATS, **FIELDING_STATS, **PITCHING_STATS}

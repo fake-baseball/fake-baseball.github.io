@@ -13,17 +13,14 @@ from data import teams as teams_data
 import pandas as pd
 
 from util import make_doc, player_link, fmt_round, render_table
-from stats_meta import BATTING_STATS, PITCHING_STATS
+from stats_meta import ALL_STATS
 
 _SKILL_LABELS     = {'power': 'POW', 'contact': 'CON', 'speed': 'SPD', 'fielding': 'FLD', 'arm': 'ARM'}
 _PIT_SKILL_LABELS = {'velocity': 'VEL', 'junk': 'JNK', 'accuracy': 'ACC'}
 
 
-_ALL_STATS = {**BATTING_STATS, **PITCHING_STATS}
-
-
 def _f(stat, val):
-    m = _ALL_STATS[stat]
+    m = ALL_STATS[stat]
     return fmt_round(val, m['decimal_places'], m['leading_zero'], m['percentage'])
 
 
@@ -102,7 +99,7 @@ def _pit_all_table(pit_rows):
 def _pit_team_summary_table(team_rows):
     """Render one row per team: summed xIP/xWAR, IP-weighted rate stats."""
     def _f(stat, val):
-        m = PITCHING_STATS[stat]
+        m = ALL_STATS[stat]
         return fmt_round(val, m['decimal_places'], m['leading_zero'], False)
     with table(border=0):
         with thead():
@@ -134,7 +131,7 @@ def _pit_team_summary_table(team_rows):
 
 def _war_delta_table(deltas):
     """Render a table of (first, last, s20_war, xwar, delta) rows."""
-    m = BATTING_STATS['WAR']
+    m = ALL_STATS['WAR']
     def _fw(v):
         return fmt_round(v, m['decimal_places'], m['leading_zero'], False)
     with table(border=0):

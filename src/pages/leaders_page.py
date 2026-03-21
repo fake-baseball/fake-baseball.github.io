@@ -14,7 +14,7 @@ from leaders import (
     get_batting_leaders, get_career_batting_leaders, get_leaders_by_season,
     get_pitching_leaders, get_career_pitching_leaders, get_pitching_leaders_by_season,
 )
-from stats_meta import BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS, PITCHING_STATS
+from stats_meta import ALL_STATS, BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS, PITCHING_STATS
 from util import make_doc, render_table
 
 
@@ -189,9 +189,8 @@ def generate_leaders():
     }
     for title, slug, suffix, df in pages:
         # Determine display name for page title: use display_col if set
-        all_meta = {**BATTING_STATS, **BASERUNNING_STATS, **FIELDING_STATS, **PITCHING_STATS}
-        stat_cols = [c for c in df.columns if c in all_meta]
-        display_col = all_meta[stat_cols[0]].get('display_col') or stat_cols[0] if stat_cols else slug
+        stat_cols = [c for c in df.columns if c in ALL_STATS]
+        display_col = ALL_STATS[stat_cols[0]].get('display_col') or stat_cols[0] if stat_cols else slug
         subdoc = make_doc(f"{display_col} - {labels[suffix]}")
         with subdoc:
             h1(f"{labels[suffix]} for {title}")
