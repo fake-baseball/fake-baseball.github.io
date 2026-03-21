@@ -132,15 +132,19 @@ def get_pitching_leaders_by_season(stat, worst=False):
 # For each registered stat, batting_leaders/pitching_leaders holds the season-best
 # value per season: max if lowest=False, min if lowest=True, filtered by the
 # qualification threshold if qualified=True.
+# _conf variants are dicts: conference_name -> same-structured DataFrame.
 
-batting_leaders  = None
-pitching_leaders = None
+batting_leaders       = None
+pitching_leaders      = None
+batting_leaders_conf  = None
+pitching_leaders_conf = None
 
 
 def compute_season_leaders():
-    global batting_leaders, pitching_leaders
+    global batting_leaders, pitching_leaders, batting_leaders_conf, pitching_leaders_conf
     import batting
     import pitching
+    from data import teams as teams_data
     from stats_meta import BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS, PITCHING_STATS
 
     bat_data = batting.stats[batting.stats['stat_type'] == 'season']
@@ -148,6 +152,24 @@ def compute_season_leaders():
 
     batting_leaders  = _compute_leaders(bat_data, [BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS])
     pitching_leaders = _compute_leaders(pit_data, [PITCHING_STATS])
+
+    if teams_data.teams is not None:
+        abbr_to_conf = teams_data.teams.set_index('abbr')['conference_name'].to_dict()
+        confs        = teams_data.teams['conference_name'].dropna().unique()
+
+        bat_c          = bat_data.copy()
+        bat_c['_conf'] = bat_c['Team'].map(abbr_to_conf)
+        pit_c          = pit_data.copy()
+        pit_c['_conf'] = pit_c['Team'].map(abbr_to_conf)
+
+        batting_leaders_conf  = {
+            c: _compute_leaders(bat_c[bat_c['_conf'] == c], [BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS])
+            for c in confs
+        }
+        pitching_leaders_conf = {
+            c: _compute_leaders(pit_c[pit_c['_conf'] == c], [PITCHING_STATS])
+            for c in confs
+        }
 
 
 def _compute_leaders(data, stat_dicts):

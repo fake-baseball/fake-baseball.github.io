@@ -55,6 +55,7 @@ from pages.home          import generate_home
 from pages.projections_page import generate_projections
 from pages.games_page    import generate_games
 from pages.awards_page   import generate_awards
+from pages.salaries_page import generate_salaries
 
 
 def main():
@@ -66,11 +67,12 @@ def main():
     parser.add_argument("--home",    action="store_true", help="Build home page")
     parser.add_argument("--awards",       action="store_true", help="Build awards page")
     parser.add_argument("--projections",  action="store_true", help="Build projections page")
+    parser.add_argument("--salaries",     action="store_true", help="Build salaries page")
     parser.add_argument("--games",   action="store_true", help="Copy game files to docs/games/")
     args = parser.parse_args()
 
     # If nothing specified, build everything.
-    build_all      = not any([args.players, args.leaders, args.seasons, args.teams, args.home, args.games, args.awards, args.projections])
+    build_all      = not any([args.players, args.leaders, args.seasons, args.teams, args.home, args.games, args.awards, args.projections, args.salaries])
     do_players     = build_all or args.players
     do_leaders     = build_all or args.leaders
     do_seasons     = build_all or args.seasons
@@ -79,6 +81,7 @@ def main():
     do_games       = build_all or args.games or do_home
     do_awards      = build_all or args.awards
     do_projections = build_all or args.projections
+    do_salaries    = build_all or args.salaries
 
     # ── Ensure output directories exist ──────────────────────────────────────
     Path("docs/players").mkdir(parents=True, exist_ok=True)
@@ -87,26 +90,26 @@ def main():
     Path("docs/seasons").mkdir(parents=True, exist_ok=True)
 
     # ── Raw data (needed by most pages) ──────────────────────────────────────
-    need_raw = do_players or do_leaders or do_seasons or do_teams or do_awards or do_projections
+    need_raw = do_players or do_leaders or do_seasons or do_teams or do_awards or do_projections or do_salaries
     if need_raw:
         print("Loading raw data...")
         load_batting()
         load_pitching()
 
     # ── League averages (needed by players, leaders, seasons) ─────────────
-    need_lg = do_players or do_leaders or do_seasons or do_teams or do_awards or do_projections
+    need_lg = do_players or do_leaders or do_seasons or do_teams or do_awards or do_projections or do_salaries
     if need_lg:
         print("Computing league averages...")
         league.compute_league()
 
     # ── Player roster info (needed by players, leaders, teams) ────────────
-    need_player_info = do_players or do_leaders or do_teams or do_projections
+    need_player_info = do_players or do_leaders or do_teams or do_projections or do_salaries
     if need_player_info:
         print("Loading player/roster info...")
         load_player_info()
 
     # ── Per-player stats (needed by players, leaders, seasons) ───────────
-    need_stats = do_players or do_leaders or do_seasons or do_teams or do_awards or do_projections
+    need_stats = do_players or do_leaders or do_seasons or do_teams or do_awards or do_projections or do_salaries
     if need_stats:
         print("Computing player stats...")
         batting.compute()
@@ -115,8 +118,8 @@ def main():
         print("Loading retirements...")
         load_retirements()
 
-    # ── Team/standings data (needed by seasons, teams, awards, and players) ─
-    need_teams_data = do_seasons or do_teams or do_awards or do_projections or do_players
+    # ── Team/standings data (needed by seasons, teams, awards, players, salaries) ─
+    need_teams_data = do_seasons or do_teams or do_awards or do_projections or do_players or do_salaries
     if need_teams_data:
         load_teams()
 
@@ -173,6 +176,10 @@ def main():
     if do_projections:
         print("Generating projections page...")
         generate_projections()
+
+    if do_salaries:
+        print("Generating salaries page...")
+        generate_salaries()
 
     if do_leaders:
         print("Generating leaders pages...")

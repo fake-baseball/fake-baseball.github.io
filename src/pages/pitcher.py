@@ -149,6 +149,7 @@ def generate_pitcher_page(first_name, last_name):
             p(f"Throws: {throw_hand}")
             p(f"Role: {pitcher_role}")
             p(f"Arsenal: {pitcher_arsenal}")
+            p(f"Skills: VEL {pi['velocity']} / JNK {pi['junk']} / ACC {pi['accuracy']}")
             p(f"Salary: {salary}")
         else:
             strong("Retired")
@@ -181,8 +182,14 @@ def generate_pitcher_page(first_name, last_name):
             'H', 'RA', 'ER', 'HR', 'BB', 'K', 'HBP', 'WP', 'BF', 'ERA-', 'FIP', 'WHIP',
             'stat_type', 'IP_true',
         ]]
-        render_leaders_table(standard_pitching, leaders.pitching_leaders, PITCHING_STATS,
-                             hidden={'stat_type', 'IP_true'}, col_aliases={'IP': 'IP_true'})
+        team_conf_map = teams_data.teams.set_index('abbr')['conference_name'].to_dict() if teams_data.teams is not None else None
+        if leaders.pitching_leaders_conf and team_conf_map:
+            render_leaders_table(standard_pitching, leaders.pitching_leaders_conf, PITCHING_STATS,
+                                 hidden={'stat_type', 'IP_true'}, col_aliases={'IP': 'IP_true'},
+                                 overall_leaders=leaders.pitching_leaders, team_conf_map=team_conf_map)
+        else:
+            render_leaders_table(standard_pitching, leaders.pitching_leaders, PITCHING_STATS,
+                                 hidden={'stat_type', 'IP_true'}, col_aliases={'IP': 'IP_true'})
 
         h3("Advanced Pitching")
         render_stat_table(stats[[

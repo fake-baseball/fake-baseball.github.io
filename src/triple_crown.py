@@ -167,6 +167,28 @@ def era_title(conference=None):
     return sorted(winners, key=lambda w: w['season'])
 
 
+def hr_sb_club(threshold):
+    """Return all season rows where HR >= threshold and SB >= threshold, sorted by season then HR desc.
+
+    Keys: season, first, last, HR, SB, AVG, team
+    """
+    import batting as bat_module
+    df = bat_module.stats[bat_module.stats['stat_type'] == 'season'].copy()
+    df = df[(df['HR'] >= threshold) & (df['SB'] >= threshold)]
+    results = []
+    for _, row in df.iterrows():
+        results.append({
+            'season': row['Season'],
+            'first':  row['First Name'],
+            'last':   row['Last Name'],
+            'HR':     int(row['HR']),
+            'SB':     int(row['SB']),
+            'AVG':    row['AVG'],
+            'team':   row['Team'],
+        })
+    return sorted(results, key=lambda r: (r['season'], -r['HR']))
+
+
 def pitching_triple_crown():
     """Return list of dicts for each pitching triple crown winner.
 

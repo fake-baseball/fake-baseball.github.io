@@ -7,7 +7,7 @@ from util import make_doc, fmt_round, fmt_ip, convert_name
 from stats_meta import BATTING_STATS, PITCHING_STATS
 from triple_crown import (batting_triple_crown, pitching_triple_crown,
                           batting_triple_crown_conf, pitching_triple_crown_conf,
-                          batting_title, era_title)
+                          batting_title, era_title, hr_sb_club)
 from data import teams as teams_data
 
 
@@ -79,6 +79,28 @@ def _era_title_table(winners):
                     td(fmt_ip(w['IP_true']))
 
 
+def _hr_sb_table(members):
+    if not members:
+        p("No members.")
+        return
+    m_avg = BATTING_STATS['AVG']
+    with table(border=0):
+        with thead():
+            with tr():
+                for col in ['Season', 'Player', 'Team', 'HR', 'SB', 'AVG']:
+                    th(col)
+        with tbody():
+            for w in members:
+                first, last = w['first'], w['last']
+                with tr():
+                    td(w['season'])
+                    td(a(f"{first} {last}", href=f"players/{convert_name(first, last)}.html"))
+                    td(w['team'])
+                    td(w['HR'])
+                    td(w['SB'])
+                    td(fmt_round(w['AVG'], m_avg['decimal_places'], m_avg['leading_zero'], m_avg['percentage']))
+
+
 def generate_awards():
     bat_winners = batting_triple_crown()
     pit_winners = pitching_triple_crown()
@@ -114,5 +136,10 @@ def generate_awards():
         for conf in conferences:
             h3(conf)
             _era_title_table(conf_era_title[conf])
+
+        h2("HR-SB Club")
+        for n in (15, 20):
+            h3(f"{n}-{n} Club")
+            _hr_sb_table(hr_sb_club(n))
 
     Path("docs/awards.html").write_text(str(doc))

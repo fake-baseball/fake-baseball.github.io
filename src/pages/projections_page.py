@@ -192,6 +192,31 @@ def _war_delta_table(deltas):
 
 
 from constants import replacement_level
+
+
+def _rookie_war_list(bat_rookies, pit_rookies, ppos_map, n=10):
+    """Render a combined numbered list of top n rookies (batters + pitchers) by xWAR."""
+    combined = [('bat', r) for r in bat_rookies] + [('pit', r) for r in pit_rookies]
+    combined.sort(key=lambda x: x[1]['xWAR'], reverse=True)
+    p(f"Stat of the day: my projected top {n} rookie position players and pitchers by WAR:")
+    with ol():
+        for kind, r in combined[:n]:
+            abbr = r['_team_abbr'] or 'FA'
+            war  = _f('WAR', r['xWAR'])
+            if kind == 'bat':
+                pos  = ppos_map.get((r['first'], r['last']), '')
+                line = (f"{_f('AVG', r['xAVG'])} AVG, {r['xHR']} HR, "
+                        f"{_f('OPS', r['xOPS'])} OPS, {war} WAR")
+            else:
+                pos  = r['role']
+                ip   = f"{r['proj_ip']:.1f}"
+                if r['role'] == 'SP':
+                    line = (f"{r['xW']}-{r['xL']}, {ip} IP, "
+                            f"{_f('ERA', r['xERA'])} ERA, {r['xK']} K, {war} WAR")
+                else:
+                    line = (f"{ip} IP, {_f('ERA', r['xERA'])} ERA, "
+                            f"{r['xK']} K, {r['xSV']} SV, {war} WAR")
+            li(f"{r['first']} {r['last']} ({pos}, {abbr}): {line}")
 _GAMES       = 80
 _REPL_WINS   = replacement_level * _GAMES
 
@@ -205,6 +230,7 @@ def generate_projections():
     player_team = {(row['first_name'], row['last_name']): row['team_name']
                    for _, row in pi.iterrows()}
     abbr_map = teams_data.teams.set_index('team_name')['abbr'] if teams_data.teams is not None else {}
+    ppos_map = {(row['first_name'], row['last_name']): row['ppos'] for _, row in pi.iterrows()}
     for r in rows + pit_rows:
         r['_team_abbr'] = abbr_map.get(r['team'], r['team']) if r['team'] != 'FREE AGENT' else None
 
@@ -271,13 +297,19 @@ def generate_projections():
                         td(t['wins'])
                         td(t['losses'])
 
+        # ── Rookies ───────────────────────────────────────────────────────────
+        rookies     = [r for r in rows    if sum(r[f'pa_{s}'] for s in proj_module.PROJ_SEASONS)     == 0]
+        pit_rookies = [r for r in pit_rows if sum(r[f'ip_{s}'] for s in pit_proj_module.PROJ_SEASONS) == 0]
+
+        h2("Rookies")
+        _rookie_war_list(rookies, pit_rookies, ppos_map)
+
         # ── Batting ───────────────────────────────────────────────────────────
         h2("Batting")
 
         h3(f"All Players ({len(rows)})")
         _proj_table(sorted(rows, key=lambda r: r['xWAR'], reverse=True))
 
-        rookies = [r for r in rows if sum(r[f'pa_{s}'] for s in proj_module.PROJ_SEASONS) == 0]
         h3(f"Rookies ({len(rookies)})")
         _proj_table(sorted(rookies, key=lambda r: r['xWAR'], reverse=True))
 
@@ -308,7 +340,6 @@ def generate_projections():
         h3(f"All Pitchers ({len(pit_rows)})")
         _pit_all_table(sorted(pit_rows, key=lambda r: r['xWAR'], reverse=True))
 
-        pit_rookies = [r for r in pit_rows if sum(r[f'ip_{s}'] for s in pit_proj_module.PROJ_SEASONS) == 0]
         h3(f"Rookies ({len(pit_rookies)})")
         _pit_all_table(sorted(pit_rookies, key=lambda r: r['xWAR'], reverse=True))
 

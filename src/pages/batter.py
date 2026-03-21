@@ -164,6 +164,7 @@ def generate_batter_page(first_name, last_name):
             if secondary_pos:
                 pos += f" (Secondary: {secondary_pos})"
             p(pos)
+            p(f"Skills: POW {pi['power']} / CON {pi['contact']} / SPD {pi['speed']} / FLD {pi['fielding']} / ARM {pi['arm']}")
             p(f"Salary: {salary}")
         else:
             strong("Retired")
@@ -199,7 +200,12 @@ def generate_batter_page(first_name, last_name):
             'SB', 'CS', 'BB', 'K', 'AVG', 'OBP', 'SLG', 'OPS', 'OPS+',
             'TB', 'HBP', 'SH', 'SF', 'stat_type',
         ]]
-        render_leaders_table(standard_batting, leaders.batting_leaders, _ALL_BAT)
+        team_conf_map = teams_data.teams.set_index('abbr')['conference_name'].to_dict() if teams_data.teams is not None else None
+        if leaders.batting_leaders_conf and team_conf_map:
+            render_leaders_table(standard_batting, leaders.batting_leaders_conf, _ALL_BAT,
+                                 overall_leaders=leaders.batting_leaders, team_conf_map=team_conf_map)
+        else:
+            render_leaders_table(standard_batting, leaders.batting_leaders, _ALL_BAT)
 
         h3("Advanced Batting")
         render_stat_table(stats[['Season', 'Age', 'Team', 'PA',

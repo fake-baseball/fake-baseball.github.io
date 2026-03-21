@@ -121,15 +121,20 @@ def linkify_players(df, prefix='../players/'):
     return df.drop(columns=['First Name', 'Last Name'])
 
 
-def render_leaders_table(df, season_leaders, stat_meta, hidden=None, col_aliases=None):
-    """Render a stat table with season-leader bolding.
-    df           - DataFrame including stat_type column
-    season_leaders - DataFrame indexed by Season with best value per stat
-    stat_meta    - dict mapping stat name to metadata
-    hidden       - set of columns to hide (default: {'stat_type'})
-    col_aliases  - dict mapping display col to comparison col (e.g. {'IP': 'IP_true'})
+def render_leaders_table(df, season_leaders, stat_meta, hidden=None, col_aliases=None,
+                         overall_leaders=None, team_conf_map=None):
+    """Render a stat table with season-leader bolding and optional conference/overall split.
+
+    df             - DataFrame including stat_type and Team columns
+    season_leaders - if team_conf_map is None: DataFrame indexed by Season (bold = BFBL leader).
+                     if team_conf_map provided: dict {conference: DataFrame} (bold = conf leader).
+    stat_meta      - dict mapping stat name to metadata
+    hidden         - set of columns to hide (default: {'stat_type'})
+    col_aliases    - dict mapping display col to comparison col (e.g. {'IP': 'IP_true'})
+    overall_leaders - optional DataFrame indexed by Season; when provided, italic = BFBL leader.
+    team_conf_map   - optional dict {team_abbr: conference}; enables conference-split bolding.
     """
-    from dominate.tags import table, thead, tbody, tr, th, td, b
+    from dominate.tags import table, thead, tbody, tr, th, td, b, i
     from leaders import SEASON_THRESHOLDS
     hidden      = hidden or {'stat_type'}
     col_aliases = col_aliases or {}
@@ -145,18 +150,43 @@ def render_leaders_table(df, season_leaders, stat_meta, hidden=None, col_aliases
             for (_, raw_row), (_, disp_row) in zip(df.iterrows(), display.iterrows()):
                 with tr(cls=raw_row['stat_type']):
                     if raw_row['stat_type'] == 'season':
-                        bests = season_leaders.loc[raw_row['Season']]
+                        season = raw_row['Season']
+
+                        # Resolve which leaders DataFrame to use for bolding
+                        if team_conf_map is not None and isinstance(season_leaders, dict):
+                            conf      = team_conf_map.get(raw_row.get('Team', ''))
+                            conf_ldr  = season_leaders.get(conf) if conf else None
+                        else:
+                            conf_ldr = season_leaders
+
+                        bests_conf    = conf_ldr.loc[season]    if conf_ldr    is not None and season in conf_ldr.index    else None
+                        bests_overall = overall_leaders.loc[season] if overall_leaders is not None and season in overall_leaders.index else None
+
                         for key in df.columns:
                             if key in hidden:
                                 continue
                             disp_val = disp_row[key]
                             cmp_key  = col_aliases.get(key, key)
                             cmp_val  = raw_row[cmp_key]
-                            if cmp_key in bests.index and cmp_key in stat_meta:
+                            is_conf_best = is_overall_best = False
+                            if cmp_key in stat_meta:
                                 meta      = stat_meta[cmp_key]
                                 qualifies = not meta['qualified'] or raw_row[meta['qual_col']] >= SEASON_THRESHOLDS[meta['qual_col']]
-                                is_best   = qualifies and ((float(cmp_val) <= float(bests[cmp_key])) if meta['lowest'] else (float(cmp_val) >= float(bests[cmp_key])))
-                                td(b(disp_val)) if is_best else td(disp_val)
+                                if qualifies:
+                                    try:
+                                        fval = float(cmp_val)
+                                        if bests_conf is not None and cmp_key in bests_conf.index:
+                                            is_conf_best = (fval <= float(bests_conf[cmp_key])) if meta['lowest'] else (fval >= float(bests_conf[cmp_key]))
+                                        if bests_overall is not None and cmp_key in bests_overall.index:
+                                            is_overall_best = (fval <= float(bests_overall[cmp_key])) if meta['lowest'] else (fval >= float(bests_overall[cmp_key]))
+                                    except (ValueError, TypeError):
+                                        pass
+                            if is_conf_best and is_overall_best:
+                                td(b(i(disp_val)))
+                            elif is_conf_best:
+                                td(b(disp_val))
+                            elif is_overall_best:
+                                td(i(disp_val))
                             else:
                                 td(disp_val)
                     else:
