@@ -6,7 +6,7 @@ from dominate.tags import *
 import batting as bat_module
 import pitching as pit_module
 from data import teams as teams_data
-from util import make_doc, render_stat_table, player_link, fmt_round
+from util import make_doc, render_table, fmt_round
 
 
 _BAT_COLS = [
@@ -18,19 +18,10 @@ _BAT_COLS = [
 
 _PIT_COLS = [
     'Player', 'WAR',
-    'W', 'L', 'WIN%', 'ERA', 'GP', 'GS', 'CG', 'SHO', 'SV', 'IP',
+    'W', 'L', 'WIN%', 'ERA', 'GP', 'GS', 'CG', 'SHO', 'SV', 'IP_true',
     'H', 'RA', 'ER', 'HR', 'BB', 'K', 'HBP', 'WP', 'BF', 'ERA-', 'FIP', 'WHIP',
     'stat_type',
 ]
-
-
-def _add_player_col(df):
-    df = df.copy()
-    df.insert(0, 'Player', df.apply(
-        lambda r: player_link(r['First Name'], r['Last Name'], prefix='../../players/'),
-        axis=1,
-    ))
-    return df.drop(columns=['First Name', 'Last Name', 'Season', 'Age', 'Team'])
 
 
 def generate_team_season_page(team_name, season_num, abbr):
@@ -44,19 +35,23 @@ def generate_team_season_page(team_name, season_num, abbr):
     w, l = int(row['gamesWon']), int(row['gamesLost'])
     win_pct = fmt_round(w / (w + l), 3, False)
 
+    def _prep(df, cols):
+        df = df.copy()
+        df['Player'] = ''
+        available = ['First Name', 'Last Name'] + [c for c in cols if c in df.columns]
+        return df[list(dict.fromkeys(available))]
+
     bat_stats = bat_module.stats[
         (bat_module.stats['Team'] == abbr) &
         (bat_module.stats['Season'] == season_num) &
         (bat_module.stats['stat_type'] != 'career')
-    ].sort_values('PA', ascending=False).copy()
-    bat_stats = _add_player_col(bat_stats)
+    ].sort_values('PA', ascending=False)
 
     pit_stats = pit_module.stats[
         (pit_module.stats['Team'] == abbr) &
         (pit_module.stats['Season'] == season_num) &
         (pit_module.stats['stat_type'] != 'career')
-    ].sort_values('IP_true', ascending=False).copy()
-    pit_stats = _add_player_col(pit_stats)
+    ].sort_values('IP_true', ascending=False)
 
     team_seasons = sorted(
         teams_data.standings[teams_data.standings['teamName'] == team_name]['Season'].unique()
@@ -82,10 +77,10 @@ def generate_team_season_page(team_name, season_num, abbr):
         p("Individual player stats here may show stats that a player achieved with another team "
           "or may not be present at all (in the case of mid-season transactions).")
         h3("Standard Batting")
-        render_stat_table(bat_stats[[c for c in _BAT_COLS if c in bat_stats.columns]])
+        render_table(_prep(bat_stats, _BAT_COLS), prefix='../../players/')
 
         h3("Standard Pitching")
-        render_stat_table(pit_stats[[c for c in _PIT_COLS if c in pit_stats.columns]])
+        render_table(_prep(pit_stats, _PIT_COLS), prefix='../../players/')
 
     slug = team_name.replace(' ', '')
     Path(f"docs/teams/{slug}/{season_num}.html").write_text(str(doc))

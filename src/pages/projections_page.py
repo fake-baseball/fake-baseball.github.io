@@ -10,7 +10,9 @@ import batting as bat_module
 import pitching as pit_module
 from data import players
 from data import teams as teams_data
-from util import make_doc, player_link, fmt_round
+import pandas as pd
+
+from util import make_doc, player_link, fmt_round, render_table
 from stats_meta import BATTING_STATS, PITCHING_STATS
 
 _SKILL_LABELS     = {'power': 'POW', 'contact': 'CON', 'speed': 'SPD', 'fielding': 'FLD', 'arm': 'ARM'}
@@ -34,39 +36,19 @@ def _team_td(abbr):
 
 
 def _proj_table(rows):
-    with table(border=0):
-        with thead():
-            with tr():
-                for col in ['Player', 'Team',
-                            'POW', 'CON', 'SPD', 'FLD', 'ARM',
-                            'GB', 'PA',
-                            'HR', 'R', 'RBI', 'SB',
-                            'AVG', 'OBP', 'SLG', 'OPS', 'wRC+',
-                            'WAR']:
-                    th(col)
-        with tbody():
-            for row in rows:
-                first, last = row['first'], row['last']
-                with tr():
-                    td(player_link(first, last, prefix='players/'))
-                    _team_td(row['_team_abbr'])
-                    td(row['power'])
-                    td(row['contact'])
-                    td(row['speed'])
-                    td(row['fielding'])
-                    td(row['arm'])
-                    td(row['xGB'])
-                    td(row['proj_pa'])
-                    td(row['xHR'])
-                    td(row['xR'])
-                    td(row['xRBI'])
-                    td(row['xSB'])
-                    td(_f('AVG',  row['xAVG']))
-                    td(_f('OBP',  row['xOBP']))
-                    td(_f('SLG',  row['xSLG']))
-                    td(_f('OPS',  row['xOPS']))
-                    td(_f('wRC+', row['xwRC+']))
-                    td(_f('WAR',  row['xWAR']))
+    records = []
+    for row in rows:
+        records.append({
+            'First Name': row['first'], 'Last Name': row['last'], 'Player': '',
+            'Team':    row['_team_abbr'] or 'FA',
+            'power':   row['power'],   'contact': row['contact'],
+            'speed':   row['speed'],   'fielding': row['fielding'], 'arm': row['arm'],
+            'GB':  row['xGB'],  'PA':  row['proj_pa'],
+            'HR':  row['xHR'], 'R':   row['xR'], 'RBI': row['xRBI'], 'SB': row['xSB'],
+            'AVG': row['xAVG'], 'OBP': row['xOBP'], 'SLG': row['xSLG'],
+            'OPS': row['xOPS'], 'wRC+': row['xwRC+'], 'WAR': row['xWAR'],
+        })
+    render_table(pd.DataFrame(records), prefix='players/')
 
 
 def _team_summary_table(team_rows):
@@ -100,42 +82,21 @@ def _team_summary_table(team_rows):
 
 
 def _pit_all_table(pit_rows):
-    with table(border=0):
-        with thead():
-            with tr():
-                for col in ['Player', 'Team',
-                            'VEL', 'JNK', 'ACC',
-                            'Role', 'IP', 'GP',
-                            'W', 'L', 'SV',
-                            'K', 'BB', 'HR',
-                            'ERA', 'ERA-', 'FIP', 'WHIP', 'K%', 'BB%',
-                            'WAR']:
-                    th(col)
-        with tbody():
-            for row in pit_rows:
-                first, last = row['first'], row['last']
-                with tr():
-                    td(player_link(first, last, prefix='players/'))
-                    _team_td(row['_team_abbr'])
-                    td(row['velocity'])
-                    td(row['junk'])
-                    td(row['accuracy'])
-                    td(row['role'])
-                    td(f"{row['proj_ip']:.1f}")
-                    td(row['xGP'])
-                    td(row['xW'])
-                    td(row['xL'])
-                    td(row['xSV'])
-                    td(row['xK'])
-                    td(row['xBB'])
-                    td(row['xHR'])
-                    td(_f('ERA',   row['xERA']))
-                    td(_f('ERA-',  row['xERA-']))
-                    td(_f('FIP',   row['xFIP']))
-                    td(_f('WHIP',  row['xWHIP']))
-                    td(_f('K%',    row['xK%']))
-                    td(_f('BB%',   row['xBB%']))
-                    td(_f('WAR',   row['xWAR']))
+    records = []
+    for row in pit_rows:
+        records.append({
+            'First Name': row['first'], 'Last Name': row['last'], 'Player': '',
+            'Team':     row['_team_abbr'] or 'FA',
+            'velocity': row['velocity'], 'junk': row['junk'], 'accuracy': row['accuracy'],
+            'Role':     row['role'],
+            'IP_true':  row['proj_ip'],
+            'GP': row['xGP'], 'W': row['xW'], 'L': row['xL'], 'SV': row['xSV'],
+            'K': row['xK'], 'BB': row['xBB'], 'HR': row['xHR'],
+            'ERA': row['xERA'], 'ERA-': row['xERA-'], 'FIP': row['xFIP'],
+            'WHIP': row['xWHIP'], 'K%': row['xK%'], 'BB%': row['xBB%'],
+            'WAR': row['xWAR'],
+        })
+    render_table(pd.DataFrame(records), prefix='players/')
 
 
 def _pit_team_summary_table(team_rows):

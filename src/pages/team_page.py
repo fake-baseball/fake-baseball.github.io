@@ -11,7 +11,7 @@ from data import players
 from stats_meta import BATTING_STATS, BASERUNNING_STATS, PITCHING_STATS
 
 _ALL_BAT = {**BATTING_STATS, **BASERUNNING_STATS}
-from util import player_link, make_doc, fmt_ip, fmt_round, fmt_rdiff
+from util import player_link, make_doc, fmt_ip, fmt_round, fmt_rdiff, render_table
 
 _PITCHER_COLS  = ['Name', '#', 'Role', 'T', 'VEL', 'JNK', 'ACC', 'FLD', 'Arsenal', 'Age', 'Salary']
 _POSITION_COLS = ['Name', '#', 'PP', '2P', 'B', 'POW', 'CON', 'SPD', 'FLD', 'ARM', 'Age', 'Salary']
@@ -200,21 +200,10 @@ def _rotation_table(rotation, bullpen):
 
 
 def _roster_table(group, cols, link_col='Name'):
-    t = table(border=0)
-    with t:
-        with thead():
-            with tr():
-                for col in cols:
-                    th(col)
-        with tbody():
-            for _, row in group.iterrows():
-                with tr():
-                    for col in cols:
-                        if col == link_col:
-                            td(player_link(row['first_name'], row['last_name'], prefix='../../players/'))
-                        else:
-                            td(row[col])
-    return t
+    df = group.rename(columns={'first_name': 'First Name', 'last_name': 'Last Name'}).copy()
+    df['Player'] = ''
+    display_cols = ['Player' if c == link_col else c for c in cols]
+    render_table(df[display_cols + ['First Name', 'Last Name']], prefix='../../players/')
 
 
 def generate_team_page(team_name, roster, team_info):

@@ -3,32 +3,20 @@ from pathlib import Path
 
 from dominate.tags import *
 
+import pandas as pd
+
 import league as lg
 from data import teams as teams_data
-from util import make_doc, fmt_round, fmt_ip, fmt_rdiff, convert_name
+from util import make_doc, render_table, fmt_round, fmt_rdiff
+from stats_meta import BATTING_STATS, PITCHING_STATS
 import leaders as ld
-from stats_meta import BATTING_STATS, BASERUNNING_STATS, PITCHING_STATS
-
-_ALL_BAT = {**BATTING_STATS, **BASERUNNING_STATS}
 
 _BAT_LEADER_STATS = ['WAR', 'HR', 'RBI', 'AVG', 'OPS', 'SB']
 _PIT_LEADER_STATS = ['WAR', 'W', 'SV', 'ERA', 'K', 'WHIP']
 
 
-def _fmt_bat(stat, val):
-    m = _ALL_BAT[stat]
-    return fmt_round(val, m['decimal_places'], m['leading_zero'], m['percentage'])
-
-
-def _fmt_pit(stat, val):
-    m = PITCHING_STATS[stat]
-    return fmt_round(val, m['decimal_places'], m['leading_zero'], m['percentage'])
-
-
-def _fmt_gb(val):
-    if val == 0:
-        return '-'
-    return f"{val:.1f}"
+def _fmt_gb(v):
+    return '-' if v == 0 else f"{v:.1f}"
 
 
 def _standings_section(season_num):
@@ -101,24 +89,13 @@ def _league_stats_section(season_num):
                     td(fmt_round(sp[stat], m['decimal_places'], m['leading_zero'], m['percentage']))
 
 
-def _leader_table(stat, rows, fmt_fn):
+def _leader_table(stat, rows):
     h4(stat)
-    with table(border=0):
-        with thead():
-            with tr():
-                th('#')
-                th('Player')
-                th('Team')
-                th(stat)
-        with tbody():
-            for rank, row in rows.iterrows():
-                val = row['IP_true'] if stat == 'IP' else row[stat]
-                first, last = row['First Name'], row['Last Name']
-                with tr():
-                    td(rank)
-                    td(a(f"{first} {last}", href=f"../players/{convert_name(first, last)}.html"))
-                    td(row['Team'])
-                    td(fmt_fn(stat, val))
+    df = rows.reset_index().rename(columns={'index': '#'})
+    stat_col = 'IP_true' if stat == 'IP_true' else stat
+    df = df[['#', 'First Name', 'Last Name', 'Team', stat_col]].copy()
+    df.insert(2, 'Player', '')
+    render_table(df, prefix='../players/')
 
 
 def _leaders_section(season_num):
@@ -126,11 +103,11 @@ def _leaders_section(season_num):
     h3("Batting")
     for stat in _BAT_LEADER_STATS:
         rows = ld.get_batting_leaders(stat, season=season_num, num=5)
-        _leader_table(stat, rows, _fmt_bat)
+        _leader_table(stat, rows)
     h3("Pitching")
     for stat in _PIT_LEADER_STATS:
         rows = ld.get_pitching_leaders(stat, season=season_num, num=5)
-        _leader_table(stat, rows, _fmt_pit)
+        _leader_table(stat, rows)
 
 
 def generate_season_page(season_num):

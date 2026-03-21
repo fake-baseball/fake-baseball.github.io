@@ -54,7 +54,7 @@ def _pit_summary_table(stats, proj_row):
                     td(label)
                     for _, col in _PIT_SUMMARY_COLS:
                         td(_fmt(col, row[col]))
-from util import fmt_df, fmt_round, render_stat_table, render_leaders_table, convert_name, make_doc
+from util import fmt_round, render_table, convert_name, make_doc
 
 
 def _pit_proj_row(first, last, cols):
@@ -178,21 +178,14 @@ def generate_pitcher_page(first_name, last_name):
         h3("Standard Pitching")
         standard_pitching = stats[[
             'Season', 'Age', 'Team', 'WAR',
-            'W', 'L', 'WIN%', 'ERA', 'GP', 'GS', 'CG', 'SHO', 'SV', 'IP',
+            'W', 'L', 'WIN%', 'ERA', 'GP', 'GS', 'CG', 'SHO', 'SV', 'IP_true',
             'H', 'RA', 'ER', 'HR', 'BB', 'K', 'HBP', 'WP', 'BF', 'ERA-', 'FIP', 'WHIP',
-            'stat_type', 'IP_true',
+            'stat_type',
         ]]
-        team_conf_map = teams_data.teams.set_index('abbr')['conference_name'].to_dict() if teams_data.teams is not None else None
-        if leaders.pitching_leaders_conf and team_conf_map:
-            render_leaders_table(standard_pitching, leaders.pitching_leaders_conf, PITCHING_STATS,
-                                 hidden={'stat_type', 'IP_true'}, col_aliases={'IP': 'IP_true'},
-                                 overall_leaders=leaders.pitching_leaders, team_conf_map=team_conf_map)
-        else:
-            render_leaders_table(standard_pitching, leaders.pitching_leaders, PITCHING_STATS,
-                                 hidden={'stat_type', 'IP_true'}, col_aliases={'IP': 'IP_true'})
+        render_table(standard_pitching)
 
         h3("Advanced Pitching")
-        render_stat_table(stats[[
+        render_table(stats[[
             'Season', 'Age', 'Team', 'IP',
             'ERA', 'FIP', 'RA9', 'BAA', 'OBPA', 'BIP', 'BABIP',
             'H/9', 'HR/9', 'K/9', 'BB/9', 'K/BB', 'K%', 'BB%',
@@ -200,7 +193,7 @@ def generate_pitcher_page(first_name, last_name):
         ]])
 
         h3("Value Pitching")
-        render_stat_table(stats[[
+        render_table(stats[[
             'Season', 'Age', 'Team', 'IP', 'GP', 'GS',
             'RA', 'Rdef', 'RA9', 'RA9def', 'Rlev', 'Rcorr',
             'RAA', 'RAAlev', 'WAA', 'Rrep', 'RAR', 'WAR', 'stat_type',

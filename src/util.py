@@ -111,110 +111,168 @@ def fmt_df(df):
     return out
 
 
-def linkify_players(df, prefix='../players/'):
-    """Replace First Name / Last Name columns with a single linked Player column."""
-    df = df.copy()
-    df.insert(0, 'Player', df.apply(
-        lambda r: f'<a href="{prefix}{convert_name(r["First Name"], r["Last Name"])}.html">{r["First Name"]} {r["Last Name"]}</a>',
-        axis=1
-    ))
-    return df.drop(columns=['First Name', 'Last Name'])
 
+def render_table(df, *, prefix='', hidden=None, row_class=None, cell_style=None, border=0):
+    """Render a DataFrame as a dominate table with formatting, bolding, and player links.
 
-def render_leaders_table(df, season_leaders, stat_meta, hidden=None, col_aliases=None,
-                         overall_leaders=None, team_conf_map=None):
-    """Render a stat table with season-leader bolding and optional conference/overall split.
-
-    df             - DataFrame including stat_type and Team columns
-    season_leaders - if team_conf_map is None: DataFrame indexed by Season (bold = BFBL leader).
-                     if team_conf_map provided: dict {conference: DataFrame} (bold = conf leader).
-    stat_meta      - dict mapping stat name to metadata
-    hidden         - set of columns to hide (default: {'stat_type'})
-    col_aliases    - dict mapping display col to comparison col (e.g. {'IP': 'IP_true'})
-    overall_leaders - optional DataFrame indexed by Season; when provided, italic = BFBL leader.
-    team_conf_map   - optional dict {team_abbr: conference}; enables conference-split bolding.
+    df         - DataFrame; may contain 'First Name'/'Last Name' for Player links,
+                 'stat_type' for row CSS classes, 'Season'/'Team' for bolding lookups.
+    prefix     - prepended to player link hrefs (e.g. '../players/').
+    hidden     - set of column names to exclude from display; 'stat_type', 'First Name',
+                 and 'Last Name' are always hidden.
+    row_class  - callable (row) -> str override for <tr> CSS class.
+    cell_style - callable (col, raw_val, row) -> str or None for inline style= on cells.
+    border     - HTML border attribute on <table>.
     """
-    from dominate.tags import table, thead, tbody, tr, th, td, b, i
+    import numpy as np
+    from dominate.tags import table, thead, tbody, tr, th, td
+    from dominate.tags import b as bold_tag, i as italic_tag, a as anchor_tag
+    from stats_meta import (BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS,
+                            PITCHING_STATS, COLUMN_META)
+    import leaders as leaders_mod
+    from data import teams as teams_data
     from leaders import SEASON_THRESHOLDS
-    hidden      = hidden or {'stat_type'}
-    col_aliases = col_aliases or {}
-    display = fmt_df(df)
-    t = table(border=0)
+
+    _always_hidden = {'stat_type', 'First Name', 'Last Name'}
+    _hidden = _always_hidden | (set(hidden) if hidden else set())
+
+    _all_stat_meta = {**BATTING_STATS, **BASERUNNING_STATS, **FIELDING_STATS, **PITCHING_STATS}
+
+    def _resolve_meta(col):
+        if col in _all_stat_meta:
+            return _all_stat_meta[col]
+        if col in COLUMN_META:
+            return COLUMN_META[col]
+        return {'name': col, 'type': 'text', 'align': 'right'}
+
+    def _header_name(col, meta):
+        if meta.get('type') == 'stat':
+            return meta.get('display_col') or col
+        return meta.get('name', col)
+
+    def _format_cell(col, meta, val):
+        ctype = meta.get('type', 'text')
+        if col == 'IP_true' or ctype == 'ip':
+            return fmt_ip(val)
+        if ctype == 'stat':
+            return fmt_round(val, meta['decimal_places'], meta['leading_zero'], meta['percentage'])
+        if ctype == 'integer':
+            try:
+                if isinstance(val, float) and np.isnan(val):
+                    return '-'
+                return str(int(val))
+            except (ValueError, TypeError):
+                return str(val) if val is not None else '-'
+        return str(val) if val is not None else ''
+
+    visible_cols = [c for c in df.columns if c not in _hidden]
+    has_player_link = ('Player' in visible_cols
+                       and 'First Name' in df.columns
+                       and 'Last Name' in df.columns)
+    col_meta = {c: _resolve_meta(c) for c in visible_cols}
+
+    bat_ldr      = leaders_mod.batting_leaders
+    pit_ldr      = leaders_mod.pitching_leaders
+    bat_ldr_conf = leaders_mod.batting_leaders_conf
+    pit_ldr_conf = leaders_mod.pitching_leaders_conf
+
+    abbr_to_conf = {}
+    if teams_data.teams is not None:
+        abbr_to_conf = teams_data.teams.set_index('abbr')['conference_name'].to_dict()
+
+    # Detect batting vs pitching table: pitcher tables always include IP_true.
+    _is_pitching_table = 'IP_true' in df.columns
+
+    def _leaders_for_col(col):
+        """Return (overall_ldr, conf_ldr_dict) for a stat column, or (None, None).
+        Check pitching leaders first for pitcher tables so overlapping stat names
+        (K, BB, HR, H, HBP) resolve to the correct leaders DataFrame."""
+        if _is_pitching_table:
+            if pit_ldr is not None and col in pit_ldr.columns:
+                return pit_ldr, pit_ldr_conf
+            if bat_ldr is not None and col in bat_ldr.columns:
+                return bat_ldr, bat_ldr_conf
+        else:
+            if bat_ldr is not None and col in bat_ldr.columns:
+                return bat_ldr, bat_ldr_conf
+            if pit_ldr is not None and col in pit_ldr.columns:
+                return pit_ldr, pit_ldr_conf
+        return None, None
+
+    t = table(border=border)
     with t:
         with thead():
             with tr():
-                for col in df.columns:
-                    if col not in hidden:
-                        th(col)
+                for col in visible_cols:
+                    th(_header_name(col, col_meta[col]))
         with tbody():
-            for (_, raw_row), (_, disp_row) in zip(df.iterrows(), display.iterrows()):
-                with tr(cls=raw_row['stat_type']):
-                    if raw_row['stat_type'] == 'season':
-                        season = raw_row['Season']
+            for _, raw_row in df.iterrows():
+                stat_type = raw_row['stat_type'] if 'stat_type' in df.columns else ''
+                cls = row_class(raw_row) if row_class is not None else stat_type
+                with tr(cls=cls):
+                    for col in visible_cols:
+                        meta    = col_meta[col]
+                        raw_val = raw_row[col]
 
-                        # Resolve which leaders DataFrame to use for bolding
-                        if team_conf_map is not None and isinstance(season_leaders, dict):
-                            conf      = team_conf_map.get(raw_row.get('Team', ''))
-                            conf_ldr  = season_leaders.get(conf) if conf else None
+                        # Build display content
+                        if col == 'Player' and has_player_link:
+                            first = raw_row['First Name']
+                            last  = raw_row['Last Name']
+                            slug  = convert_name(first, last)
+                            content = anchor_tag(f"{first} {last}", href=f"{prefix}{slug}.html")
                         else:
-                            conf_ldr = season_leaders
+                            disp_val = _format_cell(col, meta, raw_val)
 
-                        bests_conf    = conf_ldr.loc[season]    if conf_ldr    is not None and season in conf_ldr.index    else None
-                        bests_overall = overall_leaders.loc[season] if overall_leaders is not None and season in overall_leaders.index else None
-
-                        for key in df.columns:
-                            if key in hidden:
-                                continue
-                            disp_val = disp_row[key]
-                            cmp_key  = col_aliases.get(key, key)
-                            cmp_val  = raw_row[cmp_key]
-                            is_conf_best = is_overall_best = False
-                            if cmp_key in stat_meta:
-                                meta      = stat_meta[cmp_key]
-                                qualifies = not meta['qualified'] or raw_row[meta['qual_col']] >= SEASON_THRESHOLDS[meta['qual_col']]
-                                if qualifies:
+                            # Bolding: only stat columns on season rows
+                            is_bold = is_italic = False
+                            if stat_type == 'season' and meta.get('type') == 'stat':
+                                overall_ldr, conf_ldr_dict = _leaders_for_col(col)
+                                if overall_ldr is not None:
+                                    season = raw_row.get('Season')
                                     try:
-                                        fval = float(cmp_val)
-                                        if bests_conf is not None and cmp_key in bests_conf.index:
-                                            is_conf_best = (fval <= float(bests_conf[cmp_key])) if meta['lowest'] else (fval >= float(bests_conf[cmp_key]))
-                                        if bests_overall is not None and cmp_key in bests_overall.index:
-                                            is_overall_best = (fval <= float(bests_overall[cmp_key])) if meta['lowest'] else (fval >= float(bests_overall[cmp_key]))
+                                        fval     = float(raw_val)
+                                        qual_col = meta.get('qual_col', 'PA')
+                                        qualifies = (
+                                            not meta['qualified']
+                                            or raw_row.get(qual_col, 0) >= SEASON_THRESHOLDS.get(qual_col, 0)
+                                        )
+                                        if qualifies and season in overall_ldr.index and col in overall_ldr.columns:
+                                            best_o = float(overall_ldr.loc[season, col])
+                                            overall_best = fval <= best_o if meta['lowest'] else fval >= best_o
+
+                                            if conf_ldr_dict and 'Team' in df.columns:
+                                                team     = raw_row.get('Team', '')
+                                                conf     = abbr_to_conf.get(team)
+                                                conf_ldr = conf_ldr_dict.get(conf) if conf else None
+                                                if conf_ldr is not None and season in conf_ldr.index and col in conf_ldr.columns:
+                                                    best_c    = float(conf_ldr.loc[season, col])
+                                                    conf_best = fval <= best_c if meta['lowest'] else fval >= best_c
+                                                    is_bold   = conf_best
+                                                    is_italic = overall_best
+                                                else:
+                                                    is_bold = overall_best
+                                            else:
+                                                is_bold = overall_best
                                     except (ValueError, TypeError):
                                         pass
-                            if is_conf_best and is_overall_best:
-                                td(b(i(disp_val)))
-                            elif is_conf_best:
-                                td(b(disp_val))
-                            elif is_overall_best:
-                                td(i(disp_val))
+
+                            if is_bold and is_italic:
+                                content = bold_tag(italic_tag(disp_val))
+                            elif is_bold:
+                                content = bold_tag(disp_val)
+                            elif is_italic:
+                                content = italic_tag(disp_val)
                             else:
-                                td(disp_val)
-                    else:
-                        for key in df.columns:
-                            if key not in hidden:
-                                td(disp_row[key])
+                                content = disp_val
+
+                        style_str = cell_style(col, raw_val, raw_row) if cell_style else None
+                        if style_str:
+                            td(content, style=style_str)
+                        else:
+                            td(content)
     return t
 
 
-def render_stat_table(df):
-    """Render a stats DataFrame as a dominate table with stat_type-based row classes.
-    The stat_type column is used for the row class and is not displayed."""
-    from dominate.tags import table, thead, tbody, tr, th, td
-    display = fmt_df(df)
-    t = table(border=0)
-    with t:
-        with thead():
-            with tr():
-                for col in df.columns:
-                    if col != 'stat_type':
-                        th(col)
-        with tbody():
-            for (_, raw_row), (_, disp_row) in zip(df.iterrows(), display.iterrows()):
-                with tr(cls=raw_row['stat_type']):
-                    for col in df.columns:
-                        if col != 'stat_type':
-                            td(disp_row[col])
-    return t
 
 
 def convert_name(first, last):

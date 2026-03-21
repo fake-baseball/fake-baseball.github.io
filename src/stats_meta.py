@@ -708,3 +708,30 @@ for _meta in BATTING_STATS.values():     _meta.setdefault('qual_col', 'PA')
 for _meta in BASERUNNING_STATS.values(): _meta.setdefault('qual_col', 'SBatt')
 for _meta in FIELDING_STATS.values():    _meta.setdefault('qual_col', 'GF')
 for _meta in PITCHING_STATS.values():    _meta.setdefault('qual_col', 'IP_true')
+
+for _meta in [*BATTING_STATS.values(), *BASERUNNING_STATS.values(),
+              *FIELDING_STATS.values(), *PITCHING_STATS.values()]:
+    _meta.setdefault('type', 'stat')
+    _meta.setdefault('align', 'right')
+
+# -- Non-stat column metadata (for render_table) --------------------------------
+
+COLUMN_META = {
+    'Player':   {'name': 'Player',   'type': 'link',    'align': 'left'},
+    'Team':     {'name': 'Team',     'type': 'text',    'align': 'left'},
+    'Season':   {'name': 'Season',   'type': 'text',    'align': 'right'},
+    'Age':      {'name': 'Age',      'type': 'integer', 'align': 'right'},
+    'PP':       {'name': 'PP',       'type': 'text',    'align': 'left'},
+    '2P':       {'name': '2P',       'type': 'text',    'align': 'left'},
+    'Role':     {'name': 'Role',     'type': 'text',    'align': 'left'},
+    'Throws':   {'name': 'T',        'type': 'text',    'align': 'left'},
+    'Bats':     {'name': 'B',        'type': 'text',    'align': 'left'},
+    'power':    {'name': 'POW',      'type': 'integer', 'align': 'right'},
+    'contact':  {'name': 'CON',      'type': 'integer', 'align': 'right'},
+    'speed':    {'name': 'SPD',      'type': 'integer', 'align': 'right'},
+    'fielding': {'name': 'FLD',      'type': 'integer', 'align': 'right'},
+    'arm':      {'name': 'ARM',      'type': 'integer', 'align': 'right'},
+    'velocity': {'name': 'VEL',      'type': 'integer', 'align': 'right'},
+    'junk':     {'name': 'JNK',      'type': 'integer', 'align': 'right'},
+    'accuracy': {'name': 'ACC',      'type': 'integer', 'align': 'right'},
+}

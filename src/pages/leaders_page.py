@@ -1,8 +1,8 @@
 """Generate the leaders index page and all individual stat leader sub-pages."""
 from pathlib import Path
 
+import pandas as pd
 from dominate.tags import *
-from dominate.util import raw
 
 from constants import (
     BAT_SEASON_MIN_PA,   BAT_CAREER_MIN_PA,
@@ -15,11 +15,11 @@ from leaders import (
     get_pitching_leaders, get_career_pitching_leaders, get_pitching_leaders_by_season,
 )
 from stats_meta import BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS, PITCHING_STATS
-from util import fmt_round, linkify_players, make_doc
+from util import make_doc, render_table
 
 
 def generate_leaders():
-    # Each entry: (title, slug, suffix, stat, display_col, df)
+    # Each entry: (title, slug, suffix, df)
     pages = []
 
     # ── Shared index-row builder ──────────────────────────────────────────────
@@ -36,31 +36,35 @@ def generate_leaders():
     # ── Batting / baserunning / fielding leaders ──────────────────────────────
 
     def _build_batting(title, slug, stat, meta, worst):
-        _fmt = lambda v: fmt_round(v, meta['decimal_places'], meta['leading_zero'], meta['percentage'])
         qual_col = meta['qual_col']
-
         _index_row(title, slug)
 
         df = get_batting_leaders(stat, num=100, worst=worst)
         cols = list(dict.fromkeys(['First Name', 'Last Name', stat, 'Season', qual_col, 'Team']))
-        df = linkify_players(df[cols])
-        df[stat] = df[stat].map(_fmt)
-        pages.append((title, slug, 'season', stat, stat, df))
+        df = df[cols].copy()
+        df.insert(0, '#', df.index)
+        df.insert(1, 'Player', '')
+        pages.append((title, slug, 'season', df))
 
         df = get_leaders_by_season(stat, worst=worst)
-        df = linkify_players(df[['Season', 'First Name', 'Last Name', stat, qual_col, 'Team']].set_index('Season'))
-        df[stat] = df[stat].map(_fmt)
-        pages.append((title, slug, 'yearly', stat, stat, df))
+        cols = list(dict.fromkeys(['Season', 'First Name', 'Last Name', stat, qual_col, 'Team']))
+        df = df[cols].copy()
+        df.insert(1, 'Player', '')
+        pages.append((title, slug, 'yearly', df))
 
         df = get_career_batting_leaders(stat, num=100, worst=worst)
-        df = linkify_players(df[list(dict.fromkeys(['First Name', 'Last Name', stat, qual_col]))])
-        df[stat] = df[stat].map(_fmt)
-        pages.append((title, slug, 'career', stat, stat, df))
+        cols = list(dict.fromkeys(['First Name', 'Last Name', stat, qual_col]))
+        df = df[cols].copy()
+        df.insert(0, '#', df.index)
+        df.insert(1, 'Player', '')
+        pages.append((title, slug, 'career', df))
 
         df = get_career_batting_leaders(stat, active=True, num=100, worst=worst)
-        df = linkify_players(df[list(dict.fromkeys(['First Name', 'Last Name', stat, qual_col]))])
-        df[stat] = df[stat].map(_fmt)
-        pages.append((title, slug, 'active', stat, stat, df))
+        cols = list(dict.fromkeys(['First Name', 'Last Name', stat, qual_col]))
+        df = df[cols].copy()
+        df.insert(0, '#', df.index)
+        df.insert(1, 'Player', '')
+        pages.append((title, slug, 'active', df))
 
     def _render_batting():
         def render(stat, meta):
@@ -74,31 +78,30 @@ def generate_leaders():
     # ── Pitching leaders ──────────────────────────────────────────────────────
 
     def _build_pitching(title, slug, stat, meta, worst):
-        _fmt        = lambda v: fmt_round(v, meta['decimal_places'], meta['leading_zero'], meta['percentage'])
-        display_col = meta['display_col'] or stat
-        is_aliased  = display_col != stat   # True for IP_true → shown as IP
-
         _index_row(title, slug)
 
+        # Season table
         df = get_pitching_leaders(stat, num=100, worst=worst)
-        cols = (['First Name', 'Last Name', 'Role', display_col, 'Season', 'Team'] if is_aliased
-                else ['First Name', 'Last Name', 'Role', stat, 'Season', 'IP', 'Team'])
-        df = linkify_players(df[cols])
-        if not is_aliased:
-            df[stat] = df[stat].map(_fmt)
-        pages.append((title, slug, 'season', stat, display_col, df))
+        if stat == 'IP_true':
+            cols = ['First Name', 'Last Name', 'Role', 'IP_true', 'Season', 'Team']
+        else:
+            cols = ['First Name', 'Last Name', 'Role', stat, 'Season', 'IP_true', 'Team']
+        df = df[list(dict.fromkeys(cols))].copy()
+        df.insert(0, '#', df.index)
+        df.insert(1, 'Player', '')
+        pages.append((title, slug, 'season', df))
 
+        # Yearly table
         df = get_pitching_leaders_by_season(stat, worst=worst)
-        cols = (['Season', 'First Name', 'Last Name', 'Role', display_col, 'Team'] if is_aliased
-                else ['Season', 'First Name', 'Last Name', 'Role', stat, 'IP', 'Team'])
-        df = linkify_players(df[cols].set_index('Season'))
-        if not is_aliased:
-            df[stat] = df[stat].map(_fmt)
-        pages.append((title, slug, 'yearly', stat, display_col, df))
+        if stat == 'IP_true':
+            cols = ['Season', 'First Name', 'Last Name', 'Role', 'IP_true', 'Team']
+        else:
+            cols = ['Season', 'First Name', 'Last Name', 'Role', stat, 'IP_true', 'Team']
+        df = df[list(dict.fromkeys(cols))].copy()
+        df.insert(1, 'Player', '')
+        pages.append((title, slug, 'yearly', df))
 
-        career_cols = (['First Name', 'Last Name', 'Role', display_col] if is_aliased
-                       else ['First Name', 'Last Name', 'Role', stat, 'IP'])
-
+        # Career role lookup
         import pitching as _pit
         season_role = (
             _pit.stats[_pit.stats['stat_type'] == 'season']
@@ -107,21 +110,28 @@ def generate_leaders():
             .last()
         )
 
+        if stat == 'IP_true':
+            career_cols = ['First Name', 'Last Name', 'Role', 'IP_true']
+        else:
+            career_cols = ['First Name', 'Last Name', 'Role', stat, 'IP_true']
+
+        # Career table
         df = get_career_pitching_leaders(stat, num=100, worst=worst)
         df = df.copy()
         df['Role'] = df.apply(lambda r: season_role.get((r['First Name'], r['Last Name']), r['Role']), axis=1)
-        df = linkify_players(df[career_cols])
-        if not is_aliased:
-            df[stat] = df[stat].map(_fmt)
-        pages.append((title, slug, 'career', stat, display_col, df))
+        df = df[list(dict.fromkeys(career_cols))].copy()
+        df.insert(0, '#', df.index)
+        df.insert(1, 'Player', '')
+        pages.append((title, slug, 'career', df))
 
+        # Active table
         df = get_career_pitching_leaders(stat, active=True, num=100, worst=worst)
         df = df.copy()
         df['Role'] = df.apply(lambda r: season_role.get((r['First Name'], r['Last Name']), r['Role']), axis=1)
-        df = linkify_players(df[career_cols])
-        if not is_aliased:
-            df[stat] = df[stat].map(_fmt)
-        pages.append((title, slug, 'active', stat, display_col, df))
+        df = df[list(dict.fromkeys(career_cols))].copy()
+        df.insert(0, '#', df.index)
+        df.insert(1, 'Player', '')
+        pages.append((title, slug, 'active', df))
 
     def render_pitching(stat, meta):
         if meta['slug_worst']:
@@ -177,9 +187,13 @@ def generate_leaders():
         'career': 'Career Leaders',
         'active': 'Active Leaders',
     }
-    for title, slug, suffix, stat, display_col, df in pages:
+    for title, slug, suffix, df in pages:
+        # Determine display name for page title: use display_col if set
+        all_meta = {**BATTING_STATS, **BASERUNNING_STATS, **FIELDING_STATS, **PITCHING_STATS}
+        stat_cols = [c for c in df.columns if c in all_meta]
+        display_col = all_meta[stat_cols[0]].get('display_col') or stat_cols[0] if stat_cols else slug
         subdoc = make_doc(f"{display_col} - {labels[suffix]}")
         with subdoc:
             h1(f"{labels[suffix]} for {title}")
-            raw(df.to_html(border=0, index=True, escape=False))
+            render_table(df, prefix='../players/')
         Path(f"docs/leaders/{slug}_{suffix}.html").write_text(str(subdoc))

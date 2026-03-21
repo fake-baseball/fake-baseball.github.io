@@ -12,7 +12,7 @@ import projections as proj_module
 from data import players
 from data import teams as teams_data
 from stats_meta import BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS
-from util import fmt_df, fmt_round, render_stat_table, render_leaders_table, convert_name, make_doc
+from util import fmt_round, render_table, convert_name, make_doc
 
 _ALL_BAT = {**BATTING_STATS, **BASERUNNING_STATS, **FIELDING_STATS}
 
@@ -200,28 +200,23 @@ def generate_batter_page(first_name, last_name):
             'SB', 'CS', 'BB', 'K', 'AVG', 'OBP', 'SLG', 'OPS', 'OPS+',
             'TB', 'HBP', 'SH', 'SF', 'stat_type',
         ]]
-        team_conf_map = teams_data.teams.set_index('abbr')['conference_name'].to_dict() if teams_data.teams is not None else None
-        if leaders.batting_leaders_conf and team_conf_map:
-            render_leaders_table(standard_batting, leaders.batting_leaders_conf, _ALL_BAT,
-                                 overall_leaders=leaders.batting_leaders, team_conf_map=team_conf_map)
-        else:
-            render_leaders_table(standard_batting, leaders.batting_leaders, _ALL_BAT)
+        render_table(standard_batting)
 
         h3("Advanced Batting")
-        render_stat_table(stats[['Season', 'Age', 'Team', 'PA',
+        render_table(stats[['Season', 'Age', 'Team', 'PA',
                     'wOBA', 'wRC', 'wRC+', 'BIP', 'BABIP',
                     'ISO', 'XBH', 'XBH%', 'HR%', 'K%', 'BB%', 'stat_type']])
 
         h3("Baserunning")
-        render_stat_table(stats[['Season', 'Age', 'Team', 'PA',
+        render_table(stats[['Season', 'Age', 'Team', 'PA',
                     'SB', 'CS', 'SB%', 'SbAtt%', 'RS%', 'RC%', 'stat_type']])
 
         h3("Fielding")
-        render_stat_table(stats[['Season', 'Age', 'Team', 'PP', '2P',
+        render_table(stats[['Season', 'Age', 'Team', 'PP', '2P',
                     'GB', 'GF', 'E', 'E/GF', 'PB', 'PB/GF', 'stat_type']])
 
         h3("Value")
-        render_stat_table(stats[[
+        render_table(stats[[
             'Season', 'Age', 'Team', 'GB', 'PA',
             'Rbat', 'Rbr', 'Rdef', 'Rpos', 'Rcorr', 'Rrep', 'RAA', 'RAR', 'WAA', 'WAR', 'stat_type',
         ]])

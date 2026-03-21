@@ -1,104 +1,64 @@
 """Generate the Awards page (docs/awards.html)."""
 from pathlib import Path
 
+import pandas as pd
 from dominate.tags import *
 
-from util import make_doc, fmt_round, fmt_ip, convert_name
-from stats_meta import BATTING_STATS, PITCHING_STATS
+from util import make_doc, render_table
 from triple_crown import (batting_triple_crown, pitching_triple_crown,
                           batting_triple_crown_conf, pitching_triple_crown_conf,
                           batting_title, era_title, hr_sb_club)
 from data import teams as teams_data
 
 
-def _triple_crown_table(winners, stat_cols, stat_meta):
+def _triple_crown_table(winners, stat_cols):
     if not winners:
         p("No triple crown winners.")
         return
-    with table(border=0):
-        with thead():
-            with tr():
-                th('Season')
-                th('Player')
-                for col in stat_cols:
-                    th(col)
-        with tbody():
-            for w in winners:
-                first, last = w['first'], w['last']
-                with tr():
-                    td(w['season'])
-                    td(a(f"{first} {last}", href=f"players/{convert_name(first, last)}.html"))
-                    for col in stat_cols:
-                        m = stat_meta[col]
-                        td(fmt_round(w[col], m['decimal_places'], m['leading_zero'], m['percentage']))
+    rows = [
+        {'First Name': w['first'], 'Last Name': w['last'], 'Player': '',
+         'Season': w['season'], **{col: w[col] for col in stat_cols}}
+        for w in winners
+    ]
+    render_table(pd.DataFrame(rows), prefix='players/')
 
 
 def _batting_title_table(winners):
     if not winners:
         p("No batting title winners.")
         return
-    m = BATTING_STATS['AVG']
-    with table(border=0):
-        with thead():
-            with tr():
-                th('Season')
-                th('Player')
-                th('AVG')
-                th('PA')
-                th('Note')
-        with tbody():
-            for w in winners:
-                first, last = w['first'], w['last']
-                with tr():
-                    td(w['season'])
-                    td(a(f"{first} {last}", href=f"players/{convert_name(first, last)}.html"))
-                    td(fmt_round(w['AVG'], m['decimal_places'], m['leading_zero'], m['percentage']))
-                    td(w['PA'])
-                    td('* hitless AB rule' if w['unqualified'] else '')
+    rows = [
+        {'First Name': w['first'], 'Last Name': w['last'], 'Player': '',
+         'Season': w['season'], 'AVG': w['AVG'], 'PA': w['PA'],
+         'Note': '* hitless AB rule' if w['unqualified'] else ''}
+        for w in winners
+    ]
+    render_table(pd.DataFrame(rows), prefix='players/')
 
 
 def _era_title_table(winners):
     if not winners:
         p("No ERA title winners.")
         return
-    m = PITCHING_STATS['ERA']
-    with table(border=0):
-        with thead():
-            with tr():
-                th('Season')
-                th('Player')
-                th('ERA')
-                th('IP')
-        with tbody():
-            for w in winners:
-                first, last = w['first'], w['last']
-                with tr():
-                    td(w['season'])
-                    td(a(f"{first} {last}", href=f"players/{convert_name(first, last)}.html"))
-                    td(fmt_round(w['ERA'], m['decimal_places'], m['leading_zero'], m['percentage']))
-                    td(fmt_ip(w['IP_true']))
+    rows = [
+        {'First Name': w['first'], 'Last Name': w['last'], 'Player': '',
+         'Season': w['season'], 'ERA': w['ERA'], 'IP_true': w['IP_true']}
+        for w in winners
+    ]
+    render_table(pd.DataFrame(rows), prefix='players/')
 
 
 def _hr_sb_table(members):
     if not members:
         p("No members.")
         return
-    m_avg = BATTING_STATS['AVG']
-    with table(border=0):
-        with thead():
-            with tr():
-                for col in ['Season', 'Player', 'Team', 'HR', 'SB', 'AVG']:
-                    th(col)
-        with tbody():
-            for w in members:
-                first, last = w['first'], w['last']
-                with tr():
-                    td(w['season'])
-                    td(a(f"{first} {last}", href=f"players/{convert_name(first, last)}.html"))
-                    td(w['team'])
-                    td(w['HR'])
-                    td(w['SB'])
-                    td(fmt_round(w['AVG'], m_avg['decimal_places'], m_avg['leading_zero'], m_avg['percentage']))
+    rows = [
+        {'First Name': w['first'], 'Last Name': w['last'], 'Player': '',
+         'Season': w['season'], 'Team': w['team'],
+         'HR': w['HR'], 'SB': w['SB'], 'AVG': w['AVG']}
+        for w in members
+    ]
+    render_table(pd.DataFrame(rows), prefix='players/')
 
 
 def generate_awards():
@@ -116,16 +76,16 @@ def generate_awards():
 
         h2("Triple Crown")
         h3("Batting")
-        _triple_crown_table(bat_winners, ['AVG', 'HR', 'RBI'], BATTING_STATS)
+        _triple_crown_table(bat_winners, ['AVG', 'HR', 'RBI'])
         h3("Pitching")
-        _triple_crown_table(pit_winners, ['W', 'ERA', 'K'], PITCHING_STATS)
+        _triple_crown_table(pit_winners, ['W', 'ERA', 'K'])
 
         for conf in conferences:
             h2(f"{conf} Triple Crown")
             h3("Batting")
-            _triple_crown_table(conf_bat[conf], ['AVG', 'HR', 'RBI'], BATTING_STATS)
+            _triple_crown_table(conf_bat[conf], ['AVG', 'HR', 'RBI'])
             h3("Pitching")
-            _triple_crown_table(conf_pit[conf], ['W', 'ERA', 'K'], PITCHING_STATS)
+            _triple_crown_table(conf_pit[conf], ['W', 'ERA', 'K'])
 
         h2("Batting Title")
         for conf in conferences:
