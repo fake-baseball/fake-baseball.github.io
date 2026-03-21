@@ -58,9 +58,23 @@ def generate_team_season_page(team_name, season_num, abbr):
     ].sort_values('IP_true', ascending=False).copy()
     pit_stats = _add_player_col(pit_stats)
 
+    team_seasons = sorted(
+        teams_data.standings[teams_data.standings['teamName'] == team_name]['Season'].unique()
+    )
+    idx = team_seasons.index(season_num) if season_num in team_seasons else -1
+    prev_season = team_seasons[idx - 1] if idx > 0 else None
+    next_season = team_seasons[idx + 1] if idx >= 0 and idx < len(team_seasons) - 1 else None
+
     doc = make_doc(f"{team_name} Season {season_num}", css='../../style.css')
     with doc:
         h1(f"{team_name} Season {season_num}")
+        with p():
+            if prev_season:
+                a(f"<< Season {prev_season}", href=f"{prev_season}.html")
+            if prev_season and next_season:
+                span(" | ")
+            if next_season:
+                a(f"Season {next_season} >>", href=f"{next_season}.html")
         p(f"{row['conference_name']} - {row['division_name']}")
         p(f"Record: {w}-{l} ({win_pct})")
 
