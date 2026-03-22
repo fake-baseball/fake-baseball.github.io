@@ -14,8 +14,8 @@ _BAT_CONTEXTS = {'batting', 'baserunning'}
 _ALL_BAT = {k: v for k, v in REGISTRY.items() if v.get('context') in _BAT_CONTEXTS}
 from util import player_link, make_doc, fmt_ip, fmt_round, fmt_rdiff, render_table
 
-_PITCHER_COLS  = ['Name', '#', 'Role', 'T', 'VEL', 'JNK', 'ACC', 'FLD', 'Arsenal', 'Age', 'Salary']
-_POSITION_COLS = ['Name', '#', 'PP', '2P', 'B', 'POW', 'CON', 'SPD', 'FLD', 'ARM', 'Age', 'Salary']
+_PITCHER_COLS  = ['Name', '#', 'role', 'throws', 'velocity', 'junk', 'accuracy', 'fielding', 'Arsenal', 'age', 'Salary']
+_POSITION_COLS = ['Name', '#', 'pos1', 'pos2', 'bats', 'power', 'contact', 'speed', 'fielding', 'arm', 'age', 'Salary']
 
 
 def _batter_stats(first, last):
@@ -25,7 +25,7 @@ def _batter_stats(first, last):
     rows = df[mask]
     if rows.empty:
         return None
-    row = rows.loc[rows['Season'].idxmax()]
+    row = rows.loc[rows['season'].idxmax()]
     def _fmt(stat, val):
         m = REGISTRY[stat]
         return fmt_round(val, m['decimal_places'], m['leading_zero'])
@@ -44,7 +44,7 @@ def _pitcher_statline(first, last):
     rows = df[mask]
     if rows.empty:
         return None
-    row = rows.loc[rows['Season'].idxmax()]
+    row = rows.loc[rows['season'].idxmax()]
     def _fmt(stat, val):
         m = REGISTRY[stat]
         return fmt_round(val, m['decimal_places'], m['leading_zero'])
@@ -91,7 +91,7 @@ def _lineup_table(lineup, bench):
                 first, last = row['firstName'], row['lastName']
                 pi   = players.player_info.loc[(first, last)] if (first, last) in players.player_info.index else None
                 mask = ((df['First Name'] == first) & (df['Last Name'] == last) &
-                        (df['stat_type'] == 'season') & (df['Season'] == 20))
+                        (df['stat_type'] == 'season') & (df['season'] == 20))
                 s20  = df[mask].iloc[0] if not df[mask].empty else None
                 proj = proj_by_player.get((first, last))
                 with tr():
@@ -112,7 +112,7 @@ def _lineup_table(lineup, bench):
                 first, last = row['first_name'], row['last_name']
                 pi   = players.player_info.loc[(first, last)] if (first, last) in players.player_info.index else None
                 mask = ((df['First Name'] == first) & (df['Last Name'] == last) &
-                        (df['stat_type'] == 'season') & (df['Season'] == 20))
+                        (df['stat_type'] == 'season') & (df['season'] == 20))
                 s20  = df[mask].iloc[0] if not df[mask].empty else None
                 proj = proj_by_player.get((first, last))
                 with tr():
@@ -158,7 +158,7 @@ def _rotation_table(rotation, bullpen):
     def _pit_row(num, first, last):
         pi   = players.player_info.loc[(first, last)] if (first, last) in players.player_info.index else None
         mask = ((df['First Name'] == first) & (df['Last Name'] == last) &
-                (df['stat_type'] == 'season') & (df['Season'] == 20))
+                (df['stat_type'] == 'season') & (df['season'] == 20))
         s20  = df[mask].iloc[0] if not df[mask].empty else None
         proj = proj_by_player.get((first, last))
         with tr():
@@ -202,8 +202,8 @@ def _rotation_table(rotation, bullpen):
 
 def _roster_table(group, cols, link_col='Name'):
     df = group.rename(columns={'first_name': 'First Name', 'last_name': 'Last Name'}).copy()
-    df['Player'] = ''
-    display_cols = ['Player' if c == link_col else c for c in cols]
+    df['player'] = ''
+    display_cols = ['player' if c == link_col else c for c in cols]
     render_table(df[display_cols + ['First Name', 'Last Name']], prefix='../../players/')
 
 
@@ -216,25 +216,13 @@ def generate_team_page(team_name, roster, team_info):
     pitchers = roster[roster['ppos'] == 'P'].sort_values(['last_name', 'first_name']).copy()
     position = roster[roster['ppos'] != 'P'].sort_values(['last_name', 'first_name']).copy()
 
-    # Rename columns to display labels
+    # Rename columns to REGISTRY keys (or display labels for non-REGISTRY columns)
     for df in (pitchers, position):
         df.rename(columns={
             'jersey':     '#',
-            'age':        'Age',
-            'role':       'Role',
-            'ppos':       'PP',
-            'spos':       '2P',
-            'throws':     'T',
-            'bats':       'B',
+            'ppos':       'pos1',
+            'spos':       'pos2',
             'salary':     'Salary',
-            'power':      'POW',
-            'contact':    'CON',
-            'speed':      'SPD',
-            'fielding':   'FLD',
-            'arm':        'ARM',
-            'velocity':   'VEL',
-            'junk':       'JNK',
-            'accuracy':   'ACC',
             'pitchTypes': 'Arsenal',
         }, inplace=True)
         df['Name'] = None  # placeholder; _roster_table uses first_name/last_name directly

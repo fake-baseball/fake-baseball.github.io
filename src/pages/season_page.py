@@ -100,8 +100,8 @@ def _league_stats_section(season_num):
 def _leader_table(stat, rows):
     h4(REGISTRY[stat]['name'] if stat in REGISTRY else stat)
     df = rows.reset_index().rename(columns={'index': '#'})
-    df = df[['#', 'First Name', 'Last Name', 'Team', stat]].copy()
-    df.insert(2, 'Player', '')
+    df = df[['#', 'First Name', 'Last Name', 'team', stat]].copy()
+    df.insert(2, 'player', '')
     render_table(df, prefix='../players/')
 
 

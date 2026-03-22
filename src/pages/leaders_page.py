@@ -40,30 +40,30 @@ def generate_leaders():
         _index_row(title, slug)
 
         df = get_batting_leaders(stat, num=100, worst=worst)
-        cols = list(dict.fromkeys(['First Name', 'Last Name', stat, 'Season', qual_col, 'Team']))
+        cols = list(dict.fromkeys(['First Name', 'Last Name', stat, 'season', qual_col, 'team']))
         df = df[cols].copy()
         df.insert(0, '#', df.index)
-        df.insert(1, 'Player', '')
+        df.insert(1, 'player', '')
         pages.append((title, slug, 'season', df))
 
         df = get_leaders_by_season(stat, worst=worst)
-        cols = list(dict.fromkeys(['Season', 'First Name', 'Last Name', stat, qual_col, 'Team']))
+        cols = list(dict.fromkeys(['season', 'First Name', 'Last Name', stat, qual_col, 'team']))
         df = df[cols].copy()
-        df.insert(1, 'Player', '')
+        df.insert(1, 'player', '')
         pages.append((title, slug, 'yearly', df))
 
         df = get_career_batting_leaders(stat, num=100, worst=worst)
         cols = list(dict.fromkeys(['First Name', 'Last Name', stat, qual_col]))
         df = df[cols].copy()
         df.insert(0, '#', df.index)
-        df.insert(1, 'Player', '')
+        df.insert(1, 'player', '')
         pages.append((title, slug, 'career', df))
 
         df = get_career_batting_leaders(stat, active=True, num=100, worst=worst)
         cols = list(dict.fromkeys(['First Name', 'Last Name', stat, qual_col]))
         df = df[cols].copy()
         df.insert(0, '#', df.index)
-        df.insert(1, 'Player', '')
+        df.insert(1, 'player', '')
         pages.append((title, slug, 'active', df))
 
     def _render_batting():
@@ -84,54 +84,54 @@ def generate_leaders():
         # Season table
         df = get_pitching_leaders(stat, num=100, worst=worst)
         if stat == 'p_ip':
-            cols = ['First Name', 'Last Name', 'Role', 'p_ip', 'Season', 'Team']
+            cols = ['First Name', 'Last Name', 'role', 'p_ip', 'season', 'team']
         else:
-            cols = ['First Name', 'Last Name', 'Role', stat, 'Season', 'p_ip', 'Team']
+            cols = ['First Name', 'Last Name', 'role', stat, 'season', 'p_ip', 'team']
         df = df[list(dict.fromkeys(cols))].copy()
         df.insert(0, '#', df.index)
-        df.insert(1, 'Player', '')
+        df.insert(1, 'player', '')
         pages.append((title, slug, 'season', df))
 
         # Yearly table
         df = get_pitching_leaders_by_season(stat, worst=worst)
         if stat == 'p_ip':
-            cols = ['Season', 'First Name', 'Last Name', 'Role', 'p_ip', 'Team']
+            cols = ['season', 'First Name', 'Last Name', 'role', 'p_ip', 'team']
         else:
-            cols = ['Season', 'First Name', 'Last Name', 'Role', stat, 'p_ip', 'Team']
+            cols = ['season', 'First Name', 'Last Name', 'role', stat, 'p_ip', 'team']
         df = df[list(dict.fromkeys(cols))].copy()
-        df.insert(1, 'Player', '')
+        df.insert(1, 'player', '')
         pages.append((title, slug, 'yearly', df))
 
         # Career role lookup
         import pitching as _pit
         season_role = (
             _pit.stats[_pit.stats['stat_type'] == 'season']
-            .sort_values('Season')
-            .groupby(['First Name', 'Last Name'])['Role']
+            .sort_values('season')
+            .groupby(['First Name', 'Last Name'])['role']
             .last()
         )
 
         if stat == 'p_ip':
-            career_cols = ['First Name', 'Last Name', 'Role', 'p_ip']
+            career_cols = ['First Name', 'Last Name', 'role', 'p_ip']
         else:
-            career_cols = ['First Name', 'Last Name', 'Role', stat, 'p_ip']
+            career_cols = ['First Name', 'Last Name', 'role', stat, 'p_ip']
 
         # Career table
         df = get_career_pitching_leaders(stat, num=100, worst=worst)
         df = df.copy()
-        df['Role'] = df.apply(lambda r: season_role.get((r['First Name'], r['Last Name']), r['Role']), axis=1)
+        df['role'] = df.apply(lambda r: season_role.get((r['First Name'], r['Last Name']), r['role']), axis=1)
         df = df[list(dict.fromkeys(career_cols))].copy()
         df.insert(0, '#', df.index)
-        df.insert(1, 'Player', '')
+        df.insert(1, 'player', '')
         pages.append((title, slug, 'career', df))
 
         # Active table
         df = get_career_pitching_leaders(stat, active=True, num=100, worst=worst)
         df = df.copy()
-        df['Role'] = df.apply(lambda r: season_role.get((r['First Name'], r['Last Name']), r['Role']), axis=1)
+        df['role'] = df.apply(lambda r: season_role.get((r['First Name'], r['Last Name']), r['role']), axis=1)
         df = df[list(dict.fromkeys(career_cols))].copy()
         df.insert(0, '#', df.index)
-        df.insert(1, 'Player', '')
+        df.insert(1, 'player', '')
         pages.append((title, slug, 'active', df))
 
     def render_pitching(stat, meta):

@@ -10,14 +10,14 @@ from util import make_doc, render_table, fmt_round
 
 
 _BAT_COLS = [
-    'Player', 'war',
+    'player', 'war',
     'gb', 'pa', 'ab', 'r', 'h', 'b_2b', 'b_3b', 'hr', 'rbi',
     'sb', 'cs', 'bb', 'k', 'avg', 'obp', 'slg', 'ops', 'ops_plus',
     'tb', 'hbp', 'sh', 'sf', 'e', 'pb', 'stat_type',
 ]
 
 _PIT_COLS = [
-    'Player', 'p_war',
+    'player', 'p_war',
     'p_w', 'p_l', 'p_win_pct', 'p_era', 'p_gp', 'p_gs', 'p_cg', 'p_sho', 'p_sv', 'p_ip',
     'p_h', 'p_ra', 'p_er', 'p_hr', 'p_bb', 'p_k', 'p_hbp', 'p_wp', 'p_bf', 'p_era_minus', 'p_fip', 'p_whip',
     'stat_type',
@@ -37,19 +37,19 @@ def generate_team_season_page(team_name, season_num, abbr):
 
     def _prep(df, cols):
         df = df.copy()
-        df['Player'] = ''
+        df['player'] = ''
         available = ['First Name', 'Last Name'] + [c for c in cols if c in df.columns]
         return df[list(dict.fromkeys(available))]
 
     bat_stats = bat_module.stats[
-        (bat_module.stats['Team'] == abbr) &
-        (bat_module.stats['Season'] == season_num) &
+        (bat_module.stats['team'] == abbr) &
+        (bat_module.stats['season'] == season_num) &
         (bat_module.stats['stat_type'] != 'career')
     ].sort_values('pa', ascending=False)
 
     pit_stats = pit_module.stats[
-        (pit_module.stats['Team'] == abbr) &
-        (pit_module.stats['Season'] == season_num) &
+        (pit_module.stats['team'] == abbr) &
+        (pit_module.stats['season'] == season_num) &
         (pit_module.stats['stat_type'] != 'career')
     ].sort_values('p_ip', ascending=False)
 

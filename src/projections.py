@@ -37,7 +37,7 @@ def compute():
     active = set(players.player_info.index)
 
     df = bat_module.stats[
-        (bat_module.stats['Season'].isin(PROJ_SEASONS)) &
+        (bat_module.stats['season'].isin(PROJ_SEASONS)) &
         (bat_module.stats['stat_type'] == 'season')
     ].copy()
     df = df[df.apply(lambda r: (r['First Name'], r['Last Name']) in active, axis=1)]
@@ -45,7 +45,7 @@ def compute():
     # ── Step 1: Fit regression on players qualified in all 3 seasons ─────────
 
     df_qual     = df[df['pa'] >= BAT_SEASON_MIN_PA].copy()
-    full_counts = df_qual.groupby(['First Name', 'Last Name'])['Season'].nunique()
+    full_counts = df_qual.groupby(['First Name', 'Last Name'])['season'].nunique()
     full_names  = full_counts[full_counts == len(PROJ_SEASONS)].index
     df_train    = df_qual[df_qual.set_index(['First Name', 'Last Name']).index.isin(full_names)].copy()
 
@@ -55,7 +55,7 @@ def compute():
     train_rows = []
     for (first, last), group in df_train.groupby(['First Name', 'Last Name']):
         proj = {comp: sum(
-            group.loc[group['Season'] == s, f'{comp}_rate'].iloc[0] * WEIGHTS[s]
+            group.loc[group['season'] == s, f'{comp}_rate'].iloc[0] * WEIGHTS[s]
             for s in PROJ_SEASONS
         ) / WEIGHT_TOTAL for comp in COMPONENTS}
         pi = players.player_info.loc[(first, last)]
@@ -88,14 +88,14 @@ def compute():
 
         season_pa = {}
         for s in PROJ_SEASONS:
-            season_row     = df[(df['First Name'] == first) & (df['Last Name'] == last) & (df['Season'] == s)]
+            season_row     = df[(df['First Name'] == first) & (df['Last Name'] == last) & (df['season'] == s)]
             season_pa[s]   = int(season_row.iloc[0]['pa']) if not season_row.empty else 0
 
         proj = {}
         for comp in COMPONENTS:
             weighted_sum = 0.0
             for s in PROJ_SEASONS:
-                season_row  = df[(df['First Name'] == first) & (df['Last Name'] == last) & (df['Season'] == s)]
+                season_row  = df[(df['First Name'] == first) & (df['Last Name'] == last) & (df['season'] == s)]
                 actual_pa   = season_pa[s]
                 actual_stat = float(season_row.iloc[0][comp]) if not season_row.empty else 0.0
 
@@ -136,7 +136,7 @@ def fit_pa_model():
     Returns dict with keys: model, r2, rmse, coefs, intercept, n.
     """
     s20 = bat_module.stats[
-        (bat_module.stats['Season'] == 20) &
+        (bat_module.stats['season'] == 20) &
         (bat_module.stats['stat_type'] == 'season') &
         (bat_module.stats['pa'] > 0)
     ].copy()
@@ -208,7 +208,7 @@ def compute_all():
     lg_slg_20  = _lg_avg('slg')
 
     s20 = bat_module.stats[
-        (bat_module.stats['Season'] == 20) &
+        (bat_module.stats['season'] == 20) &
         (bat_module.stats['stat_type'] == 'season') &
         (bat_module.stats['pa'] > 0) &
         (bat_module.stats['gb'] > 0)
@@ -284,12 +284,12 @@ def compute_all():
     # RC% = (R - HR) / (H - HR + BB + HBP): context-driven, not a player skill,
     # so we use the weighted league average rather than individual player history.
     df_proj = bat_module.stats[
-        (bat_module.stats['Season'].isin(PROJ_SEASONS)) &
+        (bat_module.stats['season'].isin(PROJ_SEASONS)) &
         (bat_module.stats['stat_type'] == 'season')
     ]
     lg_rc_pct_total = 0.0
     for s in PROJ_SEASONS:
-        s_df            = df_proj[df_proj['Season'] == s]
+        s_df            = df_proj[df_proj['season'] == s]
         total_non_hr_ob = (s_df['h'] - s_df['hr'] + s_df['bb'] + s_df['hbp']).sum()
         lg_rc_pct_s     = (s_df['r'] - s_df['hr']).sum() / total_non_hr_ob if total_non_hr_ob > 0 else 0.0
         lg_rc_pct_total += WEIGHTS[s] * lg_rc_pct_s

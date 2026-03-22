@@ -43,7 +43,7 @@ def compute():
     active = set(players.player_info.index)
 
     df = pit_module.stats[
-        (pit_module.stats['Season'].isin(PROJ_SEASONS)) &
+        (pit_module.stats['season'].isin(PROJ_SEASONS)) &
         (pit_module.stats['stat_type'] == 'season')
     ].copy()
     df = df[df.apply(lambda r: (r['First Name'], r['Last Name']) in active, axis=1)]
@@ -63,14 +63,14 @@ def compute():
     # ── Step 1: Fit component regression on pitchers qualified in all 3 seasons ──
 
     df_qual    = df[df['p_ip'] >= PIT_SEASON_MIN_IP].copy()
-    full_counts = df_qual.groupby(['First Name', 'Last Name'])['Season'].nunique()
+    full_counts = df_qual.groupby(['First Name', 'Last Name'])['season'].nunique()
     full_names  = full_counts[full_counts == len(PROJ_SEASONS)].index
     df_train   = df_qual[df_qual.set_index(['First Name', 'Last Name']).index.isin(full_names)].copy()
 
     train_rows = []
     for (first, last), group in df_train.groupby(['First Name', 'Last Name']):
         blended = {comp: sum(
-            group.loc[group['Season'] == s, f'{comp}_rate'].iloc[0] * WEIGHTS[s]
+            group.loc[group['season'] == s, f'{comp}_rate'].iloc[0] * WEIGHTS[s]
             for s in PROJ_SEASONS
         ) / WEIGHT_TOTAL for comp in COMPONENTS}
         pi = players.player_info.loc[(first, last)]
@@ -114,7 +114,7 @@ def compute():
         season_app = {}   # p_gs for SP, p_gr for relievers
         app_col    = 'p_gs' if role == 'SP' else 'p_gr'
         for s in PROJ_SEASONS:
-            season_row    = df[(df['First Name'] == first) & (df['Last Name'] == last) & (df['Season'] == s)]
+            season_row    = df[(df['First Name'] == first) & (df['Last Name'] == last) & (df['season'] == s)]
             season_ip[s]  = float(season_row.iloc[0]['p_ip']) if not season_row.empty else 0.0
             season_app[s] = float(season_row.iloc[0][app_col])  if not season_row.empty else 0.0
 
@@ -122,7 +122,7 @@ def compute():
         for comp in COMPONENTS:
             weighted_sum = 0.0
             for s in PROJ_SEASONS:
-                season_row  = df[(df['First Name'] == first) & (df['Last Name'] == last) & (df['Season'] == s)]
+                season_row  = df[(df['First Name'] == first) & (df['Last Name'] == last) & (df['season'] == s)]
                 actual_ip   = season_ip[s]
                 actual_bf   = float(season_row.iloc[0]['p_bf']) if not season_row.empty else 0.0
                 actual_stat = float(season_row.iloc[0][comp]) if not season_row.empty else 0.0
@@ -163,13 +163,13 @@ def fit_ip_model():
     Returns dict keyed by role group, each value a dict: model, r2, rmse, coefs, intercept, n.
     """
     s20 = pit_module.stats[
-        (pit_module.stats['Season'] == 20) &
+        (pit_module.stats['season'] == 20) &
         (pit_module.stats['stat_type'] == 'season') &
         (pit_module.stats['p_ip'] > 0)
     ].copy()
 
     pi = players.player_info.reset_index()
-    pi = pi[pi['ppos'] == 'P'][['first_name', 'last_name'] + IP_FEATURES + ['role']]
+    pi = pi[pi['ppos'] == 'P'][['first_name', 'last_name'] + IP_FEATURES]
     merged = s20.merge(pi, left_on=['First Name', 'Last Name'],
                            right_on=['first_name', 'last_name'])
 
@@ -331,26 +331,26 @@ def compute_all():
     #   RP  SV/GR -> league average (role-dependent, not skill)
     df_all = pit_module.stats[pit_module.stats['stat_type'] == 'season'].copy()
 
-    sp_hist = df_all[(df_all['Role'] == 'SP') & (df_all['p_gs'] >= 5)].copy()
+    sp_hist = df_all[(df_all['role'] == 'SP') & (df_all['p_gs'] >= 5)].copy()
     sp_hist['W_rate'] = sp_hist['p_w'] / sp_hist['p_gs']
     sp_hist['L_rate'] = sp_hist['p_l'] / sp_hist['p_gs']
     sp_w_model = LinearRegression().fit(sp_hist[['p_ra9']].values, sp_hist['W_rate'].values)
     sp_l_model = LinearRegression().fit(sp_hist[['p_ra9']].values, sp_hist['L_rate'].values)
 
-    rp_hist = df_all[(df_all['Role'].isin(['RP', 'CL', 'SP/RP'])) & (df_all['p_gr'] >= 10)].copy()
+    rp_hist = df_all[(df_all['role'].isin(['RP', 'CL', 'SP/RP'])) & (df_all['p_gr'] >= 10)].copy()
     rp_hist['L_rate'] = rp_hist['p_l'] / rp_hist['p_gr']
     rp_l_model = LinearRegression().fit(rp_hist[['p_ra9']].values, rp_hist['L_rate'].values)
 
-    cl_hist = df_all[(df_all['Role'] == 'CL') & (df_all['p_gr'] >= 10)].copy()
+    cl_hist = df_all[(df_all['role'] == 'CL') & (df_all['p_gr'] >= 10)].copy()
     cl_hist['SV_rate'] = cl_hist['p_sv'] / cl_hist['p_gr']
     cl_sv_model = LinearRegression().fit(cl_hist[['p_ra9']].values, cl_hist['SV_rate'].values)
 
     # League averages for the flat cases (RP W/GR, RP SV/GR)
-    rp_all = df_all[df_all['Role'].isin(['RP', 'CL', 'SP/RP'])]
+    rp_all = df_all[df_all['role'].isin(['RP', 'CL', 'SP/RP'])]
     lg_rp_w_rate  = rp_all['p_w'].sum() / rp_all['p_gr'].sum() if rp_all['p_gr'].sum() > 0 else 0.0
-    lg_rp_sv_rate = (df_all[df_all['Role'].isin(['RP', 'SP/RP'])]['p_sv'].sum() /
-                     df_all[df_all['Role'].isin(['RP', 'SP/RP'])]['p_gr'].sum()
-                     if df_all[df_all['Role'].isin(['RP', 'SP/RP'])]['p_gr'].sum() > 0 else 0.0)
+    lg_rp_sv_rate = (df_all[df_all['role'].isin(['RP', 'SP/RP'])]['p_sv'].sum() /
+                     df_all[df_all['role'].isin(['RP', 'SP/RP'])]['p_gr'].sum()
+                     if df_all[df_all['role'].isin(['RP', 'SP/RP'])]['p_gr'].sum() > 0 else 0.0)
 
     for row in rows:
         role = row['role']

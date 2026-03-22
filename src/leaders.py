@@ -31,11 +31,11 @@ def get_batting_leaders(stat, season=None, worst=False, num=10, team=None, teams
     if season is None:
         df = df[df['stat_type'] == 'season']
     else:
-        df = df[df['Season'] == season]
+        df = df[df['season'] == season]
     if team is not None:
-        df = df[df['Team'] == team]
+        df = df[df['team'] == team]
     if teams is not None:
-        df = df[df['Team'].isin(teams)]
+        df = df[df['team'].isin(teams)]
     if ascending:
         df = df[df[stat] <= df[stat].nsmallest(num).max()]
         df = df.sort_values(stat, ascending=True)
@@ -52,11 +52,11 @@ def get_career_batting_leaders(stat, active=False, worst=False, num=10, team=Non
     meta = _ALL_BAT_META[stat]
     ascending = meta['lowest'] ^ worst
     df = batting.stats[batting.stats[meta['qual_col']] >= CAREER_THRESHOLDS[meta['qual_col']]] if meta['qualified'] else batting.stats
-    df = df[df['Season'] == 'Career']
+    df = df[df['season'] == 'Career']
     if active:
         df = df[df.set_index(['First Name', 'Last Name']).index.isin(players.player_info.index)]
     if team is not None:
-        df = df[df['Team'] == team]
+        df = df[df['team'] == team]
     if ascending:
         df = df[df[stat] <= df[stat].nsmallest(num).max()]
         df = df.sort_values(stat, ascending=True)
@@ -85,11 +85,11 @@ def get_pitching_leaders(stat, season=None, worst=False, num=10, team=None, team
     if season is None:
         df = df[df['stat_type'] == 'season']
     else:
-        df = df[df['Season'] == season]
+        df = df[df['season'] == season]
     if team is not None:
-        df = df[df['Team'] == team]
+        df = df[df['team'] == team]
     if teams is not None:
-        df = df[df['Team'].isin(teams)]
+        df = df[df['team'].isin(teams)]
     if ascending:
         df = df[df[stat] <= df[stat].nsmallest(num).max()]
         df = df.sort_values(stat, ascending=True)
@@ -106,11 +106,11 @@ def get_career_pitching_leaders(stat, active=False, worst=False, num=10, team=No
     meta = REGISTRY[stat]
     ascending = meta['lowest'] ^ worst
     df = pitching.stats[pitching.stats['p_ip'] >= PIT_CAREER_MIN_IP] if meta['qualified'] else pitching.stats
-    df = df[df['Season'] == 'Career']
+    df = df[df['season'] == 'Career']
     if active:
         df = df[df.set_index(['First Name', 'Last Name']).index.isin(players.player_info.index)]
     if team is not None:
-        df = df[df['Team'] == team]
+        df = df[df['team'] == team]
     if ascending:
         df = df[df[stat] <= df[stat].nsmallest(num).max()]
         df = df.sort_values(stat, ascending=True)
@@ -161,9 +161,9 @@ def compute_season_leaders():
         confs        = teams_data.teams['conference_name'].dropna().unique()
 
         bat_c          = bat_data.copy()
-        bat_c['_conf'] = bat_c['Team'].map(abbr_to_conf)
+        bat_c['_conf'] = bat_c['team'].map(abbr_to_conf)
         pit_c          = pit_data.copy()
-        pit_c['_conf'] = pit_c['Team'].map(abbr_to_conf)
+        pit_c['_conf'] = pit_c['team'].map(abbr_to_conf)
 
         batting_leaders_conf  = {
             c: _compute_leaders(bat_c[bat_c['_conf'] == c], [bat_meta])
@@ -194,5 +194,5 @@ def _compute_leaders(data, stat_dicts):
                 continue
             qual_col = meta['qual_col']
             source = _get_qual(qual_col) if meta['qualified'] else data
-            cols[stat] = source.groupby('Season')[stat].min() if meta['lowest'] else source.groupby('Season')[stat].max()
+            cols[stat] = source.groupby('season')[stat].min() if meta['lowest'] else source.groupby('season')[stat].max()
     return pd.DataFrame(cols)

@@ -22,6 +22,8 @@ def load_batting():
     data['2P'] = data['2P'].fillna(value="None")
     # Rename to final column names before calling formula functions
     data = data.rename(columns={
+        'PP': 'pos1', '2P': 'pos2',
+        'Team': 'team', 'Age': 'age', 'Season': 'season',
         'GP': 'b_gp', 'GB': 'gb', 'PA': 'pa', 'AB': 'ab', 'H': 'h',
         '1B': 'b_1b', '2B': 'b_2b', '3B': 'b_3b',
         'HR': 'hr', 'R': 'r', 'RBI': 'rbi', 'BB': 'bb', 'K': 'k',
@@ -48,6 +50,7 @@ def load_pitching():
     data['p_ip'] = np.floor(ip) + (ip - np.floor(ip)) * (10/3)
     data = data.drop(columns=['IP'])
     data = data.rename(columns={
+        'Team': 'team', 'Age': 'age', 'Season': 'season', 'Role': 'role',
         'W': 'p_w', 'L': 'p_l', 'GP': 'p_gp', 'GS': 'p_gs',
         'CG': 'p_cg', 'SHO': 'p_sho', 'SV': 'p_sv',
         'K': 'p_k', 'BB': 'p_bb', 'H': 'p_h', 'ER': 'p_er',

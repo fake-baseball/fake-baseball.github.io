@@ -31,7 +31,7 @@ def _pit_summary_table(stats, proj_row):
             return fmt_ip(val)
         return fmt_round(val, meta['decimal_places'], meta['leading_zero'], meta['percentage'])
 
-    s20    = stats[(stats['Season'] == 20) & (stats['stat_type'] == 'season')]
+    s20    = stats[(stats['season'] == 20) & (stats['stat_type'] == 'season')]
     career = stats[stats['stat_type'] == 'career']
 
     rows_data = []
@@ -84,9 +84,9 @@ def _pit_proj_row(first, last, cols):
         team_abbr = ''
     d = {col: np.nan for col in cols}
     d.update({
-        'Season': 'Proj', 'stat_type': 'projected',
-        'Age':  pi_row['age'] if pi_row is not None else np.nan,
-        'Team': team_abbr,
+        'season': 'Proj', 'stat_type': 'projected',
+        'age':  pi_row['age'] if pi_row is not None else np.nan,
+        'team': team_abbr,
         'p_w': proj['xW'], 'p_l': proj['xL'],
         'p_win_pct': proj['xW'] / (proj['xW'] + proj['xL']) if (proj['xW'] + proj['xL']) > 0 else np.nan,
         'p_gp': proj['xGP'], 'p_gs': proj['xGS'], 'p_sv': proj['xSV'],
@@ -127,11 +127,11 @@ def generate_pitcher_page(first_name, last_name):
     else:
         active = False
         mask   = (pitching.stats['Last Name'] == last_name) & (pitching.stats['First Name'] == first_name)
-        pitcher_role = pitching.stats.loc[mask, 'Role'].iloc[0]
+        pitcher_role = pitching.stats.loc[mask, 'role'].iloc[0]
         try:
             ret_mask          = (players.retired_pitchers['Last Name'] == last_name) & (players.retired_pitchers['First Name'] == first_name)
             retirement_season = players.retired_pitchers.loc[ret_mask, 'Retirement Season'].iloc[0]
-            retirement_age    = players.retired_pitchers.loc[ret_mask, 'Age'].iloc[0]
+            retirement_age    = players.retired_pitchers.loc[ret_mask, 'age'].iloc[0]
         except (IndexError, KeyError):
             print("Unable to fetch retirement info for", first_name, last_name)
             retirement_season = "Unknown"
@@ -177,7 +177,7 @@ def generate_pitcher_page(first_name, last_name):
 
         h3("Standard Pitching")
         standard_pitching = stats[[
-            'Season', 'Age', 'Team', 'p_war',
+            'season', 'age', 'team', 'p_war',
             'p_w', 'p_l', 'p_win_pct', 'p_era', 'p_gp', 'p_gs', 'p_cg', 'p_sho', 'p_sv', 'p_ip',
             'p_h', 'p_ra', 'p_er', 'p_hr', 'p_bb', 'p_k', 'p_hbp', 'p_wp', 'p_bf', 'p_era_minus', 'p_fip', 'p_whip',
             'stat_type',
@@ -186,7 +186,7 @@ def generate_pitcher_page(first_name, last_name):
 
         h3("Advanced Pitching")
         render_table(stats[[
-            'Season', 'Age', 'Team', 'p_ip',
+            'season', 'age', 'team', 'p_ip',
             'p_era', 'p_fip', 'p_ra9', 'p_baa', 'p_obpa', 'p_bip', 'p_babip',
             'p_h_per_9', 'p_hr_per_9', 'p_k_per_9', 'p_bb_per_9', 'p_k_per_bb', 'p_k_pct', 'p_bb_pct',
             'p_p_per_gp', 'p_p_per_ip', 'p_p_per_pa', 'stat_type',
@@ -194,7 +194,7 @@ def generate_pitcher_page(first_name, last_name):
 
         h3("Value Pitching")
         render_table(stats[[
-            'Season', 'Age', 'Team', 'p_ip', 'p_gp', 'p_gs',
+            'season', 'age', 'team', 'p_ip', 'p_gp', 'p_gs',
             'p_ra', 'p_r_def', 'p_ra9', 'p_ra9_def', 'p_r_lev', 'p_r_corr',
             'p_raa', 'p_raa_lev', 'p_waa', 'p_r_rep', 'p_rar', 'p_war', 'stat_type',
         ]])

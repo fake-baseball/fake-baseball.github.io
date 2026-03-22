@@ -16,8 +16,8 @@ def _triple_crown_table(winners, stat_cols):
         p("No triple crown winners.")
         return
     rows = [
-        {'First Name': w['first'], 'Last Name': w['last'], 'Player': '',
-         'Season': w['season'], **{col: w[col] for col in stat_cols}}
+        {'First Name': w['first'], 'Last Name': w['last'], 'player': '',
+         'season': w['season'], **{col: w[col] for col in stat_cols}}
         for w in winners
     ]
     render_table(pd.DataFrame(rows), prefix='players/')
@@ -28,8 +28,8 @@ def _batting_title_table(winners):
         p("No batting title winners.")
         return
     rows = [
-        {'First Name': w['first'], 'Last Name': w['last'], 'Player': '',
-         'Season': w['season'], 'avg': w['AVG'], 'pa': w['PA'],
+        {'First Name': w['first'], 'Last Name': w['last'], 'player': '',
+         'season': w['season'], 'avg': w['AVG'], 'pa': w['PA'],
          'Note': '* hitless AB rule' if w['unqualified'] else ''}
         for w in winners
     ]
@@ -41,8 +41,8 @@ def _era_title_table(winners):
         p("No ERA title winners.")
         return
     rows = [
-        {'First Name': w['first'], 'Last Name': w['last'], 'Player': '',
-         'Season': w['season'], 'p_era': w['ERA'], 'p_ip': w['IP_true']}
+        {'First Name': w['first'], 'Last Name': w['last'], 'player': '',
+         'season': w['season'], 'p_era': w['ERA'], 'p_ip': w['IP_true']}
         for w in winners
     ]
     render_table(pd.DataFrame(rows), prefix='players/')
@@ -53,8 +53,8 @@ def _hr_sb_table(members):
         p("No members.")
         return
     rows = [
-        {'First Name': w['first'], 'Last Name': w['last'], 'Player': '',
-         'Season': w['season'], 'Team': w['team'],
+        {'First Name': w['first'], 'Last Name': w['last'], 'player': '',
+         'season': w['season'], 'team': w['team'],
          'hr': w['HR'], 'sb': w['SB'], 'avg': w['AVG']}
         for w in members
     ]

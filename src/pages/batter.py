@@ -32,7 +32,7 @@ def _summary_table(stats, proj_row):
             return '-'
         return fmt_round(val, meta['decimal_places'], meta['leading_zero'], meta['percentage'])
 
-    s20    = stats[(stats['Season'] == 20) & (stats['stat_type'] == 'season')]
+    s20    = stats[(stats['season'] == 20) & (stats['stat_type'] == 'season')]
     career = stats[stats['stat_type'] == 'career']
 
     rows_data = []
@@ -89,9 +89,9 @@ def _bat_proj_row(first, last, cols):
         team_abbr = ''
     d = {col: np.nan for col in cols}
     d.update({
-        'Season': 'Proj', 'stat_type': 'projected',
-        'Age':  pi_row['age'] if pi_row is not None else np.nan,
-        'Team': team_abbr,
+        'season': 'Proj', 'stat_type': 'projected',
+        'age':  pi_row['age'] if pi_row is not None else np.nan,
+        'team': team_abbr,
         'pa': pa, 'ab': ab, 'bb': bb, 'hbp': hbp,
         'b_2b': twob, 'b_3b': threeb, 'hr': hr, 'h': h, 'tb': tb,
         'k': k, 'sb': sb, 'cs': cs, 'bip': bip, 'xbh': xbh,
@@ -120,7 +120,7 @@ def _bat_proj_row(first, last, cols):
     if h > 0:
         d['xbh_pct'] = xbh / h
     if pi_row is not None:
-        d['PP']   = pi_row['ppos']
+        d['pos1'] = pi_row['ppos']
         d['pos2'] = pi_row['spos']
     return pd.DataFrame([d])
 
@@ -140,12 +140,12 @@ def generate_batter_page(first_name, last_name):
     else:
         active      = False
         mask        = (batting.stats['Last Name'] == last_name) & (batting.stats['First Name'] == first_name)
-        primary_pos   = batting.stats.loc[mask, 'PP'].iloc[0]
+        primary_pos   = batting.stats.loc[mask, 'pos1'].iloc[0]
         secondary_pos = batting.stats.loc[mask, 'pos2'].iloc[0]
         try:
             ret_mask          = (players.retired_batters['Last Name'] == last_name) & (players.retired_batters['First Name'] == first_name)
             retirement_season = players.retired_batters.loc[ret_mask, 'Retirement Season'].iloc[0]
-            retirement_age    = players.retired_batters.loc[ret_mask, 'Age'].iloc[0]
+            retirement_age    = players.retired_batters.loc[ret_mask, 'age'].iloc[0]
         except (IndexError, KeyError):
             print("Unable to fetch retirement info for", first_name, last_name)
             retirement_season = "Unknown"
@@ -196,7 +196,7 @@ def generate_batter_page(first_name, last_name):
 
         h3("Standard Batting")
         standard_batting = stats[[
-            'Season', 'Age', 'Team', 'war',
+            'season', 'age', 'team', 'war',
             'gb', 'pa', 'ab', 'r', 'h', 'b_2b', 'b_3b', 'hr', 'rbi',
             'sb', 'cs', 'bb', 'k', 'avg', 'obp', 'slg', 'ops', 'ops_plus',
             'tb', 'hbp', 'sh', 'sf', 'stat_type',
@@ -204,21 +204,21 @@ def generate_batter_page(first_name, last_name):
         render_table(standard_batting)
 
         h3("Advanced Batting")
-        render_table(stats[['Season', 'Age', 'Team', 'pa',
+        render_table(stats[['season', 'age', 'team', 'pa',
                     'woba', 'wrc', 'wrc_plus', 'bip', 'babip',
                     'iso', 'xbh', 'xbh_pct', 'hr_pct', 'k_pct', 'bb_pct', 'stat_type']])
 
         h3("Baserunning")
-        render_table(stats[['Season', 'Age', 'Team', 'pa',
+        render_table(stats[['season', 'age', 'team', 'pa',
                     'sb', 'cs', 'sb_pct', 'sb_att_pct', 'rs_pct', 'rc_pct', 'stat_type']])
 
         h3("Fielding")
-        render_table(stats[['Season', 'Age', 'Team', 'PP', 'pos2',
+        render_table(stats[['season', 'age', 'team', 'pos1', 'pos2',
                     'gb', 'gf', 'e', 'e_per_gf', 'pb', 'pb_per_gf', 'stat_type']])
 
         h3("Value")
         render_table(stats[[
-            'Season', 'Age', 'Team', 'gb', 'pa',
+            'season', 'age', 'team', 'gb', 'pa',
             'r_bat', 'r_br', 'r_def', 'r_pos', 'r_corr', 'r_rep', 'raa', 'rar', 'waa', 'war', 'stat_type',
         ]])
 

@@ -36,11 +36,11 @@ def compute():
     # Columns are already renamed to final names by load_pitching() in data/stats.py
 
     compute_p_era(d)
-    d['p_era_minus'] = 100 * d['p_era'] / d['Season'].map(lg.season_pitching['p_era'])
+    d['p_era_minus'] = 100 * d['p_era'] / d['season'].map(lg.season_pitching['p_era'])
     compute_p_ra9(d)
     compute_p_whip(d)
     compute_fip_raw(d)
-    d['p_fip'] += d['Season'].map(lg.season_pitching['p_cfip'])
+    d['p_fip'] += d['season'].map(lg.season_pitching['p_cfip'])
     compute_p_baa(d)
     compute_p_obpa(d)
     compute_p_babip(d)
@@ -62,39 +62,39 @@ def compute():
     # Defense-adjusted RA9
     bip        = d['p_bf'] - d['p_bb'] - d['p_hbp'] - d['p_k'] - d['p_hr']
     babip_diff = d.apply(
-        lambda row: lg.team_defense.loc[(row['Season'], row['Team']), 'p_babip_diff'], axis=1)
-    rh         = d['Season'].map(lg.season_pitching['r_per_h'])
+        lambda row: lg.team_defense.loc[(row['season'], row['team']), 'p_babip_diff'], axis=1)
+    rh         = d['season'].map(lg.season_pitching['r_per_h'])
     d['p_r_def']  = -bip * babip_diff * rh * DEF_IMPACT
     compute_p_ra9_def(d)
 
     # WAR
-    pf       = (1 + d['Team'].map(park_factors)) / 2
+    pf       = (1 + d['team'].map(park_factors)) / 2
     ra9_comp = d.apply(
-        lambda row: lg.role_pitching.loc[(row['Season'], row['Role'] == 'SP'), 'p_ra9'], axis=1)
+        lambda row: lg.role_pitching.loc[(row['season'], row['role'] == 'SP'), 'p_ra9'], axis=1)
 
     base_raa = (ra9_comp * pf - d['p_ra9_def']) / 9 * d['p_ip']
 
     # Zero-sum correction: distribute the season RAA imbalance proportionally by IP
     d['p_r_corr'] = 0.0
     d['p_raa']    = base_raa
-    season_raa = d.groupby('Season')['p_raa'].sum()
-    season_ip  = d.groupby('Season')['p_ip'].sum()
-    d['p_r_corr'] = d['Season'].map(-season_raa / season_ip) * d['p_ip']
+    season_raa = d.groupby('season')['p_raa'].sum()
+    season_ip  = d.groupby('season')['p_ip'].sum()
+    d['p_r_corr'] = d['season'].map(-season_raa / season_ip) * d['p_ip']
     d['p_raa']    = base_raa + d['p_r_corr']
 
     d['p_r_lev']   = d.apply(
         lambda row: (
-            row['p_sv']               * lg.role_leverage.loc[(row['Season'], row['Role']), 'r_sv'] +
-            (row['p_gr'] - row['p_sv']) * lg.role_leverage.loc[(row['Season'], row['Role']), 'r_no_sv']
+            row['p_sv']               * lg.role_leverage.loc[(row['season'], row['role']), 'r_sv'] +
+            (row['p_gr'] - row['p_sv']) * lg.role_leverage.loc[(row['season'], row['role']), 'r_no_sv']
         ), axis=1)
     compute_p_raa_lev(d)
 
-    rpw       = d['Season'].map(lg.season_batting['r_per_w'])
+    rpw       = d['season'].map(lg.season_batting['r_per_w'])
     d['p_waa'] = d['p_raa_lev'] / rpw
 
     wrep       = d['p_ip'] * d.apply(
         lambda row: lg.role_innings.loc[
-            (row['Season'], 'RP' if row['Role'] == 'CL' else row['Role']), 'rw_per_ip'
+            (row['season'], 'RP' if row['role'] == 'CL' else row['role']), 'rw_per_ip'
         ], axis=1)
     d['p_r_rep'] = rpw * wrep
     compute_p_rar(d)
@@ -106,28 +106,28 @@ def compute():
 
 def _append_summary_rows(d):
     gp = ['First Name', 'Last Name']
-    gt = ['First Name', 'Last Name', 'Team']
+    gt = ['First Name', 'Last Name', 'team']
 
     career = d.groupby(gp).sum(numeric_only=True).reset_index()
-    career['Season']    = 'Career'
-    career['Age']       = ''
-    career['Role']      = ''
+    career['season']    = 'Career'
+    career['age']       = ''
+    career['role']      = ''
     career['stat_type'] = 'career'
-    team_counts = d.groupby(gp)['Team'].nunique().reset_index(name='Team')
+    team_counts = d.groupby(gp)['team'].nunique().reset_index(name='team')
     career = career.merge(team_counts, on=gp)
-    career['Team'] = career['Team'].astype(str) + 'TM'
+    career['team'] = career['team'].astype(str) + 'TM'
     career = _recompute_rates(career)
     career['p_era_minus'] = d.groupby(gp).apply(lambda g: weighted_avg(g, 'p_era_minus', 'p_ip'), include_groups=False).values
     career['p_fip']       = d.groupby(gp).apply(lambda g: weighted_avg(g, 'p_fip',       'p_ip'), include_groups=False).values
     career['p_ra9_def']   = d.groupby(gp).apply(lambda g: weighted_avg(g, 'p_ra9_def',   'p_ip'), include_groups=False).values
 
     team_totals = d.groupby(gt).sum(numeric_only=True).reset_index()
-    season_counts = d.groupby(gt)['Season'].nunique().reset_index(name='Season')
-    team_totals = team_totals.drop(columns=['Season']).merge(season_counts, on=gt)
-    team_totals['Season'] = team_totals['Season'].apply(
+    season_counts = d.groupby(gt)['season'].nunique().reset_index(name='season')
+    team_totals = team_totals.drop(columns=['season']).merge(season_counts, on=gt)
+    team_totals['season'] = team_totals['season'].apply(
         lambda n: f"{n} Szn" if n == 1 else f"{n} Szns")
-    team_totals['Age']       = ''
-    team_totals['Role']      = ''
+    team_totals['age']       = ''
+    team_totals['role']      = ''
     team_totals['stat_type'] = 'team'
     team_totals = _recompute_rates(team_totals)
     team_totals['p_era_minus'] = d.groupby(gt).apply(lambda g: weighted_avg(g, 'p_era_minus', 'p_ip'), include_groups=False).values

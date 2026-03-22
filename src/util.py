@@ -167,7 +167,7 @@ def render_table(df, *, prefix='', hidden=None, row_class=None, cell_style=None,
         return str(val) if val is not None else ''
 
     visible_cols = [c for c in df.columns if c not in _hidden]
-    has_player_link = ('Player' in visible_cols
+    has_player_link = ('player' in visible_cols
                        and 'First Name' in df.columns
                        and 'Last Name' in df.columns)
     col_meta = {c: _resolve_meta(c) for c in visible_cols}
@@ -216,7 +216,7 @@ def render_table(df, *, prefix='', hidden=None, row_class=None, cell_style=None,
                         raw_val = raw_row[col]
 
                         # Build display content
-                        if col == 'Player' and has_player_link:
+                        if col == 'player' and has_player_link:
                             first = raw_row['First Name']
                             last  = raw_row['Last Name']
                             slug  = convert_name(first, last)
@@ -229,10 +229,10 @@ def render_table(df, *, prefix='', hidden=None, row_class=None, cell_style=None,
                             if stat_type == 'season' and meta.get('type') == 'stat':
                                 overall_ldr, conf_ldr_dict = _leaders_for_col(col)
                                 if overall_ldr is not None:
-                                    season = raw_row.get('Season')
+                                    season = raw_row.get('season')
                                     try:
                                         fval     = float(raw_val)
-                                        qual_col = meta.get('qual_col', 'PA')
+                                        qual_col = meta.get('qual_col', 'pa')
                                         qualifies = (
                                             not meta['qualified']
                                             or raw_row.get(qual_col, 0) >= SEASON_THRESHOLDS.get(qual_col, 0)
@@ -241,8 +241,8 @@ def render_table(df, *, prefix='', hidden=None, row_class=None, cell_style=None,
                                             best_o = float(overall_ldr.loc[season, col])
                                             overall_best = fval <= best_o if meta['lowest'] else fval >= best_o
 
-                                            if conf_ldr_dict and 'Team' in df.columns:
-                                                team     = raw_row.get('Team', '')
+                                            if conf_ldr_dict and 'team' in df.columns:
+                                                team     = raw_row.get('team', '')
                                                 conf     = abbr_to_conf.get(team)
                                                 conf_ldr = conf_ldr_dict.get(conf) if conf else None
                                                 if conf_ldr is not None and season in conf_ldr.index and col in conf_ldr.columns:

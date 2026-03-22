@@ -411,7 +411,7 @@ def _player_table(rows, skills, labels, abbr_map, war_model_info, war_linear_inf
 def _build_war_map(stats_df, war_col='WAR'):
     """Return {(first, last): WAR} from Season 20 season rows."""
     s20 = stats_df[
-        (stats_df['Season'] == 20) & (stats_df['stat_type'] == 'season')
+        (stats_df['season'] == 20) & (stats_df['stat_type'] == 'season')
     ]
     return {
         (row['First Name'], row['Last Name']): float(row[war_col])

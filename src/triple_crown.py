@@ -92,11 +92,11 @@ def batting_title(conference=None):
 
     for season in SEASON_RANGE:
         df = bat_module.stats[
-            (bat_module.stats['Season'] == season) &
+            (bat_module.stats['season'] == season) &
             (bat_module.stats['stat_type'] == 'season')
         ].copy()
         if abbrs is not None:
-            df = df[df['Team'].isin(abbrs)]
+            df = df[df['team'].isin(abbrs)]
         if df.empty:
             continue
 
@@ -145,12 +145,12 @@ def era_title(conference=None):
 
     for season in SEASON_RANGE:
         df = pit_module.stats[
-            (pit_module.stats['Season'] == season) &
+            (pit_module.stats['season'] == season) &
             (pit_module.stats['stat_type'] == 'season') &
             (pit_module.stats['p_ip'] >= PIT_SEASON_MIN_IP)
         ].copy()
         if abbrs is not None:
-            df = df[df['Team'].isin(abbrs)]
+            df = df[df['team'].isin(abbrs)]
         if df.empty:
             continue
 
@@ -178,13 +178,13 @@ def hr_sb_club(threshold):
     results = []
     for _, row in df.iterrows():
         results.append({
-            'season': row['Season'],
+            'season': row['season'],
             'first':  row['First Name'],
             'last':   row['Last Name'],
             'HR':     int(row['hr']),
             'SB':     int(row['sb']),
             'AVG':    row['avg'],
-            'team':   row['Team'],
+            'team':   row['team'],
         })
     return sorted(results, key=lambda r: (r['season'], -r['HR']))
 

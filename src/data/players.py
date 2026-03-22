@@ -23,6 +23,7 @@ def load_retirements():
 
 def _load_retirement_csv(path):
     df = pd.read_csv(path)[['First Name', 'Last Name', 'Age', 'Retirement Season']]
+    df = df.rename(columns={'Age': 'age'})
     df = df.fillna(0)
     df['Retirement Season'] = df['Retirement Season'].astype(int)
     return df

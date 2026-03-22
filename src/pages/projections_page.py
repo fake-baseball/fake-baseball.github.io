@@ -36,8 +36,8 @@ def _proj_table(rows):
     records = []
     for row in rows:
         records.append({
-            'First Name': row['first'], 'Last Name': row['last'], 'Player': '',
-            'Team':    row['_team_abbr'] or 'FA',
+            'First Name': row['first'], 'Last Name': row['last'], 'player': '',
+            'team':    row['_team_abbr'] or 'FA',
             'power':   row['power'],   'contact': row['contact'],
             'speed':   row['speed'],   'fielding': row['fielding'], 'arm': row['arm'],
             'gb':  row['xGB'],  'pa':  row['proj_pa'],
@@ -82,10 +82,10 @@ def _pit_all_table(pit_rows):
     records = []
     for row in pit_rows:
         records.append({
-            'First Name': row['first'], 'Last Name': row['last'], 'Player': '',
-            'Team':     row['_team_abbr'] or 'FA',
+            'First Name': row['first'], 'Last Name': row['last'], 'player': '',
+            'team':     row['_team_abbr'] or 'FA',
             'velocity': row['velocity'], 'junk': row['junk'], 'accuracy': row['accuracy'],
-            'Role':     row['role'],
+            'role':     row['role'],
             'p_ip':  row['proj_ip'],
             'p_gp': row['xGP'], 'p_w': row['xW'], 'p_l': row['xL'], 'p_sv': row['xSV'],
             'p_k': row['xK'], 'p_bb': row['xBB'], 'p_hr': row['xHR'],
@@ -276,7 +276,7 @@ def generate_projections():
 
         # WAR delta: xWAR vs Season 20 WAR
         bat_s20 = bat_module.stats[
-            (bat_module.stats['Season'] == 20) & (bat_module.stats['stat_type'] == 'season')
+            (bat_module.stats['season'] == 20) & (bat_module.stats['stat_type'] == 'season')
         ].set_index(['First Name', 'Last Name'])
         bat_deltas = []
         for r in rows:
@@ -306,7 +306,7 @@ def generate_projections():
 
         # WAR delta: xWAR vs Season 20 WAR
         pit_s20 = pit_module.stats[
-            (pit_module.stats['Season'] == 20) & (pit_module.stats['stat_type'] == 'season')
+            (pit_module.stats['season'] == 20) & (pit_module.stats['stat_type'] == 'season')
         ].set_index(['First Name', 'Last Name'])
         pit_deltas = []
         for r in pit_rows:
