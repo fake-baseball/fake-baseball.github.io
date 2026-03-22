@@ -5,7 +5,7 @@ from dominate.tags import *
 
 import batting
 import pitching
-from util import player_link, make_doc
+from util import convert_name, make_doc
 
 
 def generate_players_index():
@@ -26,5 +26,5 @@ def generate_players_index():
             if last[0].upper() != current_letter:
                 current_letter = last[0].upper()
                 h2(current_letter, id=current_letter)
-            p(player_link(first, last, prefix='', label=f"{last}, {first}"))
+            p(a(f"{last}, {first}", href=f"{convert_name(first, last)}.html"))
     Path("docs/players/index.html").write_text(str(doc))

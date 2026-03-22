@@ -102,7 +102,7 @@ def _leader_table(stat, rows):
     df = rows.reset_index().rename(columns={'index': '#'})
     df = df[['#', 'First Name', 'Last Name', 'team', stat]].copy()
     df.insert(2, 'player', '')
-    render_table(df, prefix='../players/')
+    render_table(df, depth=1)
 
 
 def _leaders_section(season_num):

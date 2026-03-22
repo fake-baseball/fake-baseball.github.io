@@ -20,7 +20,7 @@ def _triple_crown_table(winners, stat_cols):
          'season': w['season'], **{col: w[col] for col in stat_cols}}
         for w in winners
     ]
-    render_table(pd.DataFrame(rows), prefix='players/')
+    render_table(pd.DataFrame(rows), depth=0)
 
 
 def _batting_title_table(winners):
@@ -33,7 +33,7 @@ def _batting_title_table(winners):
          'Note': '* hitless AB rule' if w['unqualified'] else ''}
         for w in winners
     ]
-    render_table(pd.DataFrame(rows), prefix='players/')
+    render_table(pd.DataFrame(rows), depth=0)
 
 
 def _era_title_table(winners):
@@ -45,7 +45,7 @@ def _era_title_table(winners):
          'season': w['season'], 'p_era': w['ERA'], 'p_ip': w['IP_true']}
         for w in winners
     ]
-    render_table(pd.DataFrame(rows), prefix='players/')
+    render_table(pd.DataFrame(rows), depth=0)
 
 
 def _hr_sb_table(members):
@@ -58,7 +58,7 @@ def _hr_sb_table(members):
          'hr': w['HR'], 'sb': w['SB'], 'avg': w['AVG']}
         for w in members
     ]
-    render_table(pd.DataFrame(rows), prefix='players/')
+    render_table(pd.DataFrame(rows), depth=0)
 
 
 def generate_awards():

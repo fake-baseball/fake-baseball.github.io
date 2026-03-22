@@ -204,7 +204,7 @@ def _roster_table(group, cols, link_col='Name'):
     df = group.rename(columns={'first_name': 'First Name', 'last_name': 'Last Name'}).copy()
     df['player'] = ''
     display_cols = ['player' if c == link_col else c for c in cols]
-    render_table(df[display_cols + ['First Name', 'Last Name']], prefix='../../players/')
+    render_table(df[display_cols + ['First Name', 'Last Name']], depth=2)
 
 
 def generate_team_page(team_name, roster, team_info):

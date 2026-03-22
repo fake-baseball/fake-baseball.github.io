@@ -77,10 +77,10 @@ def generate_team_season_page(team_name, season_num, abbr):
         p("Individual player stats here may show stats that a player achieved with another team "
           "or may not be present at all (in the case of mid-season transactions).")
         h3("Standard Batting")
-        render_table(_prep(bat_stats, _BAT_COLS), prefix='../../players/')
+        render_table(_prep(bat_stats, _BAT_COLS), depth=2)
 
         h3("Standard Pitching")
-        render_table(_prep(pit_stats, _PIT_COLS), prefix='../../players/')
+        render_table(_prep(pit_stats, _PIT_COLS), depth=2)
 
     slug = team_name.replace(' ', '')
     Path(f"docs/teams/{slug}/{season_num}.html").write_text(str(doc))

@@ -45,7 +45,7 @@ def _proj_table(rows):
             'avg': row['xAVG'], 'obp': row['xOBP'], 'slg': row['xSLG'],
             'ops': row['xOPS'], 'wrc_plus': row['xwRC+'], 'war': row['xWAR'],
         })
-    render_table(pd.DataFrame(records), prefix='players/')
+    render_table(pd.DataFrame(records), depth=0)
 
 
 def _team_summary_table(team_rows):
@@ -93,7 +93,7 @@ def _pit_all_table(pit_rows):
             'p_whip': row['xWHIP'], 'p_k_pct': row['xK%'], 'p_bb_pct': row['xBB%'],
             'p_war': row['xWAR'],
         })
-    render_table(pd.DataFrame(records), prefix='players/')
+    render_table(pd.DataFrame(records), depth=0)
 
 
 def _pit_team_summary_table(team_rows):
@@ -142,7 +142,7 @@ def _war_delta_table(deltas):
         with tbody():
             for first, last, s20_war, xwar, delta in deltas:
                 with tr():
-                    td(player_link(first, last, prefix='players/'))
+                    td(player_link(first, last, depth=0))
                     td(_fw(s20_war))
                     td(_fw(xwar))
                     sign = '+' if delta >= 0 else ''

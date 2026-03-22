@@ -120,12 +120,14 @@ def fmt_df(df):
 
 
 
-def render_table(df, *, prefix='', hidden=None, row_class=None, cell_style=None, border=0):
+def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, border=0):
     """Render a DataFrame as a dominate table with formatting, bolding, and player links.
 
     df         - DataFrame; may contain 'First Name'/'Last Name' for Player links,
                  'stat_type' for row CSS classes, 'Season'/'Team' for bolding lookups.
-    prefix     - prepended to player link hrefs (e.g. '../players/').
+    depth      - number of directory levels above docs/ root for the calling page.
+                 0 = docs/ (e.g. index.html), 1 = docs/leaders/, 2 = docs/teams/Team/.
+                 Player links are built as '../' * depth + 'players/{slug}.html'.
     hidden     - set of column names to exclude from display; 'stat_type', 'First Name',
                  and 'Last Name' are always hidden.
     row_class  - callable (row) -> str override for <tr> CSS class.
@@ -217,10 +219,11 @@ def render_table(df, *, prefix='', hidden=None, row_class=None, cell_style=None,
 
                         # Build display content
                         if col == 'player' and has_player_link:
-                            first = raw_row['First Name']
-                            last  = raw_row['Last Name']
-                            slug  = convert_name(first, last)
-                            content = anchor_tag(f"{first} {last}", href=f"{prefix}{slug}.html")
+                            first  = raw_row['First Name']
+                            last   = raw_row['Last Name']
+                            slug   = convert_name(first, last)
+                            _pfx   = '../' * depth + 'players/'
+                            content = anchor_tag(f"{first} {last}", href=f"{_pfx}{slug}.html")
                         else:
                             disp_val = _format_cell(col, meta, raw_val)
 
@@ -281,16 +284,16 @@ def convert_name(first, last):
     return f"{first.replace(' ', '')}{last.replace(' ', '')}"
 
 
-def player_link(first, last, prefix='../players/', label=None):
+def player_link(first, last, depth=1, label=None):
     """Return a dominate <a> tag linking to a player page.
 
-    prefix - relative path from the calling page's directory to docs/players/.
-             Defaults to '../players/' for pages one level deep (teams/, leaders/).
-             Use 'players/' for pages at the docs/ root.
-             Use '' for pages already inside docs/players/.
-    label  - link text; defaults to 'First Last'.
+    depth - number of directory levels above docs/ root for the calling page.
+            0 = docs/ (e.g. index.html), 1 = docs/leaders/, 2 = docs/teams/Team/.
+            The href is built as '../' * depth + 'players/{slug}.html'.
+    label - link text; defaults to 'First Last'.
     """
     from dominate.tags import a
+    prefix = '../' * depth + 'players/'
     href = f"{prefix}{convert_name(first, last)}.html"
     return a(label or f"{first} {last}", href=href)
 

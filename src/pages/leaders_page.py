@@ -201,5 +201,5 @@ def generate_leaders():
         subdoc = make_doc(f"{display_name} - {labels[suffix]}")
         with subdoc:
             h1(f"{labels[suffix]} for {title}")
-            render_table(df, prefix='../players/')
+            render_table(df, depth=1)
         Path(f"docs/leaders/{slug}_{suffix}.html").write_text(str(subdoc))
