@@ -18,4 +18,6 @@ def generate_home():
         h2(a("Awards", href="awards.html"))
         h2(a("Projections", href="projections.html"))
         h2(a("Salaries", href="salaries.html"))
+        h2(a("Cy Young Predictor", href="cy_young.html"))
+        h2(a("Glossary", href="glossary.html"))
     Path("docs/index.html").write_text(str(doc))

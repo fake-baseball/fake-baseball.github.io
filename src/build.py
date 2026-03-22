@@ -55,6 +55,8 @@ from pages.home          import generate_home
 from pages.projections_page import generate_projections
 from pages.games_page    import generate_games
 from pages.awards_page   import generate_awards
+from pages.cy_young_page  import generate_cy_young
+from pages.glossary_page  import generate_glossary
 from pages.salaries_page import generate_salaries
 
 
@@ -68,11 +70,13 @@ def main():
     parser.add_argument("--awards",       action="store_true", help="Build awards page")
     parser.add_argument("--projections",  action="store_true", help="Build projections page")
     parser.add_argument("--salaries",     action="store_true", help="Build salaries page")
+    parser.add_argument("--cy-young",     action="store_true", help="Build Cy Young Predictor page")
+    parser.add_argument("--glossary",     action="store_true", help="Build Glossary page")
     parser.add_argument("--games",   action="store_true", help="Copy game files to docs/games/")
     args = parser.parse_args()
 
     # If nothing specified, build everything.
-    build_all      = not any([args.players, args.leaders, args.seasons, args.teams, args.home, args.games, args.awards, args.projections, args.salaries])
+    build_all      = not any([args.players, args.leaders, args.seasons, args.teams, args.home, args.games, args.awards, args.projections, args.salaries, args.cy_young, args.glossary])
     do_players     = build_all or args.players
     do_leaders     = build_all or args.leaders
     do_seasons     = build_all or args.seasons
@@ -82,6 +86,8 @@ def main():
     do_awards      = build_all or args.awards
     do_projections = build_all or args.projections
     do_salaries    = build_all or args.salaries
+    do_cy_young    = build_all or args.cy_young
+    do_glossary    = build_all or args.glossary
 
     # ── Ensure output directories exist ──────────────────────────────────────
     Path("docs/players").mkdir(parents=True, exist_ok=True)
@@ -90,14 +96,14 @@ def main():
     Path("docs/seasons").mkdir(parents=True, exist_ok=True)
 
     # ── Raw data (needed by most pages) ──────────────────────────────────────
-    need_raw = do_players or do_leaders or do_seasons or do_teams or do_awards or do_projections or do_salaries
+    need_raw = do_players or do_leaders or do_seasons or do_teams or do_awards or do_projections or do_salaries or do_cy_young
     if need_raw:
         print("Loading raw data...")
         load_batting()
         load_pitching()
 
     # ── League averages (needed by players, leaders, seasons) ─────────────
-    need_lg = do_players or do_leaders or do_seasons or do_teams or do_awards or do_projections or do_salaries
+    need_lg = do_players or do_leaders or do_seasons or do_teams or do_awards or do_projections or do_salaries or do_cy_young
     if need_lg:
         print("Computing league averages...")
         league.compute_league()
@@ -109,7 +115,13 @@ def main():
         load_player_info()
 
     # ── Per-player stats (needed by players, leaders, seasons) ───────────
-    need_stats = do_players or do_leaders or do_seasons or do_teams or do_awards or do_projections or do_salaries
+    need_stats = do_players or do_leaders or do_seasons or do_teams or do_awards or do_projections or do_salaries or do_cy_young
+
+    # ── Standings (needed by pitching.compute for VB, and by season/team pages) ─
+    if need_stats or do_seasons or do_teams:
+        load_teams()
+        load_standings()
+
     if need_stats:
         print("Computing player stats...")
         batting.compute()
@@ -117,11 +129,6 @@ def main():
 
         print("Loading retirements...")
         load_retirements()
-
-    # ── Team/standings data (needed by seasons, teams, awards, players, salaries) ─
-    need_teams_data = do_seasons or do_teams or do_awards or do_projections or do_players or do_salaries
-    if need_teams_data:
-        load_teams()
 
     # ── Player pages + index ──────────────────────────────────────────────
     if do_players:
@@ -136,8 +143,6 @@ def main():
 
         print("Generating players index...")
         generate_players_index()
-    if do_seasons or do_teams:
-        load_standings()
 
     # ── Other pages ───────────────────────────────────────────────────────
     if do_seasons:
@@ -180,6 +185,14 @@ def main():
     if do_salaries:
         print("Generating salaries page...")
         generate_salaries()
+
+    if do_cy_young:
+        print("Generating Cy Young Predictor page...")
+        generate_cy_young()
+
+    if do_glossary:
+        print("Generating Glossary page...")
+        generate_glossary()
 
     if do_leaders:
         print("Generating leaders pages...")

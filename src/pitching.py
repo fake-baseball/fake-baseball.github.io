@@ -23,7 +23,7 @@ from formulas import (
     compute_p_k_per_bb,
     compute_p_hr_pct, compute_p_k_pct, compute_p_bb_pct,
     compute_p_p_per_gp, compute_p_p_per_ip, compute_p_p_per_pa, compute_p_ip_per_gp,
-    compute_p_sv_pct, compute_fip_raw,
+    compute_p_sv_pct, compute_p_cyp, compute_fip_raw,
     compute_p_rar, compute_p_raa_lev, compute_p_ra9_def,
 )
 
@@ -99,6 +99,18 @@ def compute():
     d['p_r_rep'] = rpw * wrep
     compute_p_rar(d)
     d['p_war']  = d['p_rar'] / rpw
+
+    # Victory Bonus: 1 if pitcher's team won their division that season
+    from data import teams as teams_data
+    div_winners = set()
+    if teams_data.standings is not None and teams_data.teams is not None:
+        abbr_map = teams_data.teams.set_index('team_name')['abbr'].to_dict()
+        for _, row in teams_data.standings[teams_data.standings['GB'] == 0].iterrows():
+            abbr = abbr_map.get(row['teamName'])
+            if abbr:
+                div_winners.add((row['Season'], abbr))
+    d['p_vb'] = d.apply(lambda row: 1 if (row['season'], row['team']) in div_winners else 0, axis=1)
+    compute_p_cyp(d)
 
     d['stat_type'] = 'season'
     stats = _append_summary_rows(d)
