@@ -16,52 +16,52 @@ def generate_seasons():
     # ── Counting ─────────────────────────────────────────────────────────────
 
     off_count = fmt_df(sb[[
-        'G', 'pa', 'ab', 'r', 'h', 'b_1b', 'b_2b', 'b_3b', 'hr', 'rbi',
+        'g', 'pa', 'ab', 'r', 'h', 'b_1b', 'b_2b', 'b_3b', 'hr', 'rbi',
         'sb', 'cs', 'bb', 'k', 'tb', 'hbp', 'sh', 'sf', 'bip',
     ]])
 
-    def_raw = sp[['G', 'p_cg', 'p_sho', 'p_sv', 'p_ip', 'p_h', 'p_ra', 'p_er', 'p_hr',
+    def_raw = sp[['g', 'p_cg', 'p_sho', 'p_sv', 'p_ip', 'p_h', 'p_ra', 'p_er', 'p_hr',
                   'p_bb', 'p_k', 'p_hbp', 'p_wp', 'p_bf', 'p_tp']].copy()
     def_raw['e']  = sb['e']
     def_raw['pb'] = sb['pb']
-    def_count = fmt_df(def_raw).rename(columns={'p_ra': 'R', 'p_ip': 'IP'})
+    def_count = fmt_df(def_raw).rename(columns={'RA': 'R'})
 
     # ── Per game ──────────────────────────────────────────────────────────────
 
     off_pg_raw = sb[[
-        'G', 'pa', 'ab', 'r', 'h', 'b_1b', 'b_2b', 'b_3b', 'hr', 'rbi',
+        'g', 'pa', 'ab', 'r', 'h', 'b_1b', 'b_2b', 'b_3b', 'hr', 'rbi',
         'sb', 'cs', 'bb', 'k', 'tb', 'hbp', 'sh', 'sf', 'bip',
     ]]
     off_pg = per_game_df(off_pg_raw).map(lambda x: f"{x:.2f}")
-    off_pg.drop('G', axis=1, inplace=True)
+    off_pg.drop('g', axis=1, inplace=True)
 
-    def_pg_raw = sp[['G', 'p_cg', 'p_sho', 'p_sv', 'p_ip', 'p_h', 'p_ra', 'p_er', 'p_hr',
+    def_pg_raw = sp[['g', 'p_cg', 'p_sho', 'p_sv', 'p_ip', 'p_h', 'p_ra', 'p_er', 'p_hr',
                      'p_bb', 'p_k', 'p_hbp', 'p_wp', 'p_bf', 'p_tp']].copy()
     def_pg_raw['e']  = sb['e']
     def_pg_raw['pb'] = sb['pb']
     def_pg = per_game_df(def_pg_raw).map(lambda x: f"{x:.2f}")
     def_pg = def_pg.rename(columns={'p_ra': 'R', 'p_ip': 'IP'})
-    def_pg.drop('G', axis=1, inplace=True)
+    def_pg.drop('g', axis=1, inplace=True)
 
     # ── Rates ─────────────────────────────────────────────────────────────────
 
     rates = pd.DataFrame({
-        'R/G':   sb['R/G'],
-        'AVG':   sb['avg'],
-        'OBP':   sb['obp'],
-        'SLG':   sb['slg'],
-        'OPS':   sb['ops'],
-        'wOBA':  sb['woba'],
-        'SB%':   sb['sb_pct'],
-        'RA9':   sp['RA9'],
-        'ERA':   sp['ERA'],
-        'WHIP':  sp['WHIP'],
-        'BABIP': sp['BABIP'],
-        'p_k_pct':  sp['p_k_pct'],
-        'p_bb_pct': sp['p_bb_pct'],
-        'p_hr_pct': sp['p_hr_pct'],
-        'P/IP':  sp['p_p_per_ip'],
-        'P/PA':  sp['p_p_per_pa'],
+        'r_per_g':    sb['r_per_g'],
+        'avg':        sb['avg'],
+        'obp':        sb['obp'],
+        'slg':        sb['slg'],
+        'ops':        sb['ops'],
+        'woba':       sb['woba'],
+        'sb_pct':     sb['sb_pct'],
+        'p_ra9':      sp['p_ra9'],
+        'p_era':      sp['p_era'],
+        'p_whip':     sp['p_whip'],
+        'p_babip':    sp['p_babip'],
+        'p_k_pct':    sp['p_k_pct'],
+        'p_bb_pct':   sp['p_bb_pct'],
+        'p_hr_pct':   sp['p_hr_pct'],
+        'p_p_per_ip': sp['p_p_per_ip'],
+        'p_p_per_pa': sp['p_p_per_pa'],
     }, index=sb.index)
     rates = fmt_df(rates)
 

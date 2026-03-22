@@ -66,11 +66,11 @@ def compute():
     pf = (1 + d['Team'].map(park_factors)) / 2
 
     # Batting value (r_bat must come before wrc_plus)
-    lg_woba = d['Season'].map(lg.season_batting['wOBA'])
+    lg_woba = d['Season'].map(lg.season_batting['woba'])
     d['r_bat'] = ((d['woba'] - lg_woba * pf) / scale_wOBA) * d['pa']
 
     # Baserunning
-    lg_wsb = d['Season'].map(lg.season_batting['lg_wSB'])
+    lg_wsb = d['Season'].map(lg.season_batting['lg_wsb'])
     d['r_br'] = (d['sb'] * runs_SB + d['cs'] * runs_CS
                  - lg_wsb * (d['b_1b'] + d['bb'] + d['hbp']))
 
@@ -94,19 +94,19 @@ def compute():
     d['r_corr'] = d['Season'].map(-season_raa / season_pa) * d['pa']
     compute_b_raa(d)
 
-    rpw       = d['Season'].map(lg.season_batting['R/W'])
-    d['r_rep'] = d['pa'] * d['Season'].map(lg.season_batting['RR/PA'])
+    rpw       = d['Season'].map(lg.season_batting['r_per_w'])
+    d['r_rep'] = d['pa'] * d['Season'].map(lg.season_batting['rr_per_pa'])
     d['waa']  = d['raa'] / rpw
     compute_b_rar(d)
     d['war']  = d['rar'] / rpw
 
     # Park-adjusted rate stats (computed after r_bat so order is correct)
-    lg_woba = d['Season'].map(lg.season_batting['wOBA'])
-    lg_obp  = d['Season'].map(lg.season_batting['OBP'])
-    lg_slg  = d['Season'].map(lg.season_batting['SLG'])
-    lg_wRC  = d['Season'].map(lg.season_batting['wRC'])
-    lg_rPA  = d['Season'].map(lg.season_batting['R/PA'])
-    lg_pa   = d['Season'].map(lg.season_batting['PA'])
+    lg_woba = d['Season'].map(lg.season_batting['woba'])
+    lg_obp  = d['Season'].map(lg.season_batting['obp'])
+    lg_slg  = d['Season'].map(lg.season_batting['slg'])
+    lg_wRC  = d['Season'].map(lg.season_batting['wrc'])
+    lg_rPA  = d['Season'].map(lg.season_batting['r_per_pa'])
+    lg_pa   = d['Season'].map(lg.season_batting['pa'])
 
     d['ops_plus'] = 100 * ((d['obp'] / lg_obp) + (d['slg'] / lg_slg) - 1) / pf
     d['wrc']      = ((d['woba'] - lg_woba) / scale_wOBA + lg_rPA) * d['pa']

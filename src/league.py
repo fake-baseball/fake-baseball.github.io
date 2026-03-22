@@ -15,17 +15,17 @@ from constants import (
 )
 from formulas import (
     _div,
-    wOBA_num_raw, wOBA_denom_raw, compute_woba_raw,
-    compute_avg_raw, compute_obp_raw, compute_slg_raw, compute_sb_pct_raw,
-    compute_era_raw, compute_ra9_raw, compute_sv_pct_raw,
-    compute_bip_pit_raw, compute_babip_pit_raw,
-    compute_whip_raw,
-    compute_h_per_9_raw, compute_hr_per_9_raw, compute_bb_per_9_raw,
-    compute_k_per_9_raw, compute_k_per_bb_raw,
-    compute_k_pct_pit_raw, compute_bb_pct_pit_raw, compute_hr_pct_pit_raw,
-    compute_e_per_gf_raw, compute_pb_per_gf_raw,
-    compute_r_per_pa, compute_r_per_h, compute_fip_raw_raw, compute_cfip,
-    compute_p_per_ip_raw, compute_p_per_pa_raw,
+    wOBA_num, wOBA_denom, compute_woba,
+    compute_avg, compute_obp, compute_slg, compute_sb_pct,
+    compute_e_per_gf, compute_pb_per_gf,
+    compute_p_bip, compute_p_babip,
+    compute_p_era, compute_p_ra9, compute_p_whip,
+    compute_p_h_per_9, compute_p_hr_per_9, compute_p_bb_per_9, compute_p_k_per_9,
+    compute_p_k_per_bb, compute_p_k_pct, compute_p_bb_pct, compute_p_hr_pct,
+    compute_p_sv_pct, compute_p_gr,
+    compute_p_p_per_ip, compute_p_p_per_pa,
+    compute_fip_raw, compute_p_cfip,
+    compute_r_per_h, compute_r_per_pa,
 )
 
 
@@ -50,14 +50,12 @@ def compute_league():
     # ── Fielding averages by position ────────────────────────────────────────
     # batting_stats now uses final column names (e, pb, gf) after load_batting()
     fld = batters.groupby(['PP', '2P']).agg({'e': 'sum', 'pb': 'sum', 'gf': 'sum'})  # fielding rates by position
-    from formulas import compute_e_per_gf, compute_pb_per_gf
     compute_e_per_gf(fld)
     compute_pb_per_gf(fld)
     pos_fielding = fld[['e_per_gf', 'pb_per_gf']]
 
     # ── Positional wOBA adjustments ──────────────────────────────────────────
     # batting_stats uses final names; wOBA_num/denom use final names (bb, hbp, b_1b, etc.)
-    from formulas import wOBA_num, wOBA_denom
     overall_wOBA = _div(wOBA_num(batters).sum(), wOBA_denom(batters).sum())
 
     wOBA_by_PP = (  # all-time wOBA per primary position, used for stabilization
@@ -93,29 +91,23 @@ def compute_league():
         'e': 'sum', 'pb': 'sum',
     })
     # season_batting uses final batting column names; use final-name formula functions
-    from formulas import compute_avg, compute_obp, compute_slg, compute_woba, compute_sb_pct
     compute_avg(sb)
     compute_obp(sb)
     compute_slg(sb)
     compute_woba(sb)
     compute_sb_pct(sb)
-    sb['ops']  = sb['obp'] + sb['slg']
-    sb['G']    = batters.groupby('Season')['Team'].nunique() * num_games
-    sb['R/G']  = _div(sb['r'], sb['G'])
-    sb['wRC']  = (((sb['woba'] - sb['woba'].mean()) / scale_wOBA) + (sb['r'] / sb['pa'])) * sb['pa']
-    sb['lg_wSB'] = _div(
+    sb['ops']     = sb['obp'] + sb['slg']
+    sb['g']       = batters.groupby('Season')['Team'].nunique() * num_games
+    sb['r_per_g'] = _div(sb['r'], sb['g'])
+    sb['wrc']     = (((sb['woba'] - sb['woba'].mean()) / scale_wOBA) + (sb['r'] / sb['pa'])) * sb['pa']
+    sb['lg_wsb']  = _div(
         sb['sb'] * runs_SB + sb['cs'] * runs_CS,
         sb['b_1b'] + sb['bb'] + sb['hbp'],
     )
-    sb['R/W']   = RUNS_PER_WIN * sb['r'] / sb['r'].mean()
-    sb['RW/PA'] = batter_WAR / sb['pa']
-    sb['RR/PA'] = sb['RW/PA'] * sb['R/W']
-    sb['R/PA']  = _div(sb['r'], sb['pa'])
-    # Also store upper-case aliases needed by projections.py and pit_projections.py
-    sb['wOBA'] = sb['woba']
-    sb['OBP']  = sb['obp']
-    sb['SLG']  = sb['slg']
-    sb['PA']   = sb['pa']
+    sb['r_per_w']  = RUNS_PER_WIN * sb['r'] / sb['r'].mean()
+    sb['rw_per_pa'] = batter_WAR / sb['pa']
+    sb['rr_per_pa'] = sb['rw_per_pa'] * sb['r_per_w']
+    sb['r_per_pa']  = _div(sb['r'], sb['pa'])
     season_batting = sb
 
     # ── Season-level pitching aggregates ────────────────────────────────────
@@ -126,77 +118,55 @@ def compute_league():
         'p_hr': 'sum', 'p_hbp': 'sum', 'p_tp': 'sum', 'p_bf': 'sum', 'p_ra': 'sum',
         'p_wp': 'sum',
     })
-    # Add raw-name aliases so the _raw helper functions work on this aggregated DataFrame
-    sp['BF']     = sp['p_bf']
-    sp['K']      = sp['p_k']
-    sp['HR']     = sp['p_hr']
-    sp['BB']     = sp['p_bb']
-    sp['HBP']    = sp['p_hbp']
-    sp['H']      = sp['p_h']
-    sp['BIP']    = sp['p_bf'] - sp['p_k'] - sp['p_hr'] - sp['p_bb'] - sp['p_hbp']
-    sp['IP_true'] = sp['p_ip']
-    sp['ER']     = sp['p_er']
-    sp['RA']     = sp['p_ra']
-    sp['TP']     = sp['p_tp']
-    compute_babip_pit_raw(sp)
+    compute_p_bip(sp)
+    compute_p_babip(sp)
     compute_r_per_h(sp)
-    compute_era_raw(sp)
-    compute_whip_raw(sp)
-    compute_h_per_9_raw(sp)
-    compute_hr_per_9_raw(sp)
-    compute_bb_per_9_raw(sp)
-    compute_k_per_9_raw(sp)
-    compute_k_per_bb_raw(sp)
-    compute_k_pct_pit_raw(sp)
-    compute_bb_pct_pit_raw(sp)
-    compute_hr_pct_pit_raw(sp)
-    compute_ra9_raw(sp)
-    compute_fip_raw_raw(sp)
-    compute_cfip(sp)
-    compute_p_per_ip_raw(sp)
-    compute_p_per_pa_raw(sp)
-    sp['GR'] = sp['p_gp'] - sp['p_gs']
-    sp['G']  = pitchers.groupby('Season')['Team'].nunique() * num_games
-    sp['R/G'] = _div(sp['p_ra'], sp['G'])
+    compute_p_era(sp)
+    compute_p_ra9(sp)
+    compute_p_whip(sp)
+    compute_p_h_per_9(sp)
+    compute_p_hr_per_9(sp)
+    compute_p_bb_per_9(sp)
+    compute_p_k_per_9(sp)
+    compute_p_k_per_bb(sp)
+    compute_p_k_pct(sp)
+    compute_p_bb_pct(sp)
+    compute_p_hr_pct(sp)
+    compute_fip_raw(sp)
+    compute_p_cfip(sp)
+    compute_p_p_per_ip(sp)
+    compute_p_p_per_pa(sp)
+    compute_p_gr(sp)
+    sp['g']        = pitchers.groupby('Season')['Team'].nunique() * num_games
+    sp['p_r_per_g'] = _div(sp['p_ra'], sp['g'])
     season_pitching = sp
 
     # ── Team defense BABIP ───────────────────────────────────────────────────
     td = pitchers.groupby(['Season', 'Team']).agg(  # team defense: BABIP vs league average
         {'p_h': 'sum', 'p_hr': 'sum', 'p_bb': 'sum', 'p_hbp': 'sum', 'p_bf': 'sum', 'p_k': 'sum'})
-    # Add raw-name aliases for the _raw helper functions
-    td['H']   = td['p_h']
-    td['HR']  = td['p_hr']
-    td['BB']  = td['p_bb']
-    td['HBP'] = td['p_hbp']
-    td['BF']  = td['p_bf']
-    td['K']   = td['p_k']
-    td['BIP'] = td['p_bf'] - td['p_k'] - td['p_hr'] - td['p_bb'] - td['p_hbp']
-    compute_babip_pit_raw(td)
-    td = td.merge(sp['BABIP'], left_on='Season', right_index=True, suffixes=('', '_lg'))
-    td['BABIP_diff'] = td['BABIP'] - td['BABIP_lg']
-    team_defense = td[['BABIP', 'BABIP_diff']]
+    compute_p_bip(td)
+    compute_p_babip(td)
+    td = td.merge(sp['p_babip'], left_on='Season', right_index=True, suffixes=('', '_lg'))
+    td['p_babip_diff'] = td['p_babip'] - td['p_babip_lg']
+    team_defense = td[['p_babip', 'p_babip_diff']]
 
     # ── Role RA9 (starter vs. reliever) ─────────────────────────────────────
     rp = pitchers.copy()  # RA9 by starter/reliever role
     rp['Starter'] = rp['Role'] == 'SP'
     rp = rp.groupby(['Season', 'Starter']).agg({'p_ip': 'sum', 'p_ra': 'sum'})
-    rp['IP_true'] = rp['p_ip']
-    rp['RA']      = rp['p_ra']
-    compute_ra9_raw(rp)
+    compute_p_ra9(rp)
     role_pitching = rp
 
     # ── Role leverage (save run values) ─────────────────────────────────────
     rl = pitchers.groupby(['Season', 'Role']).agg({'p_gr': 'sum', 'p_sv': 'sum'})  # leverage run values by role
-    rl['GR'] = rl['p_gr']
-    rl['SV'] = rl['p_sv']
-    compute_sv_pct_raw(rl)
-    rl['R_sv'] = np.select(
+    compute_p_sv_pct(rl)
+    rl['r_sv'] = np.select(
         [rl.index.get_level_values('Role') == 'SP',
          rl.index.get_level_values('Role') == 'SP/RP'],
         [0, runs_SV / 2],
         default=runs_SV,
     )
-    rl['R_no_SV'] = -rl['SV%'] * runs_SV / (1 - rl['SV%'])
+    rl['r_no_sv'] = -rl['p_sv_pct'] * runs_SV / (1 - rl['p_sv_pct'])
     role_leverage = rl
 
     # ── Replacement level innings (WAR/IP by role) ───────────────────────────
@@ -222,5 +192,5 @@ def compute_league():
         else:
             raise ValueError(f"Unmatched role: {role}")
 
-    ri['RW/IP'] = ri.apply(ip_adjusted, axis=1)
+    ri['rw_per_ip'] = ri.apply(ip_adjusted, axis=1)
     role_innings = ri

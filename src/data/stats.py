@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 from formulas import compute_tb, compute_xbh, compute_bip_bat, compute_gf, compute_sb_att
-from formulas import compute_bip_pit_raw, compute_gr_raw
+from formulas import compute_p_bip, compute_p_gr
 from data.sources import BATTERS_CSV, PITCHERS_CSV
 
 
@@ -45,18 +45,15 @@ def load_pitching():
         'K', 'BB', 'H', 'ER', 'HR', 'HBP', 'TP', 'BF', 'RA', 'WP',
     ]]
     ip = data['IP']
-    data['IP_true'] = np.floor(ip) + (ip - np.floor(ip)) * (10/3)
-    # Drop the formatted string IP column; IP_true is the canonical innings value
+    data['p_ip'] = np.floor(ip) + (ip - np.floor(ip)) * (10/3)
     data = data.drop(columns=['IP'])
-    compute_bip_pit_raw(data)
-    compute_gr_raw(data)
-    # Rename to final column names
-    _CSV_PIT_RENAMES = {
-        'W': 'p_w', 'L': 'p_l', 'GP': 'p_gp', 'GS': 'p_gs', 'GR': 'p_gr',
-        'IP_true': 'p_ip', 'CG': 'p_cg', 'SHO': 'p_sho', 'SV': 'p_sv',
+    data = data.rename(columns={
+        'W': 'p_w', 'L': 'p_l', 'GP': 'p_gp', 'GS': 'p_gs',
+        'CG': 'p_cg', 'SHO': 'p_sho', 'SV': 'p_sv',
         'K': 'p_k', 'BB': 'p_bb', 'H': 'p_h', 'ER': 'p_er',
         'HR': 'p_hr', 'HBP': 'p_hbp', 'TP': 'p_tp', 'BF': 'p_bf',
-        'RA': 'p_ra', 'WP': 'p_wp', 'BIP': 'p_bip',
-    }
-    data = data.rename(columns=_CSV_PIT_RENAMES)
+        'RA': 'p_ra', 'WP': 'p_wp',
+    })
+    compute_p_bip(data)
+    compute_p_gr(data)
     pitching_stats = data

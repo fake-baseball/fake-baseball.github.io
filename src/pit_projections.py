@@ -202,28 +202,28 @@ def compute_all():
     ip_models        = fit_ip_model()
 
     # League context: 5/4/3 weighted averages across PROJ_SEASONS
-    rpw = sum(WEIGHTS[s] * lg.season_batting.loc[s, 'R/W'] for s in PROJ_SEASONS) / WEIGHT_TOTAL
+    rpw = sum(WEIGHTS[s] * lg.season_batting.loc[s, 'r_per_w'] for s in PROJ_SEASONS) / WEIGHT_TOTAL
 
     lg_ra9_sp = sum(
-        WEIGHTS[s] * lg.role_pitching.loc[(s, True), 'RA9'] for s in PROJ_SEASONS
+        WEIGHTS[s] * lg.role_pitching.loc[(s, True), 'p_ra9'] for s in PROJ_SEASONS
     ) / WEIGHT_TOTAL
     lg_ra9_rp = sum(
-        WEIGHTS[s] * lg.role_pitching.loc[(s, False), 'RA9'] for s in PROJ_SEASONS
+        WEIGHTS[s] * lg.role_pitching.loc[(s, False), 'p_ra9'] for s in PROJ_SEASONS
     ) / WEIGHT_TOTAL
 
     # RW/IP by role (SP, SP/RP, RP); CL maps to RP
     lg_rw_ip = {}
     for role_key in ['SP', 'SP/RP', 'RP']:
         lg_rw_ip[role_key] = sum(
-            WEIGHTS[s] * lg.role_innings.loc[(s, role_key), 'RW/IP'] for s in PROJ_SEASONS
+            WEIGHTS[s] * lg.role_innings.loc[(s, role_key), 'rw_per_ip'] for s in PROJ_SEASONS
         ) / WEIGHT_TOTAL
     lg_rw_ip['CL'] = lg_rw_ip['RP']
 
-    cFIP     = sum(WEIGHTS[s] * lg.season_pitching.loc[s, 'cFIP'] for s in PROJ_SEASONS) / WEIGHT_TOTAL
-    lg_era   = sum(WEIGHTS[s] * lg.season_pitching.loc[s, 'ERA']  for s in PROJ_SEASONS) / WEIGHT_TOTAL
+    cFIP     = sum(WEIGHTS[s] * lg.season_pitching.loc[s, 'p_cfip'] for s in PROJ_SEASONS) / WEIGHT_TOTAL
+    lg_era   = sum(WEIGHTS[s] * lg.season_pitching.loc[s, 'p_era']  for s in PROJ_SEASONS) / WEIGHT_TOTAL
     lg_er_ra = sum(
-        WEIGHTS[s] * (lg.season_pitching.loc[s, 'ER'] / lg.season_pitching.loc[s, 'RA']
-                      if lg.season_pitching.loc[s, 'RA'] > 0 else 1.0)
+        WEIGHTS[s] * (lg.season_pitching.loc[s, 'p_er'] / lg.season_pitching.loc[s, 'p_ra']
+                      if lg.season_pitching.loc[s, 'p_ra'] > 0 else 1.0)
         for s in PROJ_SEASONS
     ) / WEIGHT_TOTAL
 
@@ -383,8 +383,8 @@ def compute_all():
         for s in PROJ_SEASONS:
             try:
                 lev = lg.role_leverage.loc[(s, lev_role)]
-                r_sv_total    += WEIGHTS[s] * lev['R_sv']
-                r_no_sv_total += WEIGHTS[s] * lev['R_no_SV']
+                r_sv_total    += WEIGHTS[s] * lev['r_sv']
+                r_no_sv_total += WEIGHTS[s] * lev['r_no_sv']
             except KeyError:
                 pass
         lev_rates[lev_role] = (r_sv_total / WEIGHT_TOTAL, r_no_sv_total / WEIGHT_TOTAL)

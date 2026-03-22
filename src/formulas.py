@@ -33,9 +33,6 @@ def wOBA_num(d):   return weight_BB*d['bb'] + weight_HBP*d['hbp'] + weight_1B*d[
 def wOBA_denom(d): return d['ab'] + d['bb'] + d['hbp'] + d['sf']
 def compute_woba(d): d['woba'] = _div(wOBA_num(d), wOBA_denom(d))
 
-# Legacy aliases used by league.py (still operates on raw CSV with old names)
-def wOBA_num_raw(d):   return weight_BB*d['BB'] + weight_HBP*d['HBP'] + weight_1B*d['1B'] + weight_2B*d['2B'] + weight_3B*d['3B'] + weight_HR*d['HR']
-def wOBA_denom_raw(d): return d['AB'] + d['BB'] + d['HBP'] + d['SF']
 
 
 # -- Batting counting stats (final column names) --------------------------------
@@ -80,7 +77,7 @@ def compute_b_rar(d):      d['rar']        = d['raa'] + d['r_rep']
 # TODO: compute_waa     = raa / rpw
 # TODO: compute_b_war   = rar / rpw
 # TODO: compute_ops_plus  - needs lg_obp, lg_slg, park factor
-def compute_r_per_pa(d): d['R/PA'] = _div(d['R'], d['PA'])
+def compute_r_per_pa(d): d['r_per_pa'] = _div(d['r'], d['pa'])
 # TODO: compute_wrc      - needs lg_woba, lg_R/PA
 # TODO: compute_wrc_plus - needs wraa, lg_wrc, lg_pa, lg_R/PA
 
@@ -131,37 +128,5 @@ def compute_p_sv_pct(d):     d['p_sv_pct']    = _div(d['p_sv'], d['p_gr'])
 def compute_fip_raw(d): d['p_fip'] = _div(13*d['p_hr'] + 3*(d['p_bb'] + d['p_hbp']) - 2*d['p_k'], d['p_ip'])
 
 # League context only - not meaningful for individual players:
-def compute_r_per_h(d): d['R/H']  = _div(d['RA'], d['H'])   # league run environment proxy used for defense adjustment
-def compute_cfip(d):    d['cFIP'] = d['ERA'] - d['FIP']      # scales FIP_raw to ERA level; requires ERA and FIP already computed
-
-
-# -- League-level helpers operating on RAW CSV names (used only in league.py) --
-# These operate on the raw pitching_stats DataFrame before column renaming.
-
-def compute_bip_pit_raw(d):  d['BIP']  = d['BF'] - d['K'] - d['HR'] - d['BB'] - d['HBP']
-def compute_gr_raw(d):       d['GR']   = d['GP'] - d['GS']
-def compute_era_raw(d):      d['ERA']  = 9 * _div(d['ER'], d['IP_true'])
-def compute_ra9_raw(d):      d['RA9']  = 9 * _div(d['RA'], d['IP_true'])
-def compute_whip_raw(d):     d['WHIP'] = _div(d['BB'] + d['H'], d['IP_true'])
-def compute_babip_pit_raw(d):d['BABIP']= _div(d['H'] - d['HR'], d['BIP'])
-def compute_sv_pct_raw(d):   d['SV%']  = _div(d['SV'], d['GR'])
-def compute_h_per_9_raw(d):  d['p_h_per_9']  = 9 * _div(d['H'],  d['IP_true'])
-def compute_hr_per_9_raw(d): d['p_hr_per_9'] = 9 * _div(d['HR'], d['IP_true'])
-def compute_bb_per_9_raw(d): d['p_bb_per_9'] = 9 * _div(d['BB'], d['IP_true'])
-def compute_k_per_9_raw(d):  d['p_k_per_9']  = 9 * _div(d['K'],  d['IP_true'])
-def compute_k_per_bb_raw(d): d['p_k_per_bb'] = _div(d['K'],  d['BB'])
-def compute_k_pct_pit_raw(d):d['p_k_pct']    = _div(d['K'],  d['BF'])
-def compute_bb_pct_pit_raw(d):d['p_bb_pct']  = _div(d['BB'], d['BF'])
-def compute_hr_pct_pit_raw(d):d['p_hr_pct']  = _div(d['HR'], d['BF'])
-def compute_fip_raw_raw(d):  d['FIP']  = _div(13*d['HR'] + 3*(d['BB'] + d['HBP']) - 2*d['K'], d['IP_true'])
-def compute_p_per_ip_raw(d): d['p_p_per_ip'] = _div(d['TP'], d['IP_true'])
-def compute_p_per_pa_raw(d): d['p_p_per_pa'] = _div(d['TP'], d['BF'])
-
-# League batting raw helpers (season_batting DataFrame still uses raw CSV names)
-def compute_avg_raw(d):  d['AVG'] = _div(d['H'], d['AB'])
-def compute_obp_raw(d):  d['OBP'] = _div(d['H'] + d['BB'] + d['HBP'], d['AB'] + d['BB'] + d['HBP'] + d['SF'])
-def compute_slg_raw(d):  d['SLG'] = _div(d['TB'], d['AB'])
-def compute_sb_pct_raw(d): d['sb_pct'] = _div(d['SB'], d['SB'] + d['CS'])
-def compute_woba_raw(d): d['wOBA'] = _div(wOBA_num_raw(d), wOBA_denom_raw(d))
-def compute_e_per_gf_raw(d): d['e_per_gf'] = _div(d['E'], d['GF'])
-def compute_pb_per_gf_raw(d): d['pb_per_gf'] = _div(d['PB'], d['GF'])
+def compute_r_per_h(d): d['r_per_h'] = _div(d['p_ra'], d['p_h'])  # league run environment proxy used for defense adjustment
+def compute_p_cfip(d):  d['p_cfip']  = d['p_era'] - d['p_fip']    # scales FIP_raw to ERA level; requires p_era and p_fip already computed

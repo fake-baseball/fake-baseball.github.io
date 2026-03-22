@@ -197,15 +197,15 @@ def compute_all():
     def _lg_avg(col):
         return sum(WEIGHTS[s] * lg.season_batting.loc[s, col] for s in PROJ_SEASONS) / WEIGHT_TOTAL
 
-    lg_wOBA_20 = _lg_avg('wOBA')
-    rpw_20     = _lg_avg('R/W')
-    lg_rPA_20  = _lg_avg('R/PA')
-    lg_wrcpa   = _lg_avg('wRC') / _lg_avg('PA')  # used as wRC/PA in wRC+ formula
-    lg_pa_20   = _lg_avg('PA')
-    lg_rrpa_20 = _lg_avg('RR/PA')
-    lg_wSB     = _lg_avg('lg_wSB')
-    lg_obp_20  = _lg_avg('OBP')
-    lg_slg_20  = _lg_avg('SLG')
+    lg_wOBA_20 = _lg_avg('woba')
+    rpw_20     = _lg_avg('r_per_w')
+    lg_rPA_20  = _lg_avg('r_per_pa')
+    lg_wrcpa   = _lg_avg('wrc') / _lg_avg('pa')  # used as wRC/PA in wRC+ formula
+    lg_pa_20   = _lg_avg('pa')
+    lg_rrpa_20 = _lg_avg('rr_per_pa')
+    lg_wSB     = _lg_avg('lg_wsb')
+    lg_obp_20  = _lg_avg('obp')
+    lg_slg_20  = _lg_avg('slg')
 
     s20 = bat_module.stats[
         (bat_module.stats['Season'] == 20) &

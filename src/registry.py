@@ -340,6 +340,42 @@ REGISTRY = {
         'leaders': True,
         'context': 'batting',
     },
+    # -- League context (season aggregates, not player-facing) -----------------
+    'lg_wsb': {
+        'name': 'lg_wSB',
+        'label': 'League wSB Rate',
+        'description': 'League-average value of a stolen base attempt, used to compute Rbr',
+        'decimal_places': 3,
+        'context': 'batting',
+    },
+    'r_per_w': {
+        'name': 'R/W',
+        'label': 'Runs per Win',
+        'description': 'Runs required to add one win, scaled to season run environment',
+        'decimal_places': 2,
+        'context': 'batting',
+    },
+    'rw_per_pa': {
+        'name': 'RW/PA',
+        'label': 'Replacement WAR Rate per PA',
+        'description': 'WAR per plate appearance at replacement level',
+        'decimal_places': 4,
+        'context': 'batting',
+    },
+    'rr_per_pa': {
+        'name': 'RR/PA',
+        'label': 'Replacement Runs per PA',
+        'description': 'Replacement-level runs per plate appearance',
+        'decimal_places': 4,
+        'context': 'batting',
+    },
+    'r_per_pa': {
+        'name': 'R/PA',
+        'label': 'Runs per Plate Appearance',
+        'description': 'League runs scored per plate appearance',
+        'decimal_places': 3,
+        'context': 'batting',
+    },
     # -- Value (WAR components) ------------------------------------------------
     'r_bat': {
         'name': 'Rbat',
@@ -913,11 +949,47 @@ REGISTRY = {
         'context': 'pitching',
     },
 
+    # -- League context (season aggregates, not player-facing) -----------------
+    'p_r_per_g': {
+        'name': 'RA/G',
+        'label': 'Runs Allowed per Game',
+        'description': 'League-average runs allowed per team game',
+        'decimal_places': 2,
+        'context': 'pitching',
+    },
+    'rw_per_ip': {
+        'name': 'RW/IP',
+        'label': 'Replacement WAR Rate per IP',
+        'description': 'WAR per inning pitched at replacement level',
+        'decimal_places': 4,
+        'context': 'pitching',
+    },
+    'r_sv': {
+        'name': 'R_sv',
+        'label': 'Save Run Value',
+        'description': 'Run value of earning a save opportunity',
+        'decimal_places': 2,
+        'context': 'pitching',
+    },
+    'r_no_sv': {
+        'name': 'R_no_SV',
+        'label': 'Non-Save Run Value',
+        'description': 'Run value of a relief appearance without a save',
+        'decimal_places': 2,
+        'context': 'pitching',
+    },
+
     # =========================================================================
     # Column metadata (context: 'meta')
     # Non-stat columns for render_table; no stat formatting fields.
     # =========================================================================
 
+    'g': {
+        'name': 'G',
+        'label': 'Games',
+        'type': 'integer',
+        'context': 'meta',
+    },
     'Player':   {'name': 'Player',   'type': 'link',    'align': 'left',  'context': 'meta'},
     'Team':     {'name': 'Team',     'type': 'text',    'align': 'left',  'context': 'meta'},
     'Season':   {'name': 'Season',   'type': 'text',    'align': 'right', 'context': 'meta'},

@@ -36,11 +36,11 @@ def compute():
     # Columns are already renamed to final names by load_pitching() in data/stats.py
 
     compute_p_era(d)
-    d['p_era_minus'] = 100 * d['p_era'] / d['Season'].map(lg.season_pitching['ERA'])
+    d['p_era_minus'] = 100 * d['p_era'] / d['Season'].map(lg.season_pitching['p_era'])
     compute_p_ra9(d)
     compute_p_whip(d)
     compute_fip_raw(d)
-    d['p_fip'] += d['Season'].map(lg.season_pitching['cFIP'])
+    d['p_fip'] += d['Season'].map(lg.season_pitching['p_cfip'])
     compute_p_baa(d)
     compute_p_obpa(d)
     compute_p_babip(d)
@@ -62,15 +62,15 @@ def compute():
     # Defense-adjusted RA9
     bip        = d['p_bf'] - d['p_bb'] - d['p_hbp'] - d['p_k'] - d['p_hr']
     babip_diff = d.apply(
-        lambda row: lg.team_defense.loc[(row['Season'], row['Team']), 'BABIP_diff'], axis=1)
-    rh         = d['Season'].map(lg.season_pitching['R/H'])
+        lambda row: lg.team_defense.loc[(row['Season'], row['Team']), 'p_babip_diff'], axis=1)
+    rh         = d['Season'].map(lg.season_pitching['r_per_h'])
     d['p_r_def']  = -bip * babip_diff * rh * DEF_IMPACT
     compute_p_ra9_def(d)
 
     # WAR
     pf       = (1 + d['Team'].map(park_factors)) / 2
     ra9_comp = d.apply(
-        lambda row: lg.role_pitching.loc[(row['Season'], row['Role'] == 'SP'), 'RA9'], axis=1)
+        lambda row: lg.role_pitching.loc[(row['Season'], row['Role'] == 'SP'), 'p_ra9'], axis=1)
 
     base_raa = (ra9_comp * pf - d['p_ra9_def']) / 9 * d['p_ip']
 
@@ -84,17 +84,17 @@ def compute():
 
     d['p_r_lev']   = d.apply(
         lambda row: (
-            row['p_sv']               * lg.role_leverage.loc[(row['Season'], row['Role']), 'R_sv'] +
-            (row['p_gr'] - row['p_sv']) * lg.role_leverage.loc[(row['Season'], row['Role']), 'R_no_SV']
+            row['p_sv']               * lg.role_leverage.loc[(row['Season'], row['Role']), 'r_sv'] +
+            (row['p_gr'] - row['p_sv']) * lg.role_leverage.loc[(row['Season'], row['Role']), 'r_no_sv']
         ), axis=1)
     compute_p_raa_lev(d)
 
-    rpw       = d['Season'].map(lg.season_batting['R/W'])
+    rpw       = d['Season'].map(lg.season_batting['r_per_w'])
     d['p_waa'] = d['p_raa_lev'] / rpw
 
     wrep       = d['p_ip'] * d.apply(
         lambda row: lg.role_innings.loc[
-            (row['Season'], 'RP' if row['Role'] == 'CL' else row['Role']), 'RW/IP'
+            (row['Season'], 'RP' if row['Role'] == 'CL' else row['Role']), 'rw_per_ip'
         ], axis=1)
     d['p_r_rep'] = rpw * wrep
     compute_p_rar(d)

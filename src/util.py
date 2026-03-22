@@ -80,10 +80,10 @@ def per_game_df(df):
     from registry import REGISTRY
     all_stats = REGISTRY
 
-    g = df['G']
+    g = df['g']
     out = df.copy()
     for col in out.columns:
-        if col == 'G':
+        if col == 'g':
             continue
         is_counting = (col in all_stats and all_stats[col].get('decimal_places', 0) == 0 and all_stats[col].get('type', 'stat') == 'stat') or (col in all_stats and all_stats[col].get('type') == 'ip')
         if is_counting:
@@ -92,8 +92,8 @@ def per_game_df(df):
 
 
 def fmt_df(df):
-    """Return a display copy of df with registry-registered columns formatted as strings.
-    The original DataFrame is not modified, preserving numeric types for calculations."""
+    """Return a display copy of df with registry-registered columns formatted as strings
+    and column names replaced by their REGISTRY display name."""
     from registry import REGISTRY
     all_stats = REGISTRY
 
@@ -110,6 +110,12 @@ def fmt_df(df):
             out[col] = out[col].map(
                 lambda v, m=meta: fmt_round(v, m['decimal_places'], m['leading_zero'], m['percentage'])
             )
+    # Rename columns to display names from registry
+    out = out.rename(columns={
+        col: all_stats[col]['name']
+        for col in out.columns
+        if col in all_stats and 'name' in all_stats[col]
+    })
     return out
 
 
