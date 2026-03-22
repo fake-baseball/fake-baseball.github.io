@@ -77,32 +77,34 @@ def per_game_df(df):
     """Return a copy of df with counting stats divided by G (games).
     Rate stats (decimal_places > 0) are left unchanged. Counting stats
     (decimal_places == 0, plus IP_true) are divided by G and shown to 2 dp."""
-    from stats_meta import ALL_STATS
-    all_stats = ALL_STATS
+    from registry import REGISTRY
+    all_stats = REGISTRY
 
     g = df['G']
     out = df.copy()
     for col in out.columns:
         if col == 'G':
             continue
-        is_counting = (col in all_stats and all_stats[col]['decimal_places'] == 0) or col == 'IP_true'
+        is_counting = (col in all_stats and all_stats[col].get('decimal_places', 0) == 0 and all_stats[col].get('type', 'stat') == 'stat') or (col in all_stats and all_stats[col].get('type') == 'ip')
         if is_counting:
             out[col] = out[col] / g
     return out
 
 
 def fmt_df(df):
-    """Return a display copy of df with stats_meta-registered columns formatted as strings.
+    """Return a display copy of df with registry-registered columns formatted as strings.
     The original DataFrame is not modified, preserving numeric types for calculations."""
-    from stats_meta import ALL_STATS
-    all_stats = ALL_STATS
+    from registry import REGISTRY
+    all_stats = REGISTRY
 
     out = df.copy()
     for col in out.columns:
         if col not in all_stats:
             continue
         meta = all_stats[col]
-        if col == 'IP_true':
+        if meta.get('type', 'stat') != 'stat':
+            continue
+        if meta.get('type') == 'ip':
             out[col] = out[col].map(fmt_ip)
         else:
             out[col] = out[col].map(
@@ -127,7 +129,7 @@ def render_table(df, *, prefix='', hidden=None, row_class=None, cell_style=None,
     import numpy as np
     from dominate.tags import table, thead, tbody, tr, th, td
     from dominate.tags import b as bold_tag, i as italic_tag, a as anchor_tag
-    from stats_meta import ALL_STATS, COLUMN_META
+    from registry import REGISTRY
     import leaders as leaders_mod
     from data import teams as teams_data
     from leaders import SEASON_THRESHOLDS
@@ -136,20 +138,16 @@ def render_table(df, *, prefix='', hidden=None, row_class=None, cell_style=None,
     _hidden = _always_hidden | (set(hidden) if hidden else set())
 
     def _resolve_meta(col):
-        if col in ALL_STATS:
-            return ALL_STATS[col]
-        if col in COLUMN_META:
-            return COLUMN_META[col]
+        if col in REGISTRY:
+            return REGISTRY[col]
         return {'name': col, 'type': 'text', 'align': 'right'}
 
     def _header_name(col, meta):
-        if meta.get('type') == 'stat':
-            return meta.get('display_col') or col
         return meta.get('name', col)
 
     def _format_cell(col, meta, val):
         ctype = meta.get('type', 'text')
-        if col == 'IP_true' or ctype == 'ip':
+        if ctype == 'ip':
             return fmt_ip(val)
         if ctype == 'stat':
             return fmt_round(val, meta['decimal_places'], meta['leading_zero'], meta['percentage'])
@@ -177,8 +175,8 @@ def render_table(df, *, prefix='', hidden=None, row_class=None, cell_style=None,
     if teams_data.teams is not None:
         abbr_to_conf = teams_data.teams.set_index('abbr')['conference_name'].to_dict()
 
-    # Detect batting vs pitching table: pitcher tables always include IP_true.
-    _is_pitching_table = 'IP_true' in df.columns
+    # Detect batting vs pitching table: pitcher tables always include p_ip.
+    _is_pitching_table = 'p_ip' in df.columns
 
     def _leaders_for_col(col):
         """Return (overall_ldr, conf_ldr_dict) for a stat column, or (None, None).

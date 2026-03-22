@@ -16,12 +16,14 @@ from data import players
 from constants import (PIT_SEASON_MIN_IP,
                        PROJ_SEASONS, PROJ_WEIGHTS as WEIGHTS, PROJ_WEIGHT_TOTAL as WEIGHT_TOTAL,
                        total_WAR, batter_share)
-COMPONENTS   = ['K', 'BB', 'HBP', 'HR', 'H']   # per-BF rates
+
+# Component names as they appear in pitching.stats (final column names after rename)
+COMPONENTS   = ['p_k', 'p_bb', 'p_hbp', 'p_hr', 'p_h']   # per-BF rates
 SKILLS          = ['velocity', 'junk', 'accuracy']
 IP_FEATURES     = ['velocity', 'junk', 'accuracy']
 IP_MAX          = {'SP': 120, 'SP/RP': 80, 'RP': 80, 'CL': 60}
 FULL_SEASON_APP  = {'SP': 20, 'RP': 40, 'CL': 40}
-APP_COL          = {'SP': 'GS', 'RP': 'GR', 'CL': 'GR'}
+APP_COL          = {'SP': 'p_gs', 'RP': 'p_gr', 'CL': 'p_gr'}
 SPRP_FIXED_IP    = 65.0   # SP/RP gets a fixed projection; role is deployment-driven
 
 
@@ -51,16 +53,16 @@ def compute():
     df = df[df.apply(lambda r: (r['First Name'], r['Last Name']) in pit_keys, axis=1)]
 
     # Compute lg_bf_per_ip from this filtered data
-    valid_bf_ip = df[(df['BF'] > 0) & (df['IP_true'] > 0)]
-    lg_bf_per_ip = (valid_bf_ip['BF'] / valid_bf_ip['IP_true']).mean()
+    valid_bf_ip = df[(df['p_bf'] > 0) & (df['p_ip'] > 0)]
+    lg_bf_per_ip = (valid_bf_ip['p_bf'] / valid_bf_ip['p_ip']).mean()
 
     # Add component rate columns
     for comp in COMPONENTS:
-        df[f'{comp}_rate'] = df[comp] / df['BF']
+        df[f'{comp}_rate'] = df[comp] / df['p_bf']
 
     # ── Step 1: Fit component regression on pitchers qualified in all 3 seasons ──
 
-    df_qual    = df[df['IP_true'] >= PIT_SEASON_MIN_IP].copy()
+    df_qual    = df[df['p_ip'] >= PIT_SEASON_MIN_IP].copy()
     full_counts = df_qual.groupby(['First Name', 'Last Name'])['Season'].nunique()
     full_names  = full_counts[full_counts == len(PROJ_SEASONS)].index
     df_train   = df_qual[df_qual.set_index(['First Name', 'Last Name']).index.isin(full_names)].copy()
@@ -88,7 +90,7 @@ def compute():
 
     df_ra9 = df_qual.copy()
     X_ra9  = df_ra9[[f'{comp}_rate' for comp in COMPONENTS]].values.astype(float)
-    y_ra9  = df_ra9['RA9'].values.astype(float)
+    y_ra9  = df_ra9['p_ra9'].values.astype(float)
 
     ra9_model  = LinearRegression().fit(X_ra9, y_ra9)
     ra9_metric = {
@@ -109,11 +111,11 @@ def compute():
         model_rates = {comp: comp_models[comp].predict(X_pred)[0] for comp in COMPONENTS}
 
         season_ip  = {}
-        season_app = {}   # GS for SP, GR for relievers
-        app_col    = 'GS' if role == 'SP' else 'GR'
+        season_app = {}   # p_gs for SP, p_gr for relievers
+        app_col    = 'p_gs' if role == 'SP' else 'p_gr'
         for s in PROJ_SEASONS:
             season_row    = df[(df['First Name'] == first) & (df['Last Name'] == last) & (df['Season'] == s)]
-            season_ip[s]  = float(season_row.iloc[0]['IP_true']) if not season_row.empty else 0.0
+            season_ip[s]  = float(season_row.iloc[0]['p_ip']) if not season_row.empty else 0.0
             season_app[s] = float(season_row.iloc[0][app_col])  if not season_row.empty else 0.0
 
         proj = {}
@@ -122,7 +124,7 @@ def compute():
             for s in PROJ_SEASONS:
                 season_row  = df[(df['First Name'] == first) & (df['Last Name'] == last) & (df['Season'] == s)]
                 actual_ip   = season_ip[s]
-                actual_bf   = float(season_row.iloc[0]['BF']) if not season_row.empty else 0.0
+                actual_bf   = float(season_row.iloc[0]['p_bf']) if not season_row.empty else 0.0
                 actual_stat = float(season_row.iloc[0][comp]) if not season_row.empty else 0.0
 
                 if actual_ip >= PIT_SEASON_MIN_IP:
@@ -157,13 +159,13 @@ def compute():
 def fit_ip_model():
     """Fit IP/appearance ~ VEL + JNK + ACC for each role group using Season 20 data.
 
-    Role groups: 'SP' (uses GS), 'SP/RP' (uses GP), 'reliever' (RP+CL, uses GR).
+    Role groups: 'SP' (uses p_gs), 'SP/RP' (uses p_gp), 'reliever' (RP+CL, uses p_gr).
     Returns dict keyed by role group, each value a dict: model, r2, rmse, coefs, intercept, n.
     """
     s20 = pit_module.stats[
         (pit_module.stats['Season'] == 20) &
         (pit_module.stats['stat_type'] == 'season') &
-        (pit_module.stats['IP_true'] > 0)
+        (pit_module.stats['p_ip'] > 0)
     ].copy()
 
     pi = players.player_info.reset_index()
@@ -173,11 +175,11 @@ def fit_ip_model():
 
     results = {}
     for group, roles, app_col in [
-        ('SP',       ['SP'],       'GS'),
-        ('reliever', ['RP', 'CL'], 'GR'),
+        ('SP',       ['SP'],       'p_gs'),
+        ('reliever', ['RP', 'CL'], 'p_gr'),
     ]:
         sub = merged[merged['role'].isin(roles) & (merged[app_col] > 0)].copy()
-        sub['ip_per_app'] = sub['IP_true'] / sub[app_col]
+        sub['ip_per_app'] = sub['p_ip'] / sub[app_col]
         X = sub[IP_FEATURES].values.astype(float)
         y = sub['ip_per_app'].values.astype(float)
         results[group] = LinearRegression().fit(X, y)
@@ -257,11 +259,11 @@ def compute_all():
             row['proj_ip'] = min(ip_cap, max(0.0, blended_ip_per_app * apps))
 
         # Projected counting stats (rounded to int for display)
-        K_rate   = row['K']
-        BB_rate  = row['BB']
-        HBP_rate = row['HBP']
-        HR_rate  = row['HR']
-        H_rate   = row['H']
+        K_rate   = row['p_k']
+        BB_rate  = row['p_bb']
+        HBP_rate = row['p_hbp']
+        HR_rate  = row['p_hr']
+        H_rate   = row['p_h']
 
         out_rate = 1.0 - H_rate - BB_rate - HBP_rate
         proj_bf_per_ip = 3.0 / out_rate if out_rate > 0 else lg_bf_per_ip
@@ -329,26 +331,26 @@ def compute_all():
     #   RP  SV/GR -> league average (role-dependent, not skill)
     df_all = pit_module.stats[pit_module.stats['stat_type'] == 'season'].copy()
 
-    sp_hist = df_all[(df_all['Role'] == 'SP') & (df_all['GS'] >= 5)].copy()
-    sp_hist['W_rate'] = sp_hist['W'] / sp_hist['GS']
-    sp_hist['L_rate'] = sp_hist['L'] / sp_hist['GS']
-    sp_w_model = LinearRegression().fit(sp_hist[['RA9']].values, sp_hist['W_rate'].values)
-    sp_l_model = LinearRegression().fit(sp_hist[['RA9']].values, sp_hist['L_rate'].values)
+    sp_hist = df_all[(df_all['Role'] == 'SP') & (df_all['p_gs'] >= 5)].copy()
+    sp_hist['W_rate'] = sp_hist['p_w'] / sp_hist['p_gs']
+    sp_hist['L_rate'] = sp_hist['p_l'] / sp_hist['p_gs']
+    sp_w_model = LinearRegression().fit(sp_hist[['p_ra9']].values, sp_hist['W_rate'].values)
+    sp_l_model = LinearRegression().fit(sp_hist[['p_ra9']].values, sp_hist['L_rate'].values)
 
-    rp_hist = df_all[(df_all['Role'].isin(['RP', 'CL', 'SP/RP'])) & (df_all['GR'] >= 10)].copy()
-    rp_hist['L_rate'] = rp_hist['L'] / rp_hist['GR']
-    rp_l_model = LinearRegression().fit(rp_hist[['RA9']].values, rp_hist['L_rate'].values)
+    rp_hist = df_all[(df_all['Role'].isin(['RP', 'CL', 'SP/RP'])) & (df_all['p_gr'] >= 10)].copy()
+    rp_hist['L_rate'] = rp_hist['p_l'] / rp_hist['p_gr']
+    rp_l_model = LinearRegression().fit(rp_hist[['p_ra9']].values, rp_hist['L_rate'].values)
 
-    cl_hist = df_all[(df_all['Role'] == 'CL') & (df_all['GR'] >= 10)].copy()
-    cl_hist['SV_rate'] = cl_hist['SV'] / cl_hist['GR']
-    cl_sv_model = LinearRegression().fit(cl_hist[['RA9']].values, cl_hist['SV_rate'].values)
+    cl_hist = df_all[(df_all['Role'] == 'CL') & (df_all['p_gr'] >= 10)].copy()
+    cl_hist['SV_rate'] = cl_hist['p_sv'] / cl_hist['p_gr']
+    cl_sv_model = LinearRegression().fit(cl_hist[['p_ra9']].values, cl_hist['SV_rate'].values)
 
     # League averages for the flat cases (RP W/GR, RP SV/GR)
     rp_all = df_all[df_all['Role'].isin(['RP', 'CL', 'SP/RP'])]
-    lg_rp_w_rate  = rp_all['W'].sum() / rp_all['GR'].sum() if rp_all['GR'].sum() > 0 else 0.0
-    lg_rp_sv_rate = (df_all[df_all['Role'].isin(['RP', 'SP/RP'])]['SV'].sum() /
-                     df_all[df_all['Role'].isin(['RP', 'SP/RP'])]['GR'].sum()
-                     if df_all[df_all['Role'].isin(['RP', 'SP/RP'])]['GR'].sum() > 0 else 0.0)
+    lg_rp_w_rate  = rp_all['p_w'].sum() / rp_all['p_gr'].sum() if rp_all['p_gr'].sum() > 0 else 0.0
+    lg_rp_sv_rate = (df_all[df_all['Role'].isin(['RP', 'SP/RP'])]['p_sv'].sum() /
+                     df_all[df_all['Role'].isin(['RP', 'SP/RP'])]['p_gr'].sum()
+                     if df_all[df_all['Role'].isin(['RP', 'SP/RP'])]['p_gr'].sum() > 0 else 0.0)
 
     for row in rows:
         role = row['role']
@@ -401,11 +403,10 @@ def compute_all():
         xRAR     = xRAAlev + xRrep
 
         # BAA and OBPA from projected rates
-        xBF      = row['proj_ip'] * (row.get('_proj_bf_per_ip', 1.0) if '_proj_bf_per_ip' in row else 1.0)
-        H_rate   = row['H']
-        BB_rate  = row['BB']
-        HBP_rate = row['HBP']
-        HR_rate  = row['HR']
+        H_rate   = row['p_h']
+        BB_rate  = row['p_bb']
+        HBP_rate = row['p_hbp']
+        HR_rate  = row['p_hr']
         out_rate = 1.0 - H_rate - BB_rate - HBP_rate
         bf_per_ip = 3.0 / out_rate if out_rate > 0 else 4.0
         xBF      = row['proj_ip'] * bf_per_ip

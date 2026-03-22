@@ -12,12 +12,13 @@ from constants import (
     SEASON_RANGE,
 )
 
-from stats_meta import BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS, PITCHING_STATS
+from registry import REGISTRY
 from util import rank_column
 
-SEASON_THRESHOLDS = {'PA': BAT_SEASON_MIN_PA, 'SBatt': BR_SEASON_MIN_SBATT, 'GF': FLD_SEASON_MIN_GF, 'IP_true': PIT_SEASON_MIN_IP}
-CAREER_THRESHOLDS = {'PA': BAT_CAREER_MIN_PA, 'SBatt': BR_CAREER_MIN_SBATT, 'GF': FLD_CAREER_MIN_GF, 'IP_true': PIT_CAREER_MIN_IP}
-_ALL_BAT_META = {**BATTING_STATS, **BASERUNNING_STATS, **FIELDING_STATS}
+SEASON_THRESHOLDS = {'pa': BAT_SEASON_MIN_PA, 'sb_att': BR_SEASON_MIN_SBATT, 'gf': FLD_SEASON_MIN_GF, 'p_ip': PIT_SEASON_MIN_IP}
+CAREER_THRESHOLDS = {'pa': BAT_CAREER_MIN_PA, 'sb_att': BR_CAREER_MIN_SBATT, 'gf': FLD_CAREER_MIN_GF, 'p_ip': PIT_CAREER_MIN_IP}
+_BAT_CONTEXTS = {'batting', 'baserunning', 'fielding'}
+_ALL_BAT_META = {k: v for k, v in REGISTRY.items() if v.get('context') in _BAT_CONTEXTS}
 
 
 # ── Batting leaders ──────────────────────────────────────────────────────────
@@ -78,9 +79,9 @@ def get_leaders_by_season(stat, worst=False):
 
 def get_pitching_leaders(stat, season=None, worst=False, num=10, team=None, teams=None):
     import pitching
-    meta = PITCHING_STATS[stat]
+    meta = REGISTRY[stat]
     ascending = meta['lowest'] ^ worst
-    df = pitching.stats[pitching.stats['IP_true'] >= PIT_SEASON_MIN_IP] if meta['qualified'] else pitching.stats
+    df = pitching.stats[pitching.stats['p_ip'] >= PIT_SEASON_MIN_IP] if meta['qualified'] else pitching.stats
     if season is None:
         df = df[df['stat_type'] == 'season']
     else:
@@ -102,9 +103,9 @@ def get_pitching_leaders(stat, season=None, worst=False, num=10, team=None, team
 def get_career_pitching_leaders(stat, active=False, worst=False, num=10, team=None):
     import pitching
     from data import players
-    meta = PITCHING_STATS[stat]
+    meta = REGISTRY[stat]
     ascending = meta['lowest'] ^ worst
-    df = pitching.stats[pitching.stats['IP_true'] >= PIT_CAREER_MIN_IP] if meta['qualified'] else pitching.stats
+    df = pitching.stats[pitching.stats['p_ip'] >= PIT_CAREER_MIN_IP] if meta['qualified'] else pitching.stats
     df = df[df['Season'] == 'Career']
     if active:
         df = df[df.set_index(['First Name', 'Last Name']).index.isin(players.player_info.index)]
@@ -145,13 +146,15 @@ def compute_season_leaders():
     import batting
     import pitching
     from data import teams as teams_data
-    from stats_meta import BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS, PITCHING_STATS
+
+    bat_meta = {k: v for k, v in REGISTRY.items() if v.get('context') in _BAT_CONTEXTS}
+    pit_meta = {k: v for k, v in REGISTRY.items() if v.get('context') == 'pitching'}
 
     bat_data = batting.stats[batting.stats['stat_type'] == 'season']
     pit_data = pitching.stats[pitching.stats['stat_type'] == 'season']
 
-    batting_leaders  = _compute_leaders(bat_data, [BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS])
-    pitching_leaders = _compute_leaders(pit_data, [PITCHING_STATS])
+    batting_leaders  = _compute_leaders(bat_data, [bat_meta])
+    pitching_leaders = _compute_leaders(pit_data, [pit_meta])
 
     if teams_data.teams is not None:
         abbr_to_conf = teams_data.teams.set_index('abbr')['conference_name'].to_dict()
@@ -163,25 +166,33 @@ def compute_season_leaders():
         pit_c['_conf'] = pit_c['Team'].map(abbr_to_conf)
 
         batting_leaders_conf  = {
-            c: _compute_leaders(bat_c[bat_c['_conf'] == c], [BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS])
+            c: _compute_leaders(bat_c[bat_c['_conf'] == c], [bat_meta])
             for c in confs
         }
         pitching_leaders_conf = {
-            c: _compute_leaders(pit_c[pit_c['_conf'] == c], [PITCHING_STATS])
+            c: _compute_leaders(pit_c[pit_c['_conf'] == c], [pit_meta])
             for c in confs
         }
 
 
 def _compute_leaders(data, stat_dicts):
     cols = {}
+    # Build per-qual_col filtered DataFrames (lazily, keyed by qual_col name)
+    _qual_cache = {}
+    def _get_qual(qual_col):
+        if qual_col not in _qual_cache:
+            threshold = SEASON_THRESHOLDS[qual_col]
+            if qual_col in data.columns:
+                _qual_cache[qual_col] = data[data[qual_col] >= threshold]
+            else:
+                _qual_cache[qual_col] = data.iloc[0:0]  # empty
+        return _qual_cache[qual_col]
+
     for stat_dict in stat_dicts:
-        first_meta = next(iter(stat_dict.values()))
-        qual_col   = first_meta['qual_col']
-        threshold  = SEASON_THRESHOLDS[qual_col]
-        qual_data  = data[data[qual_col] >= threshold]
         for stat, meta in stat_dict.items():
             if stat not in data.columns:
                 continue
-            source = qual_data if meta['qualified'] else data
+            qual_col = meta['qual_col']
+            source = _get_qual(qual_col) if meta['qualified'] else data
             cols[stat] = source.groupby('Season')[stat].min() if meta['lowest'] else source.groupby('Season')[stat].max()
     return pd.DataFrame(cols)

@@ -16,17 +16,16 @@ from constants import (
 )
 from formulas import (
     _div,
-    compute_ERA, compute_RA9, compute_WHIP,
-    compute_BAA, compute_OBPA, compute_BABIP_pit,
-    compute_WIN_pct,
-    compute_K_per_9, compute_H_per_9, compute_HR_per_9, compute_BB_per_9,
-    compute_K_per_BB,
-    compute_HR_pct_pit, compute_K_pct_pit, compute_BB_pct_pit,
-    compute_P_per_GP, compute_P_per_IP, compute_P_per_PA, compute_IP_per_GP,
-    compute_SV_pct, compute_FIP_raw,
-    compute_RAR_pit, compute_RAAlev, compute_RA9def,
+    compute_p_era, compute_p_ra9, compute_p_whip,
+    compute_p_baa, compute_p_obpa, compute_p_babip,
+    compute_p_win_pct,
+    compute_p_k_per_9, compute_p_h_per_9, compute_p_hr_per_9, compute_p_bb_per_9,
+    compute_p_k_per_bb,
+    compute_p_hr_pct, compute_p_k_pct, compute_p_bb_pct,
+    compute_p_p_per_gp, compute_p_p_per_ip, compute_p_p_per_pa, compute_p_ip_per_gp,
+    compute_p_sv_pct, compute_fip_raw,
+    compute_p_rar, compute_p_raa_lev, compute_p_ra9_def,
 )
-
 
 stats = None
 
@@ -34,71 +33,72 @@ stats = None
 def compute():
     global stats
     d = raw.pitching_stats.copy()
+    # Columns are already renamed to final names by load_pitching() in data/stats.py
 
-    compute_ERA(d)
-    d['ERA-'] = 100 * d['ERA'] / d['Season'].map(lg.season_pitching['ERA'])
-    compute_RA9(d)
-    compute_WHIP(d)
-    compute_FIP_raw(d)
-    d['FIP'] += d['Season'].map(lg.season_pitching['cFIP'])
-    compute_BAA(d)
-    compute_OBPA(d)
-    compute_BABIP_pit(d)
-    compute_WIN_pct(d)
-    compute_K_per_9(d)
-    compute_H_per_9(d)
-    compute_HR_per_9(d)
-    compute_BB_per_9(d)
-    compute_K_per_BB(d)
-    compute_HR_pct_pit(d)
-    compute_K_pct_pit(d)
-    compute_BB_pct_pit(d)
-    compute_P_per_GP(d)
-    compute_P_per_IP(d)
-    compute_P_per_PA(d)
-    compute_IP_per_GP(d)
-    compute_SV_pct(d)
+    compute_p_era(d)
+    d['p_era_minus'] = 100 * d['p_era'] / d['Season'].map(lg.season_pitching['ERA'])
+    compute_p_ra9(d)
+    compute_p_whip(d)
+    compute_fip_raw(d)
+    d['p_fip'] += d['Season'].map(lg.season_pitching['cFIP'])
+    compute_p_baa(d)
+    compute_p_obpa(d)
+    compute_p_babip(d)
+    compute_p_win_pct(d)
+    compute_p_k_per_9(d)
+    compute_p_h_per_9(d)
+    compute_p_hr_per_9(d)
+    compute_p_bb_per_9(d)
+    compute_p_k_per_bb(d)
+    compute_p_hr_pct(d)
+    compute_p_k_pct(d)
+    compute_p_bb_pct(d)
+    compute_p_p_per_gp(d)
+    compute_p_p_per_ip(d)
+    compute_p_p_per_pa(d)
+    compute_p_ip_per_gp(d)
+    compute_p_sv_pct(d)
 
     # Defense-adjusted RA9
-    bip        = d['BF'] - d['BB'] - d['HBP'] - d['K'] - d['HR']
+    bip        = d['p_bf'] - d['p_bb'] - d['p_hbp'] - d['p_k'] - d['p_hr']
     babip_diff = d.apply(
         lambda row: lg.team_defense.loc[(row['Season'], row['Team']), 'BABIP_diff'], axis=1)
     rh         = d['Season'].map(lg.season_pitching['R/H'])
-    d['Rdef']  = -bip * babip_diff * rh * DEF_IMPACT
-    compute_RA9def(d)
+    d['p_r_def']  = -bip * babip_diff * rh * DEF_IMPACT
+    compute_p_ra9_def(d)
 
     # WAR
     pf       = (1 + d['Team'].map(park_factors)) / 2
     ra9_comp = d.apply(
         lambda row: lg.role_pitching.loc[(row['Season'], row['Role'] == 'SP'), 'RA9'], axis=1)
 
-    base_raa = (ra9_comp * pf - d['RA9def']) / 9 * d['IP_true']
+    base_raa = (ra9_comp * pf - d['p_ra9_def']) / 9 * d['p_ip']
 
     # Zero-sum correction: distribute the season RAA imbalance proportionally by IP
-    d['Rcorr'] = 0.0
-    d['RAA']   = base_raa
-    season_raa = d.groupby('Season')['RAA'].sum()
-    season_ip  = d.groupby('Season')['IP_true'].sum()
-    d['Rcorr'] = d['Season'].map(-season_raa / season_ip) * d['IP_true']
-    d['RAA']   = base_raa + d['Rcorr']
+    d['p_r_corr'] = 0.0
+    d['p_raa']    = base_raa
+    season_raa = d.groupby('Season')['p_raa'].sum()
+    season_ip  = d.groupby('Season')['p_ip'].sum()
+    d['p_r_corr'] = d['Season'].map(-season_raa / season_ip) * d['p_ip']
+    d['p_raa']    = base_raa + d['p_r_corr']
 
-    d['Rlev']   = d.apply(
+    d['p_r_lev']   = d.apply(
         lambda row: (
-            row['SV']               * lg.role_leverage.loc[(row['Season'], row['Role']), 'R_sv'] +
-            (row['GR'] - row['SV']) * lg.role_leverage.loc[(row['Season'], row['Role']), 'R_no_SV']
+            row['p_sv']               * lg.role_leverage.loc[(row['Season'], row['Role']), 'R_sv'] +
+            (row['p_gr'] - row['p_sv']) * lg.role_leverage.loc[(row['Season'], row['Role']), 'R_no_SV']
         ), axis=1)
-    compute_RAAlev(d)
+    compute_p_raa_lev(d)
 
-    rpw      = d['Season'].map(lg.season_batting['R/W'])
-    d['WAA'] = d['RAAlev'] / rpw
+    rpw       = d['Season'].map(lg.season_batting['R/W'])
+    d['p_waa'] = d['p_raa_lev'] / rpw
 
-    wrep     = d['IP_true'] * d.apply(
+    wrep       = d['p_ip'] * d.apply(
         lambda row: lg.role_innings.loc[
             (row['Season'], 'RP' if row['Role'] == 'CL' else row['Role']), 'RW/IP'
         ], axis=1)
-    d['Rrep'] = rpw * wrep
-    compute_RAR_pit(d)
-    d['WAR']  = d['RAR'] / rpw
+    d['p_r_rep'] = rpw * wrep
+    compute_p_rar(d)
+    d['p_war']  = d['p_rar'] / rpw
 
     d['stat_type'] = 'season'
     stats = _append_summary_rows(d)
@@ -117,9 +117,9 @@ def _append_summary_rows(d):
     career = career.merge(team_counts, on=gp)
     career['Team'] = career['Team'].astype(str) + 'TM'
     career = _recompute_rates(career)
-    career['ERA-']   = d.groupby(gp).apply(lambda g: weighted_avg(g, 'ERA-',   'IP_true'), include_groups=False).values
-    career['FIP']    = d.groupby(gp).apply(lambda g: weighted_avg(g, 'FIP',    'IP_true'), include_groups=False).values
-    career['RA9def'] = d.groupby(gp).apply(lambda g: weighted_avg(g, 'RA9def', 'IP_true'), include_groups=False).values
+    career['p_era_minus'] = d.groupby(gp).apply(lambda g: weighted_avg(g, 'p_era_minus', 'p_ip'), include_groups=False).values
+    career['p_fip']       = d.groupby(gp).apply(lambda g: weighted_avg(g, 'p_fip',       'p_ip'), include_groups=False).values
+    career['p_ra9_def']   = d.groupby(gp).apply(lambda g: weighted_avg(g, 'p_ra9_def',   'p_ip'), include_groups=False).values
 
     team_totals = d.groupby(gt).sum(numeric_only=True).reset_index()
     season_counts = d.groupby(gt)['Season'].nunique().reset_index(name='Season')
@@ -130,33 +130,32 @@ def _append_summary_rows(d):
     team_totals['Role']      = ''
     team_totals['stat_type'] = 'team'
     team_totals = _recompute_rates(team_totals)
-    team_totals['ERA-']   = d.groupby(gt).apply(lambda g: weighted_avg(g, 'ERA-',   'IP_true'), include_groups=False).values
-    team_totals['FIP']    = d.groupby(gt).apply(lambda g: weighted_avg(g, 'FIP',    'IP_true'), include_groups=False).values
-    team_totals['RA9def'] = d.groupby(gt).apply(lambda g: weighted_avg(g, 'RA9def', 'IP_true'), include_groups=False).values
+    team_totals['p_era_minus'] = d.groupby(gt).apply(lambda g: weighted_avg(g, 'p_era_minus', 'p_ip'), include_groups=False).values
+    team_totals['p_fip']       = d.groupby(gt).apply(lambda g: weighted_avg(g, 'p_fip',       'p_ip'), include_groups=False).values
+    team_totals['p_ra9_def']   = d.groupby(gt).apply(lambda g: weighted_avg(g, 'p_ra9_def',   'p_ip'), include_groups=False).values
 
     return pd.concat([d, career, team_totals], ignore_index=True)
 
 
 def _recompute_rates(df):
-    df['IP'] = df['IP_true'].map(fmt_ip)
-
-    compute_ERA(df)
-    compute_RA9(df)
-    compute_WHIP(df)
-    compute_BAA(df)
-    compute_OBPA(df)
-    compute_BABIP_pit(df)
-    compute_WIN_pct(df)
-    compute_K_per_9(df)
-    compute_H_per_9(df)
-    compute_HR_per_9(df)
-    compute_BB_per_9(df)
-    compute_K_per_BB(df)
-    compute_K_pct_pit(df)
-    compute_BB_pct_pit(df)
-    compute_P_per_GP(df)
-    compute_P_per_IP(df)
-    compute_P_per_PA(df)
-    compute_IP_per_GP(df)
-    compute_SV_pct(df)
+    # DataFrame already has final column names - just call formula functions directly
+    compute_p_era(df)
+    compute_p_ra9(df)
+    compute_p_whip(df)
+    compute_p_baa(df)
+    compute_p_obpa(df)
+    compute_p_babip(df)
+    compute_p_win_pct(df)
+    compute_p_k_per_9(df)
+    compute_p_h_per_9(df)
+    compute_p_hr_per_9(df)
+    compute_p_bb_per_9(df)
+    compute_p_k_per_bb(df)
+    compute_p_k_pct(df)
+    compute_p_bb_pct(df)
+    compute_p_p_per_gp(df)
+    compute_p_p_per_ip(df)
+    compute_p_p_per_pa(df)
+    compute_p_ip_per_gp(df)
+    compute_p_sv_pct(df)
     return df

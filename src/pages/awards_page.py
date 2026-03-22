@@ -29,7 +29,7 @@ def _batting_title_table(winners):
         return
     rows = [
         {'First Name': w['first'], 'Last Name': w['last'], 'Player': '',
-         'Season': w['season'], 'AVG': w['AVG'], 'PA': w['PA'],
+         'Season': w['season'], 'avg': w['AVG'], 'pa': w['PA'],
          'Note': '* hitless AB rule' if w['unqualified'] else ''}
         for w in winners
     ]
@@ -42,7 +42,7 @@ def _era_title_table(winners):
         return
     rows = [
         {'First Name': w['first'], 'Last Name': w['last'], 'Player': '',
-         'Season': w['season'], 'ERA': w['ERA'], 'IP_true': w['IP_true']}
+         'Season': w['season'], 'p_era': w['ERA'], 'p_ip': w['IP_true']}
         for w in winners
     ]
     render_table(pd.DataFrame(rows), prefix='players/')
@@ -55,7 +55,7 @@ def _hr_sb_table(members):
     rows = [
         {'First Name': w['first'], 'Last Name': w['last'], 'Player': '',
          'Season': w['season'], 'Team': w['team'],
-         'HR': w['HR'], 'SB': w['SB'], 'AVG': w['AVG']}
+         'hr': w['HR'], 'sb': w['SB'], 'avg': w['AVG']}
         for w in members
     ]
     render_table(pd.DataFrame(rows), prefix='players/')
@@ -76,16 +76,16 @@ def generate_awards():
 
         h2("Triple Crown")
         h3("Batting")
-        _triple_crown_table(bat_winners, ['AVG', 'HR', 'RBI'])
+        _triple_crown_table(bat_winners, ['avg', 'hr', 'rbi'])
         h3("Pitching")
-        _triple_crown_table(pit_winners, ['W', 'ERA', 'K'])
+        _triple_crown_table(pit_winners, ['p_w', 'p_era', 'p_k'])
 
         for conf in conferences:
             h2(f"{conf} Triple Crown")
             h3("Batting")
-            _triple_crown_table(conf_bat[conf], ['AVG', 'HR', 'RBI'])
+            _triple_crown_table(conf_bat[conf], ['avg', 'hr', 'rbi'])
             h3("Pitching")
-            _triple_crown_table(conf_pit[conf], ['W', 'ERA', 'K'])
+            _triple_crown_table(conf_pit[conf], ['p_w', 'p_era', 'p_k'])
 
         h2("Batting Title")
         for conf in conferences:

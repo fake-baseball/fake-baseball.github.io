@@ -16,8 +16,11 @@ from data import teams as teams_data
 from constants import (BAT_SEASON_MIN_PA, scale_wOBA, num_games,
                        PROJ_SEASONS, PROJ_WEIGHTS as WEIGHTS, PROJ_WEIGHT_TOTAL as WEIGHT_TOTAL,
                        total_WAR, batter_share, runs_SB, runs_CS, park_factors)
-from formulas import compute_TB, compute_AVG, compute_OBP, compute_SLG, compute_OPS, compute_wOBA
-COMPONENTS   = ['BB', 'HBP', '1B', '2B', '3B', 'HR', 'K', 'SB', 'CS']
+from formulas import compute_tb, compute_avg, compute_obp, compute_slg, compute_ops, compute_woba
+
+# Component names as they appear in batting.stats (final column names)
+# These are per-PA rate components
+COMPONENTS   = ['bb', 'hbp', 'b_1b', 'b_2b', 'b_3b', 'hr', 'k', 'sb', 'cs']
 SKILLS       = ['power', 'contact', 'speed', 'fielding', 'arm']
 
 
@@ -41,13 +44,13 @@ def compute():
 
     # ── Step 1: Fit regression on players qualified in all 3 seasons ─────────
 
-    df_qual     = df[df['PA'] >= BAT_SEASON_MIN_PA].copy()
+    df_qual     = df[df['pa'] >= BAT_SEASON_MIN_PA].copy()
     full_counts = df_qual.groupby(['First Name', 'Last Name'])['Season'].nunique()
     full_names  = full_counts[full_counts == len(PROJ_SEASONS)].index
     df_train    = df_qual[df_qual.set_index(['First Name', 'Last Name']).index.isin(full_names)].copy()
 
     for comp in COMPONENTS:
-        df_train[f'{comp}_rate'] = df_train[comp] / df_train['PA']
+        df_train[f'{comp}_rate'] = df_train[comp] / df_train['pa']
 
     train_rows = []
     for (first, last), group in df_train.groupby(['First Name', 'Last Name']):
@@ -86,7 +89,7 @@ def compute():
         season_pa = {}
         for s in PROJ_SEASONS:
             season_row     = df[(df['First Name'] == first) & (df['Last Name'] == last) & (df['Season'] == s)]
-            season_pa[s]   = int(season_row.iloc[0]['PA']) if not season_row.empty else 0
+            season_pa[s]   = int(season_row.iloc[0]['pa']) if not season_row.empty else 0
 
         proj = {}
         for comp in COMPONENTS:
@@ -135,7 +138,7 @@ def fit_pa_model():
     s20 = bat_module.stats[
         (bat_module.stats['Season'] == 20) &
         (bat_module.stats['stat_type'] == 'season') &
-        (bat_module.stats['PA'] > 0)
+        (bat_module.stats['pa'] > 0)
     ].copy()
 
     pi = players.player_info.reset_index()
@@ -144,7 +147,7 @@ def fit_pa_model():
                            right_on=['first_name', 'last_name'])
 
     X = merged[PA_FEATURES].values.astype(float)
-    y = merged['PA'].values.astype(float)
+    y = merged['pa'].values.astype(float)
 
     return LinearRegression().fit(X, y)
 
@@ -168,26 +171,27 @@ def compute_all():
     for row in rows:
         row['proj_pa'] = min(PA_MAX, max(0, int(round(pa_reg.predict([[row[f] for f in PA_FEATURES]])[0]))))
 
+        # Use final batting column names in temp dict for formula functions
         d = {
-            'BB': row['BB'], 'HBP': row['HBP'],
-            '1B': row['1B'], '2B': row['2B'], '3B': row['3B'], 'HR': row['HR'],
-            'H':  row['1B'] + row['2B'] + row['3B'] + row['HR'],
-            'AB': max(0.0, 1.0 - row['BB'] - row['HBP']),
-            'SF': 0.0,
+            'bb': row['bb'], 'hbp': row['hbp'],
+            'b_1b': row['b_1b'], 'b_2b': row['b_2b'], 'b_3b': row['b_3b'], 'hr': row['hr'],
+            'h':  row['b_1b'] + row['b_2b'] + row['b_3b'] + row['hr'],
+            'ab': max(0.0, 1.0 - row['bb'] - row['hbp']),
+            'sf': 0.0,
         }
-        compute_TB(d); compute_AVG(d); compute_OBP(d); compute_SLG(d)
-        compute_OPS(d); compute_wOBA(d)
-        row['xAVG']  = d['AVG']
-        row['xOBP']  = d['OBP']
-        row['xSLG']  = d['SLG']
-        row['xOPS']  = d['OPS']
-        row['xwOBA'] = d['wOBA']
-        row['xHR']   = int(round(row['proj_pa'] * row['HR']))
-        row['xK']    = int(round(row['proj_pa'] * row['K']))
-        row['xSB']   = int(round(row['proj_pa'] * row['SB']))
-        row['xCS']   = int(round(row['proj_pa'] * row['CS']))
-        bip_rate     = 1.0 - row['BB'] - row['HBP'] - row['K'] - row['HR']
-        row['xBABIP'] = (row['1B'] + row['2B'] + row['3B']) / bip_rate if bip_rate > 0 else 0.0
+        compute_tb(d); compute_avg(d); compute_obp(d); compute_slg(d)
+        compute_ops(d); compute_woba(d)
+        row['xAVG']  = d['avg']
+        row['xOBP']  = d['obp']
+        row['xSLG']  = d['slg']
+        row['xOPS']  = d['ops']
+        row['xwOBA'] = d['woba']
+        row['xHR']   = int(round(row['proj_pa'] * row['hr']))
+        row['xK']    = int(round(row['proj_pa'] * row['k']))
+        row['xSB']   = int(round(row['proj_pa'] * row['sb']))
+        row['xCS']   = int(round(row['proj_pa'] * row['cs']))
+        bip_rate     = 1.0 - row['bb'] - row['hbp'] - row['k'] - row['hr']
+        row['xBABIP'] = (row['b_1b'] + row['b_2b'] + row['b_3b']) / bip_rate if bip_rate > 0 else 0.0
 
     # League context: 5/4/3 weighted average across seasons 18-20
     def _lg_avg(col):
@@ -206,10 +210,10 @@ def compute_all():
     s20 = bat_module.stats[
         (bat_module.stats['Season'] == 20) &
         (bat_module.stats['stat_type'] == 'season') &
-        (bat_module.stats['PA'] > 0) &
-        (bat_module.stats['GB'] > 0)
+        (bat_module.stats['pa'] > 0) &
+        (bat_module.stats['gb'] > 0)
     ]
-    pa_per_gb = (s20['PA'] / s20['GB']).mean()
+    pa_per_gb = (s20['pa'] / s20['gb']).mean()
 
     abbr_map = teams_data.teams.set_index('team_name')['abbr'] if teams_data.teams is not None else {}
 
@@ -225,12 +229,12 @@ def compute_all():
         row['xGB'] = max(0, min(num_games, int(round(xGB))))
         row['xOPS+'] = 100 * ((row['xOBP'] / lg_obp_20) + (row['xSLG'] / lg_slg_20) - 1) / pf if lg_obp_20 > 0 and lg_slg_20 > 0 else 100.0
         try:
-            rpos_per_g = lg.pos_adjustment.loc[(pp, sp), 'Rpos']
+            rpos_per_g = lg.pos_adjustment.loc[(pp, sp), 'r_pos']
         except KeyError:
             rpos_per_g = 0.0
         xRpos = rpos_per_g * xGB / num_games
-        xRbr  = (row['SB'] * runs_SB + row['CS'] * runs_CS
-                 - lg_wSB * (row['1B'] + row['BB'] + row['HBP'])) * row['proj_pa']
+        xRbr  = (row['sb'] * runs_SB + row['cs'] * runs_CS
+                 - lg_wSB * (row['b_1b'] + row['bb'] + row['hbp'])) * row['proj_pa']
         row['xRbat']  = xRbat
         row['xRpos']  = xRpos
         row['xRbr']   = xRbr
@@ -264,19 +268,19 @@ def compute_all():
     # ── Fit OLS: RBI/PA ~ 1B_rate + 2B_rate + 3B_rate + HR_rate + (BB+HBP)_rate
     # BB and HBP are combined: both put the batter on base with no contact and
     # almost never directly drive in a run, so they share a single coefficient.
-    RBI_FEATURES = ['1B', '2B', '3B', 'HR', 'BB_HBP']
+    RBI_FEATURES = ['b_1b', 'b_2b', 'b_3b', 'hr', 'BB_HBP']
     df_all = bat_module.stats[
         (bat_module.stats['stat_type'] == 'season') &
-        (bat_module.stats['PA'] >= BAT_SEASON_MIN_PA)
+        (bat_module.stats['pa'] >= BAT_SEASON_MIN_PA)
     ].copy()
-    df_all['BB_HBP'] = df_all['BB'] + df_all['HBP']
+    df_all['BB_HBP'] = df_all['bb'] + df_all['hbp']
     for feat in RBI_FEATURES:
-        df_all[f'{feat}_rate'] = df_all[feat] / df_all['PA']
+        df_all[f'{feat}_rate'] = df_all[feat] / df_all['pa']
     X_rbi     = df_all[[f'{feat}_rate' for feat in RBI_FEATURES]].values.astype(float)
-    y_rbi     = (df_all['RBI'] / df_all['PA']).values.astype(float)
+    y_rbi     = (df_all['rbi'] / df_all['pa']).values.astype(float)
     rbi_model = LinearRegression().fit(X_rbi, y_rbi)
 
-    # ── Projected R via league-average RC% × projected non-HR OB events ───────
+    # ── Projected R via league-average RC% x projected non-HR OB events ───────
     # RC% = (R - HR) / (H - HR + BB + HBP): context-driven, not a player skill,
     # so we use the weighted league average rather than individual player history.
     df_proj = bat_module.stats[
@@ -286,19 +290,19 @@ def compute_all():
     lg_rc_pct_total = 0.0
     for s in PROJ_SEASONS:
         s_df            = df_proj[df_proj['Season'] == s]
-        total_non_hr_ob = (s_df['H'] - s_df['HR'] + s_df['BB'] + s_df['HBP']).sum()
-        lg_rc_pct_s     = (s_df['R'] - s_df['HR']).sum() / total_non_hr_ob if total_non_hr_ob > 0 else 0.0
+        total_non_hr_ob = (s_df['h'] - s_df['hr'] + s_df['bb'] + s_df['hbp']).sum()
+        lg_rc_pct_s     = (s_df['r'] - s_df['hr']).sum() / total_non_hr_ob if total_non_hr_ob > 0 else 0.0
         lg_rc_pct_total += WEIGHTS[s] * lg_rc_pct_s
     lg_rc_pct = lg_rc_pct_total / WEIGHT_TOTAL
 
     for row in rows:
         proj_non_hr_ob = row['proj_pa'] * (
-            row['1B'] + row['2B'] + row['3B'] + row['BB'] + row['HBP']
+            row['b_1b'] + row['b_2b'] + row['b_3b'] + row['bb'] + row['hbp']
         )
         row['xR'] = int(round(row['xHR'] + proj_non_hr_ob * lg_rc_pct))
 
         # xRBI: OLS on blended per-PA component rates (BB+HBP combined)
-        X_pred        = [[row['1B'], row['2B'], row['3B'], row['HR'], row['BB'] + row['HBP']]]
+        X_pred        = [[row['b_1b'], row['b_2b'], row['b_3b'], row['hr'], row['bb'] + row['hbp']]]
         rbi_rate_pred = max(0.0, rbi_model.predict(X_pred)[0])
         row['xRBI']   = int(round(row['proj_pa'] * rbi_rate_pred))
 

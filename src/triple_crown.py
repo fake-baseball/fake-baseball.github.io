@@ -15,9 +15,9 @@ def batting_triple_crown():
     """
     winners = []
     for season in SEASON_RANGE:
-        avg_rows = ld.get_batting_leaders('AVG', season=season, num=1)
-        hr_rows  = ld.get_batting_leaders('HR',  season=season, num=1)
-        rbi_rows = ld.get_batting_leaders('RBI', season=season, num=1)
+        avg_rows = ld.get_batting_leaders('avg', season=season, num=1)
+        hr_rows  = ld.get_batting_leaders('hr',  season=season, num=1)
+        rbi_rows = ld.get_batting_leaders('rbi', season=season, num=1)
         crown = _names(avg_rows) & _names(hr_rows) & _names(rbi_rows)
         for first, last in crown:
             mask = (avg_rows['First Name'] == first) & (avg_rows['Last Name'] == last)
@@ -25,9 +25,9 @@ def batting_triple_crown():
                 'season': season,
                 'first':  first,
                 'last':   last,
-                'AVG':    avg_rows.loc[mask].iloc[0]['AVG'],
-                'HR':     int(hr_rows.loc[(hr_rows['First Name'] == first) & (hr_rows['Last Name'] == last)].iloc[0]['HR']),
-                'RBI':    int(rbi_rows.loc[(rbi_rows['First Name'] == first) & (rbi_rows['Last Name'] == last)].iloc[0]['RBI']),
+                'avg':    avg_rows.loc[mask].iloc[0]['avg'],
+                'hr':     int(hr_rows.loc[(hr_rows['First Name'] == first) & (hr_rows['Last Name'] == last)].iloc[0]['hr']),
+                'rbi':    int(rbi_rows.loc[(rbi_rows['First Name'] == first) & (rbi_rows['Last Name'] == last)].iloc[0]['rbi']),
             })
     return sorted(winners, key=lambda w: w['season'])
 
@@ -41,9 +41,9 @@ def batting_triple_crown_conf(conference):
     abbrs = _conf_abbrs(conference)
     winners = []
     for season in SEASON_RANGE:
-        avg_rows = ld.get_batting_leaders('AVG', season=season, num=1, teams=abbrs)
-        hr_rows  = ld.get_batting_leaders('HR',  season=season, num=1, teams=abbrs)
-        rbi_rows = ld.get_batting_leaders('RBI', season=season, num=1, teams=abbrs)
+        avg_rows = ld.get_batting_leaders('avg', season=season, num=1, teams=abbrs)
+        hr_rows  = ld.get_batting_leaders('hr',  season=season, num=1, teams=abbrs)
+        rbi_rows = ld.get_batting_leaders('rbi', season=season, num=1, teams=abbrs)
         crown = _names(avg_rows) & _names(hr_rows) & _names(rbi_rows)
         for first, last in crown:
             mask = (avg_rows['First Name'] == first) & (avg_rows['Last Name'] == last)
@@ -51,9 +51,9 @@ def batting_triple_crown_conf(conference):
                 'season': season,
                 'first':  first,
                 'last':   last,
-                'AVG':    avg_rows.loc[mask].iloc[0]['AVG'],
-                'HR':     int(hr_rows.loc[(hr_rows['First Name'] == first) & (hr_rows['Last Name'] == last)].iloc[0]['HR']),
-                'RBI':    int(rbi_rows.loc[(rbi_rows['First Name'] == first) & (rbi_rows['Last Name'] == last)].iloc[0]['RBI']),
+                'avg':    avg_rows.loc[mask].iloc[0]['avg'],
+                'hr':     int(hr_rows.loc[(hr_rows['First Name'] == first) & (hr_rows['Last Name'] == last)].iloc[0]['hr']),
+                'rbi':    int(rbi_rows.loc[(rbi_rows['First Name'] == first) & (rbi_rows['Last Name'] == last)].iloc[0]['rbi']),
             })
     return sorted(winners, key=lambda w: w['season'])
 
@@ -63,18 +63,18 @@ def pitching_triple_crown_conf(conference):
     abbrs = _conf_abbrs(conference)
     winners = []
     for season in SEASON_RANGE:
-        w_rows   = ld.get_pitching_leaders('W',   season=season, num=1, teams=abbrs)
-        era_rows = ld.get_pitching_leaders('ERA', season=season, num=1, teams=abbrs)
-        k_rows   = ld.get_pitching_leaders('K',   season=season, num=1, teams=abbrs)
+        w_rows   = ld.get_pitching_leaders('p_w',   season=season, num=1, teams=abbrs)
+        era_rows = ld.get_pitching_leaders('p_era', season=season, num=1, teams=abbrs)
+        k_rows   = ld.get_pitching_leaders('p_k',   season=season, num=1, teams=abbrs)
         crown = _names(w_rows) & _names(era_rows) & _names(k_rows)
         for first, last in crown:
             winners.append({
                 'season': season,
                 'first':  first,
                 'last':   last,
-                'W':   int(w_rows.loc[(w_rows['First Name'] == first) & (w_rows['Last Name'] == last)].iloc[0]['W']),
-                'ERA': era_rows.loc[(era_rows['First Name'] == first) & (era_rows['Last Name'] == last)].iloc[0]['ERA'],
-                'K':   int(k_rows.loc[(k_rows['First Name'] == first) & (k_rows['Last Name'] == last)].iloc[0]['K']),
+                'p_w':   int(w_rows.loc[(w_rows['First Name'] == first) & (w_rows['Last Name'] == last)].iloc[0]['p_w']),
+                'p_era': era_rows.loc[(era_rows['First Name'] == first) & (era_rows['Last Name'] == last)].iloc[0]['p_era'],
+                'p_k':   int(k_rows.loc[(k_rows['First Name'] == first) & (k_rows['Last Name'] == last)].iloc[0]['p_k']),
             })
     return sorted(winners, key=lambda w: w['season'])
 
@@ -100,17 +100,17 @@ def batting_title(conference=None):
         if df.empty:
             continue
 
-        qualified   = df[df['PA'] >= BAT_SEASON_MIN_PA]
-        unqualified = df[df['PA'] < BAT_SEASON_MIN_PA]
+        qualified   = df[df['pa'] >= BAT_SEASON_MIN_PA]
+        unqualified = df[df['pa'] < BAT_SEASON_MIN_PA]
 
-        best_qual_avg = qualified['AVG'].max() if not qualified.empty else -1.0
+        best_qual_avg = qualified['avg'].max() if not qualified.empty else -1.0
 
         candidates = []
         for _, row in qualified.iterrows():
-            candidates.append((row['AVG'], row, False))
+            candidates.append((row['avg'], row, False))
         for _, row in unqualified.iterrows():
-            extra     = int(BAT_SEASON_MIN_PA - row['PA'])
-            adj_avg   = row['H'] / (row['AB'] + extra)
+            extra     = int(BAT_SEASON_MIN_PA - row['pa'])
+            adj_avg   = row['h'] / (row['ab'] + extra)
             if adj_avg > best_qual_avg:
                 candidates.append((adj_avg, row, True))
 
@@ -124,8 +124,8 @@ def batting_title(conference=None):
                     'season':      season,
                     'first':       row['First Name'],
                     'last':        row['Last Name'],
-                    'AVG':         row['AVG'],
-                    'PA':          int(row['PA']),
+                    'AVG':         row['avg'],
+                    'PA':          int(row['pa']),
                     'unqualified': unqual,
                 })
 
@@ -147,21 +147,21 @@ def era_title(conference=None):
         df = pit_module.stats[
             (pit_module.stats['Season'] == season) &
             (pit_module.stats['stat_type'] == 'season') &
-            (pit_module.stats['IP_true'] >= PIT_SEASON_MIN_IP)
+            (pit_module.stats['p_ip'] >= PIT_SEASON_MIN_IP)
         ].copy()
         if abbrs is not None:
             df = df[df['Team'].isin(abbrs)]
         if df.empty:
             continue
 
-        best = df['ERA'].min()
-        for _, row in df[df['ERA'] == best].iterrows():
+        best = df['p_era'].min()
+        for _, row in df[df['p_era'] == best].iterrows():
             winners.append({
                 'season':  season,
                 'first':   row['First Name'],
                 'last':    row['Last Name'],
-                'ERA':     row['ERA'],
-                'IP_true': row['IP_true'],
+                'ERA':     row['p_era'],
+                'IP_true': row['p_ip'],
             })
 
     return sorted(winners, key=lambda w: w['season'])
@@ -174,16 +174,16 @@ def hr_sb_club(threshold):
     """
     import batting as bat_module
     df = bat_module.stats[bat_module.stats['stat_type'] == 'season'].copy()
-    df = df[(df['HR'] >= threshold) & (df['SB'] >= threshold)]
+    df = df[(df['hr'] >= threshold) & (df['sb'] >= threshold)]
     results = []
     for _, row in df.iterrows():
         results.append({
             'season': row['Season'],
             'first':  row['First Name'],
             'last':   row['Last Name'],
-            'HR':     int(row['HR']),
-            'SB':     int(row['SB']),
-            'AVG':    row['AVG'],
+            'HR':     int(row['hr']),
+            'SB':     int(row['sb']),
+            'AVG':    row['avg'],
             'team':   row['Team'],
         })
     return sorted(results, key=lambda r: (r['season'], -r['HR']))
@@ -196,17 +196,17 @@ def pitching_triple_crown():
     """
     winners = []
     for season in SEASON_RANGE:
-        w_rows   = ld.get_pitching_leaders('W',   season=season, num=1)
-        era_rows = ld.get_pitching_leaders('ERA', season=season, num=1)
-        k_rows   = ld.get_pitching_leaders('K',   season=season, num=1)
+        w_rows   = ld.get_pitching_leaders('p_w',   season=season, num=1)
+        era_rows = ld.get_pitching_leaders('p_era', season=season, num=1)
+        k_rows   = ld.get_pitching_leaders('p_k',   season=season, num=1)
         crown = _names(w_rows) & _names(era_rows) & _names(k_rows)
         for first, last in crown:
             winners.append({
                 'season': season,
                 'first':  first,
                 'last':   last,
-                'W':   int(w_rows.loc[(w_rows['First Name'] == first) & (w_rows['Last Name'] == last)].iloc[0]['W']),
-                'ERA': era_rows.loc[(era_rows['First Name'] == first) & (era_rows['Last Name'] == last)].iloc[0]['ERA'],
-                'K':   int(k_rows.loc[(k_rows['First Name'] == first) & (k_rows['Last Name'] == last)].iloc[0]['K']),
+                'p_w':   int(w_rows.loc[(w_rows['First Name'] == first) & (w_rows['Last Name'] == last)].iloc[0]['p_w']),
+                'p_era': era_rows.loc[(era_rows['First Name'] == first) & (era_rows['Last Name'] == last)].iloc[0]['p_era'],
+                'p_k':   int(k_rows.loc[(k_rows['First Name'] == first) & (k_rows['Last Name'] == last)].iloc[0]['p_k']),
             })
     return sorted(winners, key=lambda w: w['season'])

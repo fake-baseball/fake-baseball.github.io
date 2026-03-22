@@ -8,11 +8,11 @@ import pandas as pd
 import league as lg
 from data import teams as teams_data
 from util import make_doc, render_table, fmt_round, fmt_rdiff
-from stats_meta import BATTING_STATS, PITCHING_STATS
+from registry import REGISTRY
 import leaders as ld
 
-_BAT_LEADER_STATS = ['WAR', 'HR', 'RBI', 'AVG', 'OPS', 'SB']
-_PIT_LEADER_STATS = ['WAR', 'W', 'SV', 'ERA', 'K', 'WHIP']
+_BAT_LEADER_STATS = ['war', 'hr', 'rbi', 'avg', 'ops', 'sb']
+_PIT_LEADER_STATS = ['p_war', 'p_w', 'p_sv', 'p_era', 'p_k', 'p_whip']
 
 
 def _fmt_gb(v):
@@ -67,33 +67,40 @@ def _league_stats_section(season_num):
                     th(col)
         with tbody():
             with tr():
-                for stat in ['AVG', 'OBP', 'SLG', 'OPS', 'wOBA']:
-                    m = BATTING_STATS[stat]
+                for stat in ['avg', 'obp', 'slg', 'ops', 'woba']:
+                    m = REGISTRY[stat]
                     td(fmt_round(sb[stat], m['decimal_places'], m['leading_zero'], m['percentage']))
                 td(f"{sb['R/G']:.2f}")
-                td(int(sb['HR']))
-                td(int(sb['BB']))
-                td(int(sb['K']))
+                td(int(sb['hr']))
+                td(int(sb['bb']))
+                td(int(sb['k']))
 
     h3("Pitching")
-    pit_cols = ['ERA', 'RA9', 'WHIP', 'K/9', 'BB/9', 'BABIP']
+    # (stat key in REGISTRY, column name in season_pitching, display header)
+    pit_cols = [
+        ('p_era',    'ERA',   'ERA'),
+        ('p_ra9',    'RA9',   'RA9'),
+        ('p_whip',   'WHIP',  'WHIP'),
+        ('p_k_per_9', 'p_k_per_9',  'K/9'),
+        ('p_bb_per_9','p_bb_per_9', 'BB/9'),
+        ('p_babip',  'BABIP', 'BABIP'),
+    ]
     with table(border=0):
         with thead():
             with tr():
-                for col in pit_cols:
-                    th(col)
+                for _, _, disp in pit_cols:
+                    th(disp)
         with tbody():
             with tr():
-                for stat in pit_cols:
-                    m = PITCHING_STATS[stat]
-                    td(fmt_round(sp[stat], m['decimal_places'], m['leading_zero'], m['percentage']))
+                for stat_key, sp_col, _ in pit_cols:
+                    m = REGISTRY[stat_key]
+                    td(fmt_round(sp[sp_col], m['decimal_places'], m['leading_zero'], m['percentage']))
 
 
 def _leader_table(stat, rows):
-    h4(stat)
+    h4(REGISTRY[stat]['name'] if stat in REGISTRY else stat)
     df = rows.reset_index().rename(columns={'index': '#'})
-    stat_col = 'IP_true' if stat == 'IP_true' else stat
-    df = df[['#', 'First Name', 'Last Name', 'Team', stat_col]].copy()
+    df = df[['#', 'First Name', 'Last Name', 'Team', stat]].copy()
     df.insert(2, 'Player', '')
     render_table(df, prefix='../players/')
 

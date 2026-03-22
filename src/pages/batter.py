@@ -11,15 +11,16 @@ import leaders
 import projections as proj_module
 from data import players
 from data import teams as teams_data
-from stats_meta import BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS
+from registry import REGISTRY
 from util import fmt_round, render_table, convert_name, make_doc
 
-_ALL_BAT = {**BATTING_STATS, **BASERUNNING_STATS, **FIELDING_STATS}
+_BAT_CONTEXTS = {'batting', 'baserunning', 'fielding'}
+_ALL_BAT = {k: v for k, v in REGISTRY.items() if v.get('context') in _BAT_CONTEXTS}
 
 _SUMMARY_COLS = [
-    ('WAR', 'WAR'), ('AB', 'AB'), ('H', 'H'), ('HR', 'HR'),
-    ('BA',  'AVG'), ('R',  'R'),  ('RBI', 'RBI'), ('SB', 'SB'),
-    ('OBP', 'OBP'), ('SLG', 'SLG'), ('OPS', 'OPS'), ('OPS+', 'OPS+'),
+    ('WAR', 'war'), ('AB', 'ab'), ('H', 'h'), ('HR', 'hr'),
+    ('BA',  'avg'), ('R',  'r'),  ('RBI', 'rbi'), ('SB', 'sb'),
+    ('OBP', 'obp'), ('SLG', 'slg'), ('OPS', 'ops'), ('OPS+', 'ops_plus'),
 ]
 
 
@@ -64,11 +65,11 @@ def _bat_proj_row(first, last, cols):
         return None
 
     pa    = proj['proj_pa']
-    bb    = int(round(pa * proj['BB']))
-    hbp   = int(round(pa * proj['HBP']))
-    oneb  = int(round(pa * proj['1B']))
-    twob  = int(round(pa * proj['2B']))
-    threeb = int(round(pa * proj['3B']))
+    bb    = int(round(pa * proj['bb']))
+    hbp   = int(round(pa * proj['hbp']))
+    oneb  = int(round(pa * proj['b_1b']))
+    twob  = int(round(pa * proj['b_2b']))
+    threeb = int(round(pa * proj['b_3b']))
     hr    = proj['xHR']
     k     = proj['xK']
     sb    = proj['xSB']
@@ -91,36 +92,36 @@ def _bat_proj_row(first, last, cols):
         'Season': 'Proj', 'stat_type': 'projected',
         'Age':  pi_row['age'] if pi_row is not None else np.nan,
         'Team': team_abbr,
-        'PA': pa, 'AB': ab, 'BB': bb, 'HBP': hbp,
-        '2B': twob, '3B': threeb, 'HR': hr, 'H': h, 'TB': tb,
-        'K': k, 'SB': sb, 'CS': cs, 'BIP': bip, 'XBH': xbh,
-        'GB': proj['xGB'], 'R': proj['xR'], 'RBI': proj['xRBI'],
-        'AVG': proj['xAVG'], 'OBP': proj['xOBP'], 'SLG': proj['xSLG'],
-        'OPS': proj['xOPS'], 'OPS+': proj['xOPS+'], 'wOBA': proj['xwOBA'], 'wRC+': proj['xwRC+'],
-        'BABIP': proj['xBABIP'], 'WAR': proj['xWAR'],
-        'ISO': proj['xSLG'] - proj['xAVG'],
-        'HR%': proj['HR'], 'K%': proj['K'], 'BB%': proj['BB'],
-        'Rbr': proj['xRbr'],
-        'wRC': proj['xwRC'],
-        'Rbat': proj['xRbat'], 'Rpos': proj['xRpos'],
-        'Rcorr': proj['xRcorr'], 'Rrep': proj['xRrep'],
-        'RAA': proj['xRAA'], 'RAR': proj['xRAR'],
-        'WAA': proj['xWAA'],
+        'pa': pa, 'ab': ab, 'bb': bb, 'hbp': hbp,
+        'b_2b': twob, 'b_3b': threeb, 'hr': hr, 'h': h, 'tb': tb,
+        'k': k, 'sb': sb, 'cs': cs, 'bip': bip, 'xbh': xbh,
+        'gb': proj['xGB'], 'r': proj['xR'], 'rbi': proj['xRBI'],
+        'avg': proj['xAVG'], 'obp': proj['xOBP'], 'slg': proj['xSLG'],
+        'ops': proj['xOPS'], 'ops_plus': proj['xOPS+'], 'woba': proj['xwOBA'], 'wrc_plus': proj['xwRC+'],
+        'babip': proj['xBABIP'], 'war': proj['xWAR'],
+        'iso': proj['xSLG'] - proj['xAVG'],
+        'hr_pct': proj['hr'], 'k_pct': proj['k'], 'bb_pct': proj['bb'],
+        'r_br': proj['xRbr'],
+        'wrc': proj['xwRC'],
+        'r_bat': proj['xRbat'], 'r_pos': proj['xRpos'],
+        'r_corr': proj['xRcorr'], 'r_rep': proj['xRrep'],
+        'raa': proj['xRAA'], 'rar': proj['xRAR'],
+        'waa': proj['xWAA'],
     })
     ob = h + bb + hbp
     if ob > 0:
-        d['RS%'] = proj['xR'] / ob
+        d['rs_pct'] = proj['xR'] / ob
     non_hr_ob = h - hr + bb + hbp
     if non_hr_ob > 0:
-        d['RC%'] = (proj['xR'] - hr) / non_hr_ob
+        d['rc_pct'] = (proj['xR'] - hr) / non_hr_ob
     if sbatt > 0:
-        d['SB%']    = sb / sbatt
-        d['SbAtt%'] = sbatt / oneb if oneb > 0 else np.nan
+        d['sb_pct']     = sb / sbatt
+        d['sb_att_pct'] = sbatt / oneb if oneb > 0 else np.nan
     if h > 0:
-        d['XBH%'] = xbh / h
+        d['xbh_pct'] = xbh / h
     if pi_row is not None:
-        d['PP'] = pi_row['ppos']
-        d['2P'] = pi_row['spos']
+        d['PP']   = pi_row['ppos']
+        d['pos2'] = pi_row['spos']
     return pd.DataFrame([d])
 
 
@@ -140,7 +141,7 @@ def generate_batter_page(first_name, last_name):
         active      = False
         mask        = (batting.stats['Last Name'] == last_name) & (batting.stats['First Name'] == first_name)
         primary_pos   = batting.stats.loc[mask, 'PP'].iloc[0]
-        secondary_pos = batting.stats.loc[mask, '2P'].iloc[0]
+        secondary_pos = batting.stats.loc[mask, 'pos2'].iloc[0]
         try:
             ret_mask          = (players.retired_batters['Last Name'] == last_name) & (players.retired_batters['First Name'] == first_name)
             retirement_season = players.retired_batters.loc[ret_mask, 'Retirement Season'].iloc[0]
@@ -195,35 +196,33 @@ def generate_batter_page(first_name, last_name):
 
         h3("Standard Batting")
         standard_batting = stats[[
-            'Season', 'Age', 'Team', 'WAR',
-            'GB', 'PA', 'AB', 'R', 'H', '2B', '3B', 'HR', 'RBI',
-            'SB', 'CS', 'BB', 'K', 'AVG', 'OBP', 'SLG', 'OPS', 'OPS+',
-            'TB', 'HBP', 'SH', 'SF', 'stat_type',
+            'Season', 'Age', 'Team', 'war',
+            'gb', 'pa', 'ab', 'r', 'h', 'b_2b', 'b_3b', 'hr', 'rbi',
+            'sb', 'cs', 'bb', 'k', 'avg', 'obp', 'slg', 'ops', 'ops_plus',
+            'tb', 'hbp', 'sh', 'sf', 'stat_type',
         ]]
         render_table(standard_batting)
 
         h3("Advanced Batting")
-        render_table(stats[['Season', 'Age', 'Team', 'PA',
-                    'wOBA', 'wRC', 'wRC+', 'BIP', 'BABIP',
-                    'ISO', 'XBH', 'XBH%', 'HR%', 'K%', 'BB%', 'stat_type']])
+        render_table(stats[['Season', 'Age', 'Team', 'pa',
+                    'woba', 'wrc', 'wrc_plus', 'bip', 'babip',
+                    'iso', 'xbh', 'xbh_pct', 'hr_pct', 'k_pct', 'bb_pct', 'stat_type']])
 
         h3("Baserunning")
-        render_table(stats[['Season', 'Age', 'Team', 'PA',
-                    'SB', 'CS', 'SB%', 'SbAtt%', 'RS%', 'RC%', 'stat_type']])
+        render_table(stats[['Season', 'Age', 'Team', 'pa',
+                    'sb', 'cs', 'sb_pct', 'sb_att_pct', 'rs_pct', 'rc_pct', 'stat_type']])
 
         h3("Fielding")
-        render_table(stats[['Season', 'Age', 'Team', 'PP', '2P',
-                    'GB', 'GF', 'E', 'E/GF', 'PB', 'PB/GF', 'stat_type']])
+        render_table(stats[['Season', 'Age', 'Team', 'PP', 'pos2',
+                    'gb', 'gf', 'e', 'e_per_gf', 'pb', 'pb_per_gf', 'stat_type']])
 
         h3("Value")
         render_table(stats[[
-            'Season', 'Age', 'Team', 'GB', 'PA',
-            'Rbat', 'Rbr', 'Rdef', 'Rpos', 'Rcorr', 'Rrep', 'RAA', 'RAR', 'WAA', 'WAR', 'stat_type',
+            'Season', 'Age', 'Team', 'gb', 'pa',
+            'r_bat', 'r_br', 'r_def', 'r_pos', 'r_corr', 'r_rep', 'raa', 'rar', 'waa', 'war', 'stat_type',
         ]])
 
         h2("Awards")
 
     path = Path(f"docs/players/{convert_name(first_name, last_name)}.html")
     path.write_text(str(doc))
-
-

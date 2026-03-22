@@ -13,14 +13,14 @@ from data import teams as teams_data
 import pandas as pd
 
 from util import make_doc, player_link, fmt_round, render_table
-from stats_meta import ALL_STATS
+from registry import REGISTRY
 
 _SKILL_LABELS     = {'power': 'POW', 'contact': 'CON', 'speed': 'SPD', 'fielding': 'FLD', 'arm': 'ARM'}
 _PIT_SKILL_LABELS = {'velocity': 'VEL', 'junk': 'JNK', 'accuracy': 'ACC'}
 
 
 def _f(stat, val):
-    m = ALL_STATS[stat]
+    m = REGISTRY[stat]
     return fmt_round(val, m['decimal_places'], m['leading_zero'], m['percentage'])
 
 
@@ -40,10 +40,10 @@ def _proj_table(rows):
             'Team':    row['_team_abbr'] or 'FA',
             'power':   row['power'],   'contact': row['contact'],
             'speed':   row['speed'],   'fielding': row['fielding'], 'arm': row['arm'],
-            'GB':  row['xGB'],  'PA':  row['proj_pa'],
-            'HR':  row['xHR'], 'R':   row['xR'], 'RBI': row['xRBI'], 'SB': row['xSB'],
-            'AVG': row['xAVG'], 'OBP': row['xOBP'], 'SLG': row['xSLG'],
-            'OPS': row['xOPS'], 'wRC+': row['xwRC+'], 'WAR': row['xWAR'],
+            'gb':  row['xGB'],  'pa':  row['proj_pa'],
+            'hr':  row['xHR'], 'r':   row['xR'], 'rbi': row['xRBI'], 'sb': row['xSB'],
+            'avg': row['xAVG'], 'obp': row['xOBP'], 'slg': row['xSLG'],
+            'ops': row['xOPS'], 'wrc_plus': row['xwRC+'], 'war': row['xWAR'],
         })
     render_table(pd.DataFrame(records), prefix='players/')
 
@@ -53,7 +53,7 @@ def _team_summary_table(team_rows):
     with table(border=0):
         with thead():
             with tr():
-                for col in ['Team', 'PA', 'AVG', 'HR', 'OPS', 'wRC+', 'WAR']:
+                for col in ['Team', 'PA', 'AVG', 'HR', 'OPS', 'wRC+', 'WAR']:  # display headers only
                     th(col)
         with tbody():
             for tname, trows in team_rows:
@@ -63,17 +63,17 @@ def _team_summary_table(team_rows):
                 if total_pa > 0:
                     w_avg  = sum(r['xAVG']  * r['proj_pa'] for r in trows) / total_pa
                     w_ops  = sum(r['xOPS']  * r['proj_pa'] for r in trows) / total_pa
-                    w_wrc  = sum(r['xwRC+'] * r['proj_pa'] for r in trows) / total_pa
+                    w_wrc  = sum(r['xwRC+']  * r['proj_pa'] for r in trows) / total_pa
                 else:
                     w_avg = w_ops = w_wrc = 0.0
                 with tr():
                     td(tname)
                     td(total_pa)
-                    td(_f('AVG',  w_avg))
+                    td(_f('avg',  w_avg))
                     td(total_hr)
-                    td(_f('OPS',  w_ops))
-                    td(_f('wRC+', w_wrc))
-                    td(_f('WAR',  total_war))
+                    td(_f('ops',  w_ops))
+                    td(_f('wrc_plus', w_wrc))
+                    td(_f('war',  total_war))
 
 
 
@@ -86,12 +86,12 @@ def _pit_all_table(pit_rows):
             'Team':     row['_team_abbr'] or 'FA',
             'velocity': row['velocity'], 'junk': row['junk'], 'accuracy': row['accuracy'],
             'Role':     row['role'],
-            'IP_true':  row['proj_ip'],
-            'GP': row['xGP'], 'W': row['xW'], 'L': row['xL'], 'SV': row['xSV'],
-            'K': row['xK'], 'BB': row['xBB'], 'HR': row['xHR'],
-            'ERA': row['xERA'], 'ERA-': row['xERA-'], 'FIP': row['xFIP'],
-            'WHIP': row['xWHIP'], 'K%': row['xK%'], 'BB%': row['xBB%'],
-            'WAR': row['xWAR'],
+            'p_ip':  row['proj_ip'],
+            'p_gp': row['xGP'], 'p_w': row['xW'], 'p_l': row['xL'], 'p_sv': row['xSV'],
+            'p_k': row['xK'], 'p_bb': row['xBB'], 'p_hr': row['xHR'],
+            'p_era': row['xERA'], 'p_era_minus': row['xERA-'], 'p_fip': row['xFIP'],
+            'p_whip': row['xWHIP'], 'p_k_pct': row['xK%'], 'p_bb_pct': row['xBB%'],
+            'p_war': row['xWAR'],
         })
     render_table(pd.DataFrame(records), prefix='players/')
 
@@ -99,7 +99,7 @@ def _pit_all_table(pit_rows):
 def _pit_team_summary_table(team_rows):
     """Render one row per team: summed xIP/xWAR, IP-weighted rate stats."""
     def _f(stat, val):
-        m = ALL_STATS[stat]
+        m = REGISTRY[stat]
         return fmt_round(val, m['decimal_places'], m['leading_zero'], False)
     with table(border=0):
         with thead():
@@ -121,17 +121,17 @@ def _pit_team_summary_table(team_rows):
                 with tr():
                     td(tname)
                     td(f"{total_ip:.1f}")
-                    td(_f('RA9',  w_ra9))
-                    td(_f('ERA',  w_era))
-                    td(_f('FIP',  w_fip))
-                    td(_f('K%',   w_kpct))
-                    td(_f('BB%',  w_bbpct))
-                    td(_f('WAR',  total_war))
+                    td(_f('p_ra9',  w_ra9))
+                    td(_f('p_era',  w_era))
+                    td(_f('p_fip',  w_fip))
+                    td(_f('p_k_pct',  w_kpct))
+                    td(_f('p_bb_pct', w_bbpct))
+                    td(_f('p_war',    total_war))
 
 
 def _war_delta_table(deltas):
     """Render a table of (first, last, s20_war, xwar, delta) rows."""
-    m = ALL_STATS['WAR']
+    m = REGISTRY['war']
     def _fw(v):
         return fmt_round(v, m['decimal_places'], m['leading_zero'], False)
     with table(border=0):
@@ -160,19 +160,19 @@ def _rookie_war_list(bat_rookies, pit_rookies, ppos_map, n=10):
     with ol():
         for kind, r in combined[:n]:
             abbr = r['_team_abbr'] or 'FA'
-            war  = _f('WAR', r['xWAR'])
+            war  = _f('war', r['xWAR'])
             if kind == 'bat':
                 pos  = ppos_map.get((r['first'], r['last']), '')
-                line = (f"{_f('AVG', r['xAVG'])} AVG, {r['xHR']} HR, "
-                        f"{_f('OPS', r['xOPS'])} OPS, {war} WAR")
+                line = (f"{_f('avg', r['xAVG'])} AVG, {r['xHR']} HR, "
+                        f"{_f('ops', r['xOPS'])} OPS, {war} WAR")
             else:
                 pos  = r['role']
                 ip   = f"{r['proj_ip']:.1f}"
                 if r['role'] == 'SP':
                     line = (f"{r['xW']}-{r['xL']}, {ip} IP, "
-                            f"{_f('ERA', r['xERA'])} ERA, {r['xK']} K, {war} WAR")
+                            f"{_f('p_era', r['xERA'])} ERA, {r['xK']} K, {war} WAR")
                 else:
-                    line = (f"{ip} IP, {_f('ERA', r['xERA'])} ERA, "
+                    line = (f"{ip} IP, {_f('p_era', r['xERA'])} ERA, "
                             f"{r['xK']} K, {r['xSV']} SV, {war} WAR")
             li(f"{r['first']} {r['last']} ({pos}, {abbr}): {line}")
 _GAMES       = 80
@@ -282,7 +282,7 @@ def generate_projections():
         for r in rows:
             key = (r['first'], r['last'])
             if key in bat_s20.index:
-                s20_war = float(bat_s20.loc[key, 'WAR'])
+                s20_war = float(bat_s20.loc[key, 'war'])
                 bat_deltas.append((r['first'], r['last'], s20_war, r['xWAR'], r['xWAR'] - s20_war))
         bat_deltas.sort(key=lambda x: x[4], reverse=True)
 
@@ -312,7 +312,7 @@ def generate_projections():
         for r in pit_rows:
             key = (r['first'], r['last'])
             if key in pit_s20.index:
-                s20_war = float(pit_s20.loc[key, 'WAR'])
+                s20_war = float(pit_s20.loc[key, 'p_war'])
                 pit_deltas.append((r['first'], r['last'], s20_war, r['xWAR'], r['xWAR'] - s20_war))
         pit_deltas.sort(key=lambda x: x[4], reverse=True)
 

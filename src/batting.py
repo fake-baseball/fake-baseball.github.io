@@ -17,17 +17,19 @@ from constants import (
 )
 from formulas import (
     _div,
-    compute_wOBA,
-    compute_AVG, compute_OBP, compute_SLG, compute_OPS, compute_ISO,
-    compute_BABIP_bat,
-    compute_HR_pct_bat, compute_K_pct_bat, compute_BB_pct_bat,
-    compute_PA_per_GB, compute_PA_per_HR,
-    compute_XBH_pct, compute_RS_pct, compute_RC_pct,
-    compute_RS, compute_RB,
-    compute_SB_pct, compute_SbAtt_pct,
-    compute_E_per_GF, compute_PB_per_GF,
-    compute_RAA_bat, compute_RAR_bat,
+    compute_woba,
+    compute_avg, compute_obp, compute_slg, compute_ops, compute_iso,
+    compute_babip_bat,
+    compute_hr_pct_bat, compute_k_pct_bat, compute_bb_pct_bat,
+    compute_pa_per_gb, compute_pa_per_hr,
+    compute_xbh_pct, compute_rs_pct, compute_rc_pct,
+    compute_rs, compute_rb,
+    compute_sb_pct, compute_sb_att_pct,
+    compute_e_per_gf, compute_pb_per_gf,
+    compute_b_raa, compute_b_rar,
 )
+
+# batting_stats is already renamed to final names in data/stats.py load_batting()
 
 
 stats = None
@@ -35,79 +37,83 @@ stats = None
 
 def compute():
     global stats
+    # batting_stats already has final column names from load_batting()
     d = raw.batting_stats.copy()
 
-    compute_AVG(d)
-    compute_OBP(d)
-    compute_SLG(d)
-    compute_OPS(d)
-    compute_BABIP_bat(d)
-    compute_wOBA(d)
-    compute_ISO(d)
-    compute_HR_pct_bat(d)
-    compute_K_pct_bat(d)
-    compute_BB_pct_bat(d)
-    compute_PA_per_GB(d)
-    compute_PA_per_HR(d)
-    compute_XBH_pct(d)
-    compute_RS_pct(d)
-    compute_RC_pct(d)
-    compute_RS(d)
-    compute_RB(d)
-    compute_SB_pct(d)
-    compute_SbAtt_pct(d)
-    compute_E_per_GF(d)
-    compute_PB_per_GF(d)
+    compute_avg(d)
+    compute_obp(d)
+    compute_slg(d)
+    compute_ops(d)
+    compute_babip_bat(d)
+    compute_woba(d)
+    compute_iso(d)
+    compute_hr_pct_bat(d)
+    compute_k_pct_bat(d)
+    compute_bb_pct_bat(d)
+    compute_pa_per_gb(d)
+    compute_pa_per_hr(d)
+    compute_xbh_pct(d)
+    compute_rs_pct(d)
+    compute_rc_pct(d)
+    compute_rs(d)
+    compute_rb(d)
+    compute_sb_pct(d)
+    compute_sb_att_pct(d)
+    compute_e_per_gf(d)
+    compute_pb_per_gf(d)
 
     # Park factor
     pf = (1 + d['Team'].map(park_factors)) / 2
 
-    # Batting value (Rbat must come before wRC+)
-    lg_wOBA = d['Season'].map(lg.season_batting['wOBA'])
-    d['Rbat'] = ((d['wOBA'] - lg_wOBA * pf) / scale_wOBA) * d['PA']
+    # Batting value (r_bat must come before wrc_plus)
+    lg_woba = d['Season'].map(lg.season_batting['wOBA'])
+    d['r_bat'] = ((d['woba'] - lg_woba * pf) / scale_wOBA) * d['pa']
 
     # Baserunning
     lg_wsb = d['Season'].map(lg.season_batting['lg_wSB'])
-    d['Rbr'] = (d['SB'] * runs_SB + d['CS'] * runs_CS
-                - lg_wsb * (d['1B'] + d['BB'] + d['HBP']))
+    d['r_br'] = (d['sb'] * runs_SB + d['cs'] * runs_CS
+                 - lg_wsb * (d['b_1b'] + d['bb'] + d['hbp']))
 
     # Fielding
-    avg_e  = d.set_index(['PP', '2P']).index.map(lg.pos_fielding['E/GF'])
-    avg_pb = d.set_index(['PP', '2P']).index.map(lg.pos_fielding['PB/GF'])
-    def_e  = (_div(d['E'],  d['GF']) - avg_e)  * runs_E * d['GB']
-    def_pb = (_div(d['PB'], d['GF']) - avg_pb) * runs_E * d['GB']
-    d['Rdef'] = def_e + def_pb
+    avg_e  = d.set_index(['PP', '2P']).index.map(lg.pos_fielding['e_per_gf'])
+    avg_pb = d.set_index(['PP', '2P']).index.map(lg.pos_fielding['pb_per_gf'])
+    def_e  = (_div(d['e'],  d['gf']) - avg_e)  * runs_E * d['gb']
+    def_pb = (_div(d['pb'], d['gf']) - avg_pb) * runs_E * d['gb']
+    d['r_def'] = def_e + def_pb
 
     # Positional
-    rpos      = d.set_index(['PP', '2P']).index.map(lg.pos_adjustment['Rpos'])
-    d['Rpos'] = rpos * d['GB'] / num_games
+    rpos      = d.set_index(['PP', '2P']).index.map(lg.pos_adjustment['r_pos'])
+    d['r_pos'] = rpos * d['gb'] / num_games
 
-    d['Rcorr'] = 0.0
-    compute_RAA_bat(d)
+    d['r_corr'] = 0.0
+    compute_b_raa(d)
 
     # Zero-sum correction: distribute the season RAA imbalance proportionally by PA
-    season_raa = d.groupby('Season')['RAA'].sum()
-    season_pa  = d.groupby('Season')['PA'].sum()
-    d['Rcorr'] = d['Season'].map(-season_raa / season_pa) * d['PA']
-    compute_RAA_bat(d)
+    season_raa = d.groupby('Season')['raa'].sum()
+    season_pa  = d.groupby('Season')['pa'].sum()
+    d['r_corr'] = d['Season'].map(-season_raa / season_pa) * d['pa']
+    compute_b_raa(d)
 
     rpw       = d['Season'].map(lg.season_batting['R/W'])
-    d['Rrep'] = d['PA'] * d['Season'].map(lg.season_batting['RR/PA'])
-    d['WAA']  = d['RAA'] / rpw
-    compute_RAR_bat(d)
-    d['WAR']  = d['RAR'] / rpw
+    d['r_rep'] = d['pa'] * d['Season'].map(lg.season_batting['RR/PA'])
+    d['waa']  = d['raa'] / rpw
+    compute_b_rar(d)
+    d['war']  = d['rar'] / rpw
 
-    # Park-adjusted rate stats (computed after Rbat so order is correct)
-    lg_wOBA = d['Season'].map(lg.season_batting['wOBA'])
+    # Park-adjusted rate stats (computed after r_bat so order is correct)
+    lg_woba = d['Season'].map(lg.season_batting['wOBA'])
     lg_obp  = d['Season'].map(lg.season_batting['OBP'])
     lg_slg  = d['Season'].map(lg.season_batting['SLG'])
     lg_wRC  = d['Season'].map(lg.season_batting['wRC'])
     lg_rPA  = d['Season'].map(lg.season_batting['R/PA'])
     lg_pa   = d['Season'].map(lg.season_batting['PA'])
 
-    d['OPS+'] = 100 * ((d['OBP'] / lg_obp) + (d['SLG'] / lg_slg) - 1) / pf
-    d['wRC']  = ((d['wOBA'] - lg_wOBA) / scale_wOBA + lg_rPA) * d['PA']
-    d['wRC+'] = 100 * (d['Rbat'] / d['PA'] + lg_rPA) / (lg_wRC / lg_pa)
+    d['ops_plus'] = 100 * ((d['obp'] / lg_obp) + (d['slg'] / lg_slg) - 1) / pf
+    d['wrc']      = ((d['woba'] - lg_woba) / scale_wOBA + lg_rPA) * d['pa']
+    d['wrc_plus'] = 100 * (d['r_bat'] / d['pa'] + lg_rPA) / (lg_wRC / lg_pa)
+
+    # Rename '2P' column to 'pos2' for REGISTRY compatibility
+    d = d.rename(columns={'2P': 'pos2'})
 
     d['stat_type'] = 'season'
     stats = _append_summary_rows(d)
@@ -121,15 +127,15 @@ def _append_summary_rows(d):
     career['Season']    = 'Career'
     career['Age']       = ''
     career['PP']        = ''
-    career['2P']        = ''
+    career['pos2']      = ''
     career['stat_type'] = 'career'
     team_counts = d.groupby(gp)['Team'].nunique().reset_index(name='Team')
     career = career.merge(team_counts, on=gp)
     career['Team'] = career['Team'].astype(str) + 'TM'
     career = _recompute_rates(career)
-    career['wOBA'] = d.groupby(gp).apply(lambda g: weighted_avg(g, 'wOBA', 'PA'), include_groups=False).values
-    career['OPS+'] = d.groupby(gp).apply(lambda g: weighted_avg(g, 'OPS+', 'PA'), include_groups=False).values
-    career['wRC+'] = d.groupby(gp).apply(lambda g: weighted_avg(g, 'wRC+', 'PA'), include_groups=False).values
+    career['woba']     = d.groupby(gp).apply(lambda g: weighted_avg(g, 'woba',     'pa'), include_groups=False).values
+    career['ops_plus'] = d.groupby(gp).apply(lambda g: weighted_avg(g, 'ops_plus', 'pa'), include_groups=False).values
+    career['wrc_plus'] = d.groupby(gp).apply(lambda g: weighted_avg(g, 'wrc_plus', 'pa'), include_groups=False).values
 
     team_totals = d.groupby(gt).sum(numeric_only=True).reset_index()
     season_counts = d.groupby(gt)['Season'].nunique().reset_index(name='Season')
@@ -138,33 +144,34 @@ def _append_summary_rows(d):
         lambda n: f"{n} Szn" if n == 1 else f"{n} Szns")
     team_totals['Age']       = ''
     team_totals['PP']        = ''
-    team_totals['2P']        = ''
+    team_totals['pos2']      = ''
     team_totals['stat_type'] = 'team'
     team_totals = _recompute_rates(team_totals)
-    team_totals['wOBA'] = d.groupby(gt).apply(lambda g: weighted_avg(g, 'wOBA', 'PA'), include_groups=False).values
-    team_totals['OPS+'] = d.groupby(gt).apply(lambda g: weighted_avg(g, 'OPS+', 'PA'), include_groups=False).values
-    team_totals['wRC+'] = d.groupby(gt).apply(lambda g: weighted_avg(g, 'wRC+', 'PA'), include_groups=False).values
+    team_totals['woba']     = d.groupby(gt).apply(lambda g: weighted_avg(g, 'woba',     'pa'), include_groups=False).values
+    team_totals['ops_plus'] = d.groupby(gt).apply(lambda g: weighted_avg(g, 'ops_plus', 'pa'), include_groups=False).values
+    team_totals['wrc_plus'] = d.groupby(gt).apply(lambda g: weighted_avg(g, 'wrc_plus', 'pa'), include_groups=False).values
 
     return pd.concat([d, career, team_totals], ignore_index=True)
 
 
 def _recompute_rates(df):
-    compute_AVG(df)
-    compute_OBP(df)
-    compute_SLG(df)
-    compute_OPS(df)
-    compute_BABIP_bat(df)
-    compute_ISO(df)
-    compute_HR_pct_bat(df)
-    compute_K_pct_bat(df)
-    compute_BB_pct_bat(df)
-    compute_PA_per_GB(df)
-    compute_PA_per_HR(df)
-    compute_XBH_pct(df)
-    compute_RS_pct(df)
-    compute_RC_pct(df)
-    compute_SB_pct(df)
-    compute_SbAtt_pct(df)
-    compute_E_per_GF(df)
-    compute_PB_per_GF(df)
+    # DataFrame already has final column names - just call formula functions directly
+    compute_avg(df)
+    compute_obp(df)
+    compute_slg(df)
+    compute_ops(df)
+    compute_babip_bat(df)
+    compute_iso(df)
+    compute_hr_pct_bat(df)
+    compute_k_pct_bat(df)
+    compute_bb_pct_bat(df)
+    compute_pa_per_gb(df)
+    compute_pa_per_hr(df)
+    compute_xbh_pct(df)
+    compute_rs_pct(df)
+    compute_rc_pct(df)
+    compute_sb_pct(df)
+    compute_sb_att_pct(df)
+    compute_e_per_gf(df)
+    compute_pb_per_gf(df)
     return df

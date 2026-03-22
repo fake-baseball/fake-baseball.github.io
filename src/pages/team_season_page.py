@@ -10,16 +10,16 @@ from util import make_doc, render_table, fmt_round
 
 
 _BAT_COLS = [
-    'Player', 'WAR',
-    'GB', 'PA', 'AB', 'R', 'H', '2B', '3B', 'HR', 'RBI',
-    'SB', 'CS', 'BB', 'K', 'AVG', 'OBP', 'SLG', 'OPS', 'OPS+',
-    'TB', 'HBP', 'SH', 'SF', 'E', 'PB', 'stat_type',
+    'Player', 'war',
+    'gb', 'pa', 'ab', 'r', 'h', 'b_2b', 'b_3b', 'hr', 'rbi',
+    'sb', 'cs', 'bb', 'k', 'avg', 'obp', 'slg', 'ops', 'ops_plus',
+    'tb', 'hbp', 'sh', 'sf', 'e', 'pb', 'stat_type',
 ]
 
 _PIT_COLS = [
-    'Player', 'WAR',
-    'W', 'L', 'WIN%', 'ERA', 'GP', 'GS', 'CG', 'SHO', 'SV', 'IP_true',
-    'H', 'RA', 'ER', 'HR', 'BB', 'K', 'HBP', 'WP', 'BF', 'ERA-', 'FIP', 'WHIP',
+    'Player', 'p_war',
+    'p_w', 'p_l', 'p_win_pct', 'p_era', 'p_gp', 'p_gs', 'p_cg', 'p_sho', 'p_sv', 'p_ip',
+    'p_h', 'p_ra', 'p_er', 'p_hr', 'p_bb', 'p_k', 'p_hbp', 'p_wp', 'p_bf', 'p_era_minus', 'p_fip', 'p_whip',
     'stat_type',
 ]
 
@@ -45,13 +45,13 @@ def generate_team_season_page(team_name, season_num, abbr):
         (bat_module.stats['Team'] == abbr) &
         (bat_module.stats['Season'] == season_num) &
         (bat_module.stats['stat_type'] != 'career')
-    ].sort_values('PA', ascending=False)
+    ].sort_values('pa', ascending=False)
 
     pit_stats = pit_module.stats[
         (pit_module.stats['Team'] == abbr) &
         (pit_module.stats['Season'] == season_num) &
         (pit_module.stats['stat_type'] != 'career')
-    ].sort_values('IP_true', ascending=False)
+    ].sort_values('p_ip', ascending=False)
 
     team_seasons = sorted(
         teams_data.standings[teams_data.standings['teamName'] == team_name]['Season'].unique()

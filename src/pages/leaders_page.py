@@ -14,7 +14,7 @@ from leaders import (
     get_batting_leaders, get_career_batting_leaders, get_leaders_by_season,
     get_pitching_leaders, get_career_pitching_leaders, get_pitching_leaders_by_season,
 )
-from stats_meta import ALL_STATS, BATTING_STATS, BASERUNNING_STATS, FIELDING_STATS, PITCHING_STATS
+from registry import REGISTRY
 from util import make_doc, render_table
 
 
@@ -68,11 +68,12 @@ def generate_leaders():
 
     def _render_batting():
         def render(stat, meta):
-            if meta['slug_worst']:
-                _build_batting(meta['name'] + " (Best)",  meta['slug'],            stat, meta, worst=False)
-                _build_batting(meta['name'] + " (Worst)", meta['slug'] + '_worst', stat, meta, worst=True)
+            slug = meta.get('slug', stat)
+            if meta['has_worst']:
+                _build_batting(meta['label'] + " (Best)",  slug,            stat, meta, worst=False)
+                _build_batting(meta['label'] + " (Worst)", slug + '_worst', stat, meta, worst=True)
             else:
-                _build_batting(meta['name'], meta['slug'], stat, meta, worst=False)
+                _build_batting(meta['label'], slug, stat, meta, worst=False)
         return render
 
     # ── Pitching leaders ──────────────────────────────────────────────────────
@@ -82,10 +83,10 @@ def generate_leaders():
 
         # Season table
         df = get_pitching_leaders(stat, num=100, worst=worst)
-        if stat == 'IP_true':
-            cols = ['First Name', 'Last Name', 'Role', 'IP_true', 'Season', 'Team']
+        if stat == 'p_ip':
+            cols = ['First Name', 'Last Name', 'Role', 'p_ip', 'Season', 'Team']
         else:
-            cols = ['First Name', 'Last Name', 'Role', stat, 'Season', 'IP_true', 'Team']
+            cols = ['First Name', 'Last Name', 'Role', stat, 'Season', 'p_ip', 'Team']
         df = df[list(dict.fromkeys(cols))].copy()
         df.insert(0, '#', df.index)
         df.insert(1, 'Player', '')
@@ -93,10 +94,10 @@ def generate_leaders():
 
         # Yearly table
         df = get_pitching_leaders_by_season(stat, worst=worst)
-        if stat == 'IP_true':
-            cols = ['Season', 'First Name', 'Last Name', 'Role', 'IP_true', 'Team']
+        if stat == 'p_ip':
+            cols = ['Season', 'First Name', 'Last Name', 'Role', 'p_ip', 'Team']
         else:
-            cols = ['Season', 'First Name', 'Last Name', 'Role', stat, 'IP_true', 'Team']
+            cols = ['Season', 'First Name', 'Last Name', 'Role', stat, 'p_ip', 'Team']
         df = df[list(dict.fromkeys(cols))].copy()
         df.insert(1, 'Player', '')
         pages.append((title, slug, 'yearly', df))
@@ -110,10 +111,10 @@ def generate_leaders():
             .last()
         )
 
-        if stat == 'IP_true':
-            career_cols = ['First Name', 'Last Name', 'Role', 'IP_true']
+        if stat == 'p_ip':
+            career_cols = ['First Name', 'Last Name', 'Role', 'p_ip']
         else:
-            career_cols = ['First Name', 'Last Name', 'Role', stat, 'IP_true']
+            career_cols = ['First Name', 'Last Name', 'Role', stat, 'p_ip']
 
         # Career table
         df = get_career_pitching_leaders(stat, num=100, worst=worst)
@@ -134,11 +135,12 @@ def generate_leaders():
         pages.append((title, slug, 'active', df))
 
     def render_pitching(stat, meta):
-        if meta['slug_worst']:
-            _build_pitching(meta['name'] + " (Best)",  meta['slug'],            stat, meta, worst=False)
-            _build_pitching(meta['name'] + " (Worst)", meta['slug'] + '_worst', stat, meta, worst=True)
+        slug = meta.get('slug', stat)
+        if meta['has_worst']:
+            _build_pitching(meta['label'] + " (Best)",  slug,            stat, meta, worst=False)
+            _build_pitching(meta['label'] + " (Worst)", slug + '_worst', stat, meta, worst=True)
         else:
-            _build_pitching(meta['name'], meta['slug'], stat, meta, worst=False)
+            _build_pitching(meta['label'], slug, stat, meta, worst=False)
 
     # ── Leaders index page ────────────────────────────────────────────────────
 
@@ -157,7 +159,7 @@ def generate_leaders():
         h2(title)
         has_qualified = any(
             v['qualified'] for v in stat_dict.values()
-            if v['slug']
+            if v['leaders']
         )
         if has_qualified:
             p(qual_note)
@@ -166,16 +168,21 @@ def generate_leaders():
                 tr(th("Statistic"), th("Single-Season"), th("Yearly"), th("Career"), th("Active"))
             with tbody():
                 for stat, meta in stat_dict.items():
-                    if meta['slug']:
+                    if meta['leaders']:
                         render_fn(stat, meta)
+
+    _batting_stats     = {k: v for k, v in REGISTRY.items() if v.get('context') == 'batting'}
+    _baserunning_stats = {k: v for k, v in REGISTRY.items() if v.get('context') == 'baserunning'}
+    _fielding_stats    = {k: v for k, v in REGISTRY.items() if v.get('context') == 'fielding'}
+    _pitching_stats    = {k: v for k, v in REGISTRY.items() if v.get('context') == 'pitching'}
 
     doc = make_doc("Leaders")
     with doc:
         h1("Leaders")
-        _section("Batting",     BATTING_STATS,     qual_notes['batting'],     _render_batting())
-        _section("Baserunning", BASERUNNING_STATS, qual_notes['baserunning'], _render_batting())
-        _section("Fielding",    FIELDING_STATS,    qual_notes['fielding'],    _render_batting())
-        _section("Pitching",    PITCHING_STATS,    qual_notes['pitching'],    render_pitching)
+        _section("Batting",     _batting_stats,     qual_notes['batting'],     _render_batting())
+        _section("Baserunning", _baserunning_stats, qual_notes['baserunning'], _render_batting())
+        _section("Fielding",    _fielding_stats,    qual_notes['fielding'],    _render_batting())
+        _section("Pitching",    _pitching_stats,    qual_notes['pitching'],    render_pitching)
 
     Path("docs/leaders/index.html").write_text(str(doc))
 
@@ -188,10 +195,10 @@ def generate_leaders():
         'active': 'Active Leaders',
     }
     for title, slug, suffix, df in pages:
-        # Determine display name for page title: use display_col if set
-        stat_cols = [c for c in df.columns if c in ALL_STATS]
-        display_col = ALL_STATS[stat_cols[0]].get('display_col') or stat_cols[0] if stat_cols else slug
-        subdoc = make_doc(f"{display_col} - {labels[suffix]}")
+        # Determine display name for page title: use meta['name'] if available
+        stat_cols = [c for c in df.columns if c in REGISTRY and REGISTRY[c].get('type', 'stat') == 'stat']
+        display_name = REGISTRY[stat_cols[0]]['name'] if stat_cols else slug
+        subdoc = make_doc(f"{display_name} - {labels[suffix]}")
         with subdoc:
             h1(f"{labels[suffix]} for {title}")
             render_table(df, prefix='../players/')

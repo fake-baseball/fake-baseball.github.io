@@ -11,22 +11,22 @@ import leaders
 import pit_projections as pit_proj_module
 from data import players
 from data import teams as teams_data
-from stats_meta import PITCHING_STATS
+from registry import REGISTRY
 
 _PIT_SUMMARY_COLS = [
-    ('WAR',   'WAR'),  ('W',    'W'),   ('L',  'L'),   ('ERA', 'ERA'),
-    ('ERA-',  'ERA-'), ('G',    'GP'),  ('GS', 'GS'),  ('SV',  'SV'),
-    ('IP',    'IP_true'), ('BB', 'BB'), ('SO', 'K'),   ('WHIP', 'WHIP'),
+    ('WAR',   'p_war'),  ('W',    'p_w'),   ('L',  'p_l'),   ('ERA', 'p_era'),
+    ('ERA-',  'p_era_minus'), ('G',    'p_gp'),  ('GS', 'p_gs'),  ('SV',  'p_sv'),
+    ('IP',    'p_ip'), ('BB', 'p_bb'), ('SO', 'p_k'),   ('WHIP', 'p_whip'),
 ]
 
 
 def _pit_summary_table(stats, proj_row):
     """Render BB-ref style summary strip: Season 20, Projected, Career."""
     def _fmt(col, val):
-        meta = PITCHING_STATS.get(col)
+        meta = REGISTRY.get(col)
         if meta is None or (isinstance(val, float) and np.isnan(val)):
             return '-'
-        if col == 'IP_true':
+        if meta.get('type') == 'ip':
             from util import fmt_ip
             return fmt_ip(val)
         return fmt_round(val, meta['decimal_places'], meta['leading_zero'], meta['percentage'])
@@ -71,7 +71,7 @@ def _pit_proj_row(first, last, cols):
     xhr  = proj['xHR']
     xh   = proj['xH']
 
-    out_rate = 1.0 - proj['H'] - proj['BB'] - proj['HBP']
+    out_rate = 1.0 - proj['p_h'] - proj['p_bb'] - proj['p_hbp']
     xbf  = int(round(ip * 3.0 / out_rate)) if out_rate > 0 else np.nan
     xbip = (xbf - xk - xbb - xhbp - xhr) if not np.isnan(float(xbf)) else np.nan
     xra  = proj['xRA9'] * ip / 9.0 if ip > 0 else 0.0
@@ -87,29 +87,29 @@ def _pit_proj_row(first, last, cols):
         'Season': 'Proj', 'stat_type': 'projected',
         'Age':  pi_row['age'] if pi_row is not None else np.nan,
         'Team': team_abbr,
-        'W': proj['xW'], 'L': proj['xL'],
-        'WIN%': proj['xW'] / (proj['xW'] + proj['xL']) if (proj['xW'] + proj['xL']) > 0 else np.nan,
-        'GP': proj['xGP'], 'GS': proj['xGS'], 'SV': proj['xSV'],
-        'IP': round(ip, 1), 'IP_true': ip,
-        'H': xh, 'HR': xhr, 'BB': xbb, 'K': xk, 'HBP': xhbp,
-        'BF': xbf, 'BIP': xbip, 'RA': xra,
-        'ER': proj['xER'], 'ERA': proj['xERA'], 'ERA-': proj['xERA-'],
-        'FIP': proj['xFIP'], 'WHIP': proj['xWHIP'],
-        'RA9': proj['xRA9'], 'BABIP': proj['xBABIP'],
-        'K%': proj['xK%'], 'BB%': proj['xBB%'],
-        'WAR': proj['xWAR'],
-        'BAA': proj['xBAA'], 'OBPA': proj['xOBPA'],
-        'Rdef': proj['xRdef'], 'Rlev': proj['xRlev'], 'Rcorr': proj['xRcorr'],
-        'RAA': proj['xRAA'], 'RAAlev': proj['xRAAlev'], 'WAA': proj['xWAA'],
-        'Rrep': proj['xRrep'], 'RAR': proj['xRAR'],
+        'p_w': proj['xW'], 'p_l': proj['xL'],
+        'p_win_pct': proj['xW'] / (proj['xW'] + proj['xL']) if (proj['xW'] + proj['xL']) > 0 else np.nan,
+        'p_gp': proj['xGP'], 'p_gs': proj['xGS'], 'p_sv': proj['xSV'],
+        'p_ip': ip,
+        'p_h': xh, 'p_hr': xhr, 'p_bb': xbb, 'p_k': xk, 'p_hbp': xhbp,
+        'p_bf': xbf, 'p_bip': xbip, 'p_ra': xra,
+        'p_er': proj['xER'], 'p_era': proj['xERA'], 'p_era_minus': proj['xERA-'],
+        'p_fip': proj['xFIP'], 'p_whip': proj['xWHIP'],
+        'p_ra9': proj['xRA9'], 'p_babip': proj['xBABIP'],
+        'p_k_pct': proj['xK%'], 'p_bb_pct': proj['xBB%'],
+        'p_war': proj['xWAR'],
+        'p_baa': proj['xBAA'], 'p_obpa': proj['xOBPA'],
+        'p_r_def': proj['xRdef'], 'p_r_lev': proj['xRlev'], 'p_r_corr': proj['xRcorr'],
+        'p_raa': proj['xRAA'], 'p_raa_lev': proj['xRAAlev'], 'p_waa': proj['xWAA'],
+        'p_r_rep': proj['xRrep'], 'p_rar': proj['xRAR'],
     })
     if ip > 0:
-        d['H/9']  = xh  / ip * 9
-        d['HR/9'] = xhr / ip * 9
-        d['K/9']  = xk  / ip * 9
-        d['BB/9'] = xbb / ip * 9
+        d['p_h_per_9']  = xh  / ip * 9
+        d['p_hr_per_9'] = xhr / ip * 9
+        d['p_k_per_9']  = xk  / ip * 9
+        d['p_bb_per_9'] = xbb / ip * 9
         if xbb > 0:
-            d['K/BB'] = xk / xbb
+            d['p_k_per_bb'] = xk / xbb
     return pd.DataFrame([d])
 
 
@@ -177,31 +177,29 @@ def generate_pitcher_page(first_name, last_name):
 
         h3("Standard Pitching")
         standard_pitching = stats[[
-            'Season', 'Age', 'Team', 'WAR',
-            'W', 'L', 'WIN%', 'ERA', 'GP', 'GS', 'CG', 'SHO', 'SV', 'IP_true',
-            'H', 'RA', 'ER', 'HR', 'BB', 'K', 'HBP', 'WP', 'BF', 'ERA-', 'FIP', 'WHIP',
+            'Season', 'Age', 'Team', 'p_war',
+            'p_w', 'p_l', 'p_win_pct', 'p_era', 'p_gp', 'p_gs', 'p_cg', 'p_sho', 'p_sv', 'p_ip',
+            'p_h', 'p_ra', 'p_er', 'p_hr', 'p_bb', 'p_k', 'p_hbp', 'p_wp', 'p_bf', 'p_era_minus', 'p_fip', 'p_whip',
             'stat_type',
         ]]
         render_table(standard_pitching)
 
         h3("Advanced Pitching")
         render_table(stats[[
-            'Season', 'Age', 'Team', 'IP',
-            'ERA', 'FIP', 'RA9', 'BAA', 'OBPA', 'BIP', 'BABIP',
-            'H/9', 'HR/9', 'K/9', 'BB/9', 'K/BB', 'K%', 'BB%',
-            'P/GP', 'P/IP', 'P/PA', 'stat_type',
+            'Season', 'Age', 'Team', 'p_ip',
+            'p_era', 'p_fip', 'p_ra9', 'p_baa', 'p_obpa', 'p_bip', 'p_babip',
+            'p_h_per_9', 'p_hr_per_9', 'p_k_per_9', 'p_bb_per_9', 'p_k_per_bb', 'p_k_pct', 'p_bb_pct',
+            'p_p_per_gp', 'p_p_per_ip', 'p_p_per_pa', 'stat_type',
         ]])
 
         h3("Value Pitching")
         render_table(stats[[
-            'Season', 'Age', 'Team', 'IP', 'GP', 'GS',
-            'RA', 'Rdef', 'RA9', 'RA9def', 'Rlev', 'Rcorr',
-            'RAA', 'RAAlev', 'WAA', 'Rrep', 'RAR', 'WAR', 'stat_type',
+            'Season', 'Age', 'Team', 'p_ip', 'p_gp', 'p_gs',
+            'p_ra', 'p_r_def', 'p_ra9', 'p_ra9_def', 'p_r_lev', 'p_r_corr',
+            'p_raa', 'p_raa_lev', 'p_waa', 'p_r_rep', 'p_rar', 'p_war', 'stat_type',
         ]])
 
         h2("Awards")
 
     path = Path(f"docs/players/{convert_name(first_name, last_name)}.html")
     path.write_text(str(doc))
-
-

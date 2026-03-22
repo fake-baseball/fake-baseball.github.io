@@ -408,13 +408,13 @@ def _player_table(rows, skills, labels, abbr_map, war_model_info, war_linear_inf
                     td(diff_proj_lin)
 
 
-def _build_war_map(stats_df):
+def _build_war_map(stats_df, war_col='WAR'):
     """Return {(first, last): WAR} from Season 20 season rows."""
     s20 = stats_df[
         (stats_df['Season'] == 20) & (stats_df['stat_type'] == 'season')
     ]
     return {
-        (row['First Name'], row['Last Name']): float(row['WAR'])
+        (row['First Name'], row['Last Name']): float(row[war_col])
         for _, row in s20.iterrows()
     }
 
@@ -520,8 +520,8 @@ def generate_salaries():
     pit_pi   = pi[pi['ppos'] == 'P']
     abbr_map = teams_data.teams.set_index('team_name')['abbr'].to_dict() if teams_data.teams is not None else {}
 
-    bat_war_map = _build_war_map(bat_module.stats)
-    pit_war_map = _build_war_map(pit_module.stats)
+    bat_war_map = _build_war_map(bat_module.stats, war_col='war')
+    pit_war_map = _build_war_map(pit_module.stats, war_col='p_war')
 
     bat_model_info, bat_rows = _fit_skills(bat_pi, BAT_SKILLS, bat_war_map)
     pit_model_info, pit_rows = _fit_skills(pit_pi, PIT_SKILLS, pit_war_map, cat_cols=['role'])

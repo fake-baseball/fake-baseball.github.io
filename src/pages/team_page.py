@@ -8,9 +8,10 @@ import projections as proj_module
 import pit_projections as pit_proj_module
 from data import teams as teams_data
 from data import players
-from stats_meta import BATTING_STATS, BASERUNNING_STATS, PITCHING_STATS
+from registry import REGISTRY
 
-_ALL_BAT = {**BATTING_STATS, **BASERUNNING_STATS}
+_BAT_CONTEXTS = {'batting', 'baserunning'}
+_ALL_BAT = {k: v for k, v in REGISTRY.items() if v.get('context') in _BAT_CONTEXTS}
 from util import player_link, make_doc, fmt_ip, fmt_round, fmt_rdiff, render_table
 
 _PITCHER_COLS  = ['Name', '#', 'Role', 'T', 'VEL', 'JNK', 'ACC', 'FLD', 'Arsenal', 'Age', 'Salary']
@@ -26,14 +27,14 @@ def _batter_stats(first, last):
         return None
     row = rows.loc[rows['Season'].idxmax()]
     def _fmt(stat, val):
-        m = BATTING_STATS[stat]
+        m = REGISTRY[stat]
         return fmt_round(val, m['decimal_places'], m['leading_zero'])
     return {
-        'AVG': _fmt('AVG', row['AVG']),
-        'HR':  int(row['HR']),
-        'RBI': int(row['RBI']),
-        'OPS': _fmt('OPS', row['OPS']),
-        'WAR': _fmt('WAR', row['WAR']),
+        'AVG': _fmt('avg', row['avg']),
+        'HR':  int(row['hr']),
+        'RBI': int(row['rbi']),
+        'OPS': _fmt('ops', row['ops']),
+        'WAR': _fmt('war', row['war']),
     }
 
 
@@ -45,12 +46,12 @@ def _pitcher_statline(first, last):
         return None
     row = rows.loc[rows['Season'].idxmax()]
     def _fmt(stat, val):
-        m = PITCHING_STATS[stat]
+        m = REGISTRY[stat]
         return fmt_round(val, m['decimal_places'], m['leading_zero'])
-    era = _fmt('ERA', row['ERA'])
-    war = _fmt('WAR', row['WAR'])
-    ip  = fmt_ip(row['IP_true'])
-    return f"{int(row['W'])}-{int(row['L'])}, {era} ERA, {ip} IP, {int(row['K'])} K, {war} WAR"
+    era = _fmt('p_era', row['p_era'])
+    war = _fmt('p_war', row['p_war'])
+    ip  = fmt_ip(row['p_ip'])
+    return f"{int(row['p_w'])}-{int(row['p_l'])}, {era} ERA, {ip} IP, {int(row['p_k'])} K, {war} WAR"
 
 
 _LINEUP_HEADERS = ['#', 'Pos', 'Name', 'B', 'Age', 'POW', 'CON', 'SPD', 'FLD', 'ARM',
@@ -59,14 +60,14 @@ _LINEUP_HEADERS = ['#', 'Pos', 'Name', 'B', 'Age', 'POW', 'CON', 'SPD', 'FLD', '
 
 # (actual stat key, proj row key, stat meta key for formatting)
 _LINEUP_PAIRED = [
-    ('PA',    'proj_pa',  'PA'),
-    ('AVG',   'xAVG',    'AVG'),
-    ('HR',    'xHR',     'HR'),
-    ('SB',    'xSB',     'SB'),
-    ('OPS',   'xOPS',    'OPS'),
-    ('wRC+',  'xwRC+',   'wRC+'),
-    ('BABIP', 'xBABIP',  'BABIP'),
-    ('WAR',   'xWAR',    'WAR'),
+    ('pa',       'proj_pa',  'pa'),
+    ('avg',      'xAVG',     'avg'),
+    ('hr',       'xHR',      'hr'),
+    ('sb',       'xSB',      'sb'),
+    ('ops',      'xOPS',     'ops'),
+    ('wrc_plus', 'xwRC+',    'wrc_plus'),
+    ('babip',    'xBABIP',   'babip'),
+    ('war',      'xWAR',     'war'),
 ]
 
 
@@ -135,14 +136,14 @@ _ROTATION_HEADERS = ['#', 'Name', 'Role', 'T', 'Age', 'VEL', 'JNK', 'ACC', 'FLD'
                      'IP', 'xIP', 'ERA', 'xRA9',
                      'K%', 'xK%', 'BB%', 'xBB%', 'BABIP', 'xBABIP', 'WAR', 'xWAR']
 
-# (actual pitching.stats key, proj row key, PITCHING_STATS meta key or None for special)
+# (actual pitching.stats key, proj row key, REGISTRY meta key or None for special)
 _ROTATION_PAIRED = [
-    ('IP_true', 'proj_ip',  None),    # special: fmt_ip actual, .1f proj
-    ('ERA',     'xRA9',    'ERA'),
-    ('K%',      'xK%',     'K%'),
-    ('BB%',     'xBB%',    'BB%'),
-    ('BABIP',   'xBABIP',  'BABIP'),
-    ('WAR',     'xWAR',    'WAR'),
+    ('p_ip',      'proj_ip',  None),         # special: fmt_ip actual, .1f proj
+    ('p_era',     'xRA9',     'p_era'),
+    ('p_k_pct',   'xK%',      'p_k_pct'),
+    ('p_bb_pct',  'xBB%',     'p_bb_pct'),
+    ('p_babip',   'xBABIP',   'p_babip'),
+    ('p_war',     'xWAR',     'p_war'),
 ]
 
 
@@ -151,7 +152,7 @@ _ROLE_ORDER = {'SP': 0, 'SP/RP': 1, 'RP': 2, 'CL': 3}
 
 def _rotation_table(rotation, bullpen):
     def _fmt_pit(meta_key, val):
-        m = PITCHING_STATS[meta_key]
+        m = REGISTRY[meta_key]
         return fmt_round(val, m['decimal_places'], m['leading_zero'], m['percentage'])
 
     def _pit_row(num, first, last):
@@ -171,8 +172,8 @@ def _rotation_table(rotation, bullpen):
             td(pi['accuracy'] if pi is not None else '')
             td(pi['fielding'] if pi is not None else '')
             for actual_key, proj_key, meta_key in _ROTATION_PAIRED:
-                if actual_key == 'IP_true':
-                    td(fmt_ip(s20['IP_true'])       if s20  is not None else '-')
+                if actual_key == 'p_ip':
+                    td(fmt_ip(s20['p_ip'])          if s20  is not None else '-')
                     td(f"{proj['proj_ip']:.1f}"     if proj is not None else '-')
                 else:
                     td(_fmt_pit(meta_key, s20[actual_key])  if s20  is not None else '-')
