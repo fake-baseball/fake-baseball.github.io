@@ -1024,6 +1024,10 @@ REGISTRY = {
     'velocity': {'name': 'VEL',    'type': 'integer', 'align': 'right', 'context': 'meta'},
     'junk':     {'name': 'JNK',    'type': 'integer', 'align': 'right', 'context': 'meta'},
     'accuracy': {'name': 'ACC',    'type': 'integer', 'align': 'right', 'context': 'meta'},
+    'pos':      {'name': 'Pos',    'type': 'text',    'align': 'left',  'context': 'meta'},
+    'dh_off':   {'name': 'OFF',    'type': 'stat',    'align': 'right', 'decimal_places': 3, 'leading_zero': True,  'context': 'meta'},
+    'dh_def':   {'name': 'DEF',    'type': 'stat',    'align': 'right', 'decimal_places': 3, 'leading_zero': True,  'context': 'meta'},
+    'p_dh':     {'name': 'P(DH)',  'type': 'stat',    'align': 'right', 'decimal_places': 1, 'leading_zero': True, 'percentage': True, 'context': 'meta'},
 }
 
 # -- Fill in defaults -----------------------------------------------------------

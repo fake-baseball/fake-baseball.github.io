@@ -18,6 +18,19 @@ from registry import REGISTRY
 _SKILL_LABELS     = {'power': 'POW', 'contact': 'CON', 'speed': 'SPD', 'fielding': 'FLD', 'arm': 'ARM'}
 _PIT_SKILL_LABELS = {'velocity': 'VEL', 'junk': 'JNK', 'accuracy': 'ACC'}
 
+# Position-specific defensive weights: (ARM, SPD, FLD)
+_POS_WEIGHTS = {
+    'C':  (0.50, 0.10, 0.40),
+    '1B': (0.10, 0.20, 0.70),
+    '2B': (0.15, 0.30, 0.55),
+    'SS': (0.25, 0.30, 0.45),
+    '3B': (0.30, 0.15, 0.55),
+    'LF': (0.20, 0.35, 0.45),
+    'CF': (0.15, 0.45, 0.40),
+    'RF': (0.35, 0.30, 0.35),
+}
+_BETA_DH = 4
+
 
 def _f(stat, val):
     m = REGISTRY[stat]
@@ -32,10 +45,33 @@ def _team_td(abbr):
             raw(abbr)
 
 
+def _attach_dh_model(rows, ppos_map):
+    """Compute OFF, DEF, and P(DH) for each row and attach as '_dh_*' keys in-place."""
+    import math
+    eligible = []
+    for r in rows:
+        pos = ppos_map.get((r['first'], r['last']), '')
+        r['_dh_pos'] = pos
+        if pos not in _POS_WEIGHTS:
+            r['_dh_off'] = r['_dh_def'] = r['_dh_exp'] = None
+            continue
+        arm_w, spd_w, fld_w = _POS_WEIGHTS[pos]
+        r['_dh_off'] = (0.40 * r['contact'] + 0.40 * r['power'] + 0.20 * r['speed']) / 99
+        r['_dh_def'] = (arm_w * r['arm'] + spd_w * r['speed'] + fld_w * r['fielding']) / 99
+        r['_dh_exp'] = math.exp(_BETA_DH * (r['_dh_off'] ** 2 - r['_dh_def']))
+        eligible.append(r)
+    total = sum(r['_dh_exp'] for r in eligible)
+    for r in eligible:
+        r['_dh_p'] = r['_dh_exp'] / total
+    for r in rows:
+        if r.get('_dh_exp') is None:
+            r['_dh_p'] = None
+
+
 def _proj_table(rows):
     records = []
     for row in rows:
-        records.append({
+        rec = {
             'First Name': row['first'], 'Last Name': row['last'], 'player': '',
             'team':    row['_team_abbr'] or 'FA',
             'power':   row['power'],   'contact': row['contact'],
@@ -44,7 +80,13 @@ def _proj_table(rows):
             'hr':  row['xHR'], 'r':   row['xR'], 'rbi': row['xRBI'], 'sb': row['xSB'],
             'avg': row['xAVG'], 'obp': row['xOBP'], 'slg': row['xSLG'],
             'ops': row['xOPS'], 'wrc_plus': row['xwRC+'], 'war': row['xWAR'],
-        })
+        }
+        if row.get('_dh_off') is not None:
+            rec['pos'] = row['_dh_pos']
+            rec['dh_off'] = row['_dh_off']
+            rec['dh_def'] = row['_dh_def']
+            rec['p_dh'] = row['_dh_p']
+        records.append(rec)
     render_table(pd.DataFrame(records), depth=0)
 
 
@@ -149,6 +191,30 @@ def _war_delta_table(deltas):
                     td(f"{sign}{_fw(delta)}")
 
 
+def _top50_section(rows, pit_rows, ppos_map):
+    combined = [('bat', r) for r in rows if r['_team_abbr']] + [('pit', r) for r in pit_rows if r['_team_abbr']]
+    combined.sort(key=lambda x: x[1]['xWAR'], reverse=True)
+    h2("Top 50")
+    with ol():
+        for kind, r in combined[:50]:
+            abbr = r['_team_abbr'] or 'FA'
+            war  = _f('war', r['xWAR'])
+            if kind == 'bat':
+                pos   = ppos_map.get((r['first'], r['last']), '')
+                stats = (f"{_f('avg', r['xAVG'])} AVG, {r['xHR']} HR, "
+                         f"{_f('ops', r['xOPS'])} OPS, {war} WAR")
+            else:
+                pos  = r['role']
+                ip   = f"{r['proj_ip']:.1f}"
+                if r['role'] == 'SP':
+                    stats = (f"{r['xW']}-{r['xL']}, {ip} IP, "
+                             f"{_f('p_era', r['xERA'])} ERA, {r['xK']} K, {war} WAR")
+                else:
+                    stats = (f"{ip} IP, {_f('p_era', r['xERA'])} ERA, "
+                             f"{r['xK']} K, {r['xSV']} SV, {war} WAR")
+            li(f"{r['first']} {r['last']} ({pos}, {abbr}): {stats}")
+
+
 from constants import replacement_level
 
 
@@ -222,6 +288,9 @@ def generate_projections():
 
     # Sort by division name, then total WAR descending
     team_summary.sort(key=lambda t: (t['division'], -t['tot_war']))
+
+    # Attach DH model values to batter rows
+    _attach_dh_model(rows, ppos_map)
 
     # Also sort the per-section tables by xWAR for their own sections
     team_rows_sorted     = sorted(team_proj.items(),
@@ -321,6 +390,8 @@ def generate_projections():
         _war_delta_table(pit_deltas[:10])
         p("Regression candidates (bottom 10):")
         _war_delta_table(pit_deltas[-10:][::-1])
+
+        _top50_section(rows, pit_rows, ppos_map)
 
         _methodology_section()
 
