@@ -82,5 +82,38 @@ def generate_team_season_page(team_name, season_num, abbr):
         h3("Standard Pitching")
         render_table(_prep(pit_stats, _PIT_COLS), depth=2)
 
+        if season_num == 20 and teams_data.schedule20 is not None:
+            h2("Game Log")
+            sched = teams_data.schedule20
+            games = sched[(sched['Home Team'] == team_name) | (sched['Away Team'] == team_name)].copy()
+            games = games.sort_values('Game #').reset_index(drop=True)
+            w_count = l_count = 0
+            with table(border=0):
+                with thead():
+                    with tr():
+                        for col in ['#', 'Day', 'H/A', 'Opponent', 'R', 'RA', 'W/L', 'Record']:
+                            th(col)
+                with tbody():
+                    for _, g in games.iterrows():
+                        home = g['Home Team'] == team_name
+                        opp  = g['Away Team'] if home else g['Home Team']
+                        r    = int(g['Home Score'] if home else g['Away Score'])
+                        ra   = int(g['Away Score'] if home else g['Home Score'])
+                        win  = r > ra
+                        if win:
+                            w_count += 1
+                        else:
+                            l_count += 1
+                        opp_slug = opp.replace(' ', '')
+                        with tr():
+                            td(int(g['Game #']))
+                            td(int(g['Day']))
+                            td('H' if home else 'A')
+                            td(a(opp, href=f"../../teams/{opp_slug}/20.html"))
+                            td(r)
+                            td(ra)
+                            td('W' if win else 'L')
+                            td(f"{w_count}-{l_count}")
+
     slug = team_name.replace(' ', '')
     Path(f"docs/teams/{slug}/{season_num}.html").write_text(str(doc))

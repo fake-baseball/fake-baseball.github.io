@@ -40,7 +40,7 @@ import leaders
 
 from data.stats    import load_batting, load_pitching
 from data.players  import load_player_info, load_retirements
-from data.teams    import load_teams, load_rotations, load_lineups, load_standings
+from data.teams    import load_teams, load_rotations, load_lineups, load_standings, load_schedule20
 from data          import teams as teams_data
 
 from pages.batter        import generate_batter_page
@@ -121,6 +121,7 @@ def main():
     if need_stats or do_seasons or do_teams:
         load_teams()
         load_standings()
+        load_schedule20()
 
     if need_stats:
         print("Computing player stats...")

@@ -135,7 +135,7 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
     border     - HTML border attribute on <table>.
     """
     import numpy as np
-    from dominate.tags import table, thead, tbody, tr, th, td
+    from dominate.tags import table, thead, tbody, tr, th, td, abbr as abbr_tag
     from dominate.tags import b as bold_tag, i as italic_tag, a as anchor_tag
     from registry import REGISTRY
     import leaders as leaders_mod
@@ -207,7 +207,13 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
         with thead():
             with tr():
                 for col in visible_cols:
-                    th(_header_name(col, col_meta[col]))
+                    meta = col_meta[col]
+                    label = meta.get('label', '')
+                    header = _header_name(col, meta)
+                    if label:
+                        th(abbr_tag(header, title=label))
+                    else:
+                        th(header)
         with tbody():
             for _, raw_row in df.iterrows():
                 stat_type = raw_row['stat_type'] if 'stat_type' in df.columns else ''

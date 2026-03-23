@@ -313,7 +313,7 @@ def _team_salary_table(abbr_map, bat_rows, pit_rows, bat_war_model_info, pit_war
                 th('Pos%')
         with tbody():
             for team_name, v in sorted(totals.items(), key=lambda x: x[0]):
-                abbr = abbr_map.get(team_name, team_name)
+                abbr = abbr_map[team_name]
                 total = v['bat'] + v['pit']
                 pct = v['bat'] / total * 100 if total > 0 else 0.0
                 with tr():
@@ -395,7 +395,7 @@ def _player_table(rows, skills, labels, abbr_map, war_model_info, war_linear_inf
                 with tr():
                     td(a(f"{first} {last}", href=f"players/{convert_name(first, last)}.html"))
                     team = players.player_info.loc[(first, last), 'team_name']
-                    td(abbr_map.get(team, team))
+                    td(abbr_map[team])
                     for val in d['X']:
                         td(val)
                     td(_fmt_sal(d['pred_skills']))

@@ -35,7 +35,7 @@ REGISTRY = {
     # -- Value -----------------------------------------------------------------
     'war': {
         'name': 'WAR',
-        'label': 'WAR for Position Players',
+        'label': 'Wins Above Replacement',
         'description': '',
         'decimal_places': 1,
         'leaders': True,
@@ -44,13 +44,13 @@ REGISTRY = {
     # -- Counting --------------------------------------------------------------
     'b_gp': {
         'name': 'GP',
-        'label': 'Games Played',
+        'label': 'Games Rostered',
         'description': '',
         'context': 'batting',
     },
     'gb': {
-        'name': 'GB',
-        'label': 'Games Batted',
+        'name': 'G',
+        'label': 'Games Appeared',
         'description': '',
         'leaders': True,
         'context': 'batting',
@@ -120,7 +120,7 @@ REGISTRY = {
     },
     'bb': {
         'name': 'BB',
-        'label': 'Walks',
+        'label': 'Bases on Balls',
         'description': '',
         'leaders': True,
         'context': 'batting',
@@ -204,7 +204,7 @@ REGISTRY = {
     'ops': {
         'name': 'OPS',
         'label': 'On-Base Plus Slugging',
-        'description': '',
+        'description': 'OBP + SLG',
         'qualified': True,
         'decimal_places': 3, 'leading_zero': False,
         'leaders': True, 'has_worst': True,
@@ -212,8 +212,8 @@ REGISTRY = {
     },
     'ops_plus': {
         'name': 'OPS+',
-        'label': 'OPS+',
-        'description': '',
+        'label': 'Adjusted OPS',
+        'description': 'Measures a player\'s OPS relative to league average, considering park factor. 100 = league average, higher is better.',
         'qualified': True,
         'leaders': True,
         'context': 'batting',
@@ -221,7 +221,7 @@ REGISTRY = {
     'iso': {
         'name': 'ISO',
         'label': 'Isolated Power',
-        'description': '',
+        'description': 'SLG - AVG',
         'qualified': True,
         'decimal_places': 3, 'leading_zero': False,
         'leaders': True,
@@ -254,7 +254,7 @@ REGISTRY = {
     },
     'wrc_plus': {
         'name': 'wRC+',
-        'label': 'wRC+',
+        'label': 'Adjusted Weighted Runs Created',
         'description': '',
         'qualified': True,
         'leaders': True,
@@ -305,8 +305,8 @@ REGISTRY = {
         'context': 'batting',
     },
     'pa_per_gb': {
-        'name': 'PA/GB',
-        'label': 'Plate Appearances per Games Batted',
+        'name': 'PA/G',
+        'label': 'Plate Appearances per Game',
         'description': '',
         'qualified': True,
         'decimal_places': 2,
@@ -357,22 +357,22 @@ REGISTRY = {
     },
     'rw_per_pa': {
         'name': 'RW/PA',
-        'label': 'Replacement WAR Rate per PA',
-        'description': 'WAR per plate appearance at replacement level',
+        'label': 'Replacement Wins per PA',
+        'description': 'Number of wins a replacement level player would contribute per plate appearance.',
         'decimal_places': 4,
         'context': 'batting',
     },
     'rr_per_pa': {
         'name': 'RR/PA',
         'label': 'Replacement Runs per PA',
-        'description': 'Replacement-level runs per plate appearance',
+        'description': 'Number of runs a replacement level player would contribute per plate appearance.',
         'decimal_places': 4,
         'context': 'batting',
     },
     'r_per_pa': {
         'name': 'R/PA',
         'label': 'Runs per Plate Appearance',
-        'description': 'League runs scored per plate appearance',
+        'description': 'League average runs scored per plate appearance',
         'decimal_places': 3,
         'context': 'batting',
     },
@@ -435,7 +435,7 @@ REGISTRY = {
     },
     'r_rep': {
         'name': 'Rrep',
-        'label': 'Replacement Run Credit',
+        'label': 'Replacement Runs',
         'description': '',
         'decimal_places': 1,
         'context': 'batting',
@@ -478,7 +478,7 @@ REGISTRY = {
         'context': 'baserunning',
     },
     'sb_att_pct': {
-        'name': 'SbAtt%',
+        'name': 'SBatt%',
         'label': 'Stolen Base Attempt Rate',
         'description': '',
         'qualified': True,
@@ -508,7 +508,7 @@ REGISTRY = {
     },
     'gf': {
         'name': 'GF',
-        'label': 'Fielding Games',
+        'label': 'Games Fielded',
         'description': '',
         'decimal_places': 1,
         'context': 'fielding',
@@ -516,7 +516,7 @@ REGISTRY = {
     # -- Rate ------------------------------------------------------------------
     'e_per_gf': {
         'name': 'E/GF',
-        'label': 'Errors per Fielding Game',
+        'label': 'Errors per Game Fielded',
         'description': '',
         'qualified': True, 'lowest': True,
         'decimal_places': 3, 'leading_zero': False,
@@ -524,7 +524,7 @@ REGISTRY = {
     },
     'pb_per_gf': {
         'name': 'PB/GF',
-        'label': 'Passed Balls per Fielding Game',
+        'label': 'Passed Balls per Game Fielded',
         'description': '',
         'qualified': True, 'lowest': True,
         'decimal_places': 3, 'leading_zero': False,
@@ -538,7 +538,7 @@ REGISTRY = {
     # -- Value -----------------------------------------------------------------
     'p_war': {
         'name': 'WAR',
-        'label': 'WAR for Pitchers',
+        'label': 'Wins Above Replacement',
         'description': '',
         'decimal_places': 1,
         'leaders': True,
@@ -547,7 +547,7 @@ REGISTRY = {
     # -- Cy Young Predictor ----------------------------------------------------
     'p_cyp': {
         'name': 'CYP',
-        'label': 'Cy Young Predictor',
+        'label': 'Cy Young Points',
         'description': '((5*IP/9)-ER) + (K/12) + (SV*2.5) + SHO + ((W*6)-(L*2)) + (VB*12)',
         'decimal_places': 1,
         'leaders': True,
@@ -576,7 +576,7 @@ REGISTRY = {
         'context': 'pitching',
     },
     'p_gp': {
-        'name': 'GP',
+        'name': 'G',
         'label': 'Games Pitched',
         'description': '',
         'leaders': True,
@@ -634,7 +634,7 @@ REGISTRY = {
     },
     'p_bb': {
         'name': 'BB',
-        'label': 'Walks',
+        'label': 'Bases on Balls',
         'description': '',
         'leaders': True,
         'context': 'pitching',
@@ -662,7 +662,7 @@ REGISTRY = {
     },
     'p_hbp': {
         'name': 'HBP',
-        'label': 'Hit Batters',
+        'label': 'Hit by Pitch',
         'description': '',
         'leaders': True,
         'context': 'pitching',
@@ -682,7 +682,7 @@ REGISTRY = {
         'context': 'pitching',
     },
     'p_ra': {
-        'name': 'RA',
+        'name': 'R',
         'label': 'Runs Allowed',
         'description': '',
         'leaders': True,
@@ -697,7 +697,7 @@ REGISTRY = {
     },
     'p_bip': {
         'name': 'BIP',
-        'label': 'Balls in Play Against',
+        'label': 'Balls in Play',
         'description': '',
         'context': 'pitching',
     },
@@ -713,7 +713,7 @@ REGISTRY = {
     },
     'p_era_minus': {
         'name': 'ERA-',
-        'label': 'ERA-',
+        'label': 'Adjusted ERA',
         'description': '',
         'qualified': True, 'lowest': True,
         'leaders': True,
@@ -756,8 +756,8 @@ REGISTRY = {
         'context': 'pitching',
     },
     'p_baa': {
-        'name': 'BAA',
-        'label': 'Batting Average Against',
+        'name': 'AVG',
+        'label': 'Batting Average Allowed',
         'description': '',
         'qualified': True, 'lowest': True,
         'decimal_places': 3, 'leading_zero': False,
@@ -765,8 +765,8 @@ REGISTRY = {
         'context': 'pitching',
     },
     'p_obpa': {
-        'name': 'OBPA',
-        'label': 'On-Base Percentage Against',
+        'name': 'OBP',
+        'label': 'On-Base Percentage Allowed',
         'description': '',
         'qualified': True, 'lowest': True,
         'decimal_places': 3, 'leading_zero': False,
@@ -775,7 +775,7 @@ REGISTRY = {
     },
     'p_babip': {
         'name': 'BABIP',
-        'label': 'BABIP Against',
+        'label': 'Batting Average on Balls in Play',
         'description': '',
         'qualified': True, 'lowest': True,
         'decimal_places': 3, 'leading_zero': False,
@@ -783,7 +783,7 @@ REGISTRY = {
         'context': 'pitching',
     },
     'p_win_pct': {
-        'name': 'WIN%',
+        'name': 'Win%',
         'label': 'Win Percentage',
         'description': '',
         'qualified': True,
@@ -872,7 +872,7 @@ REGISTRY = {
         'context': 'pitching',
     },
     'p_p_per_gp': {
-        'name': 'P/GP',
+        'name': 'P/G',
         'label': 'Pitches per Game',
         'description': '',
         'qualified': True,
@@ -894,12 +894,12 @@ REGISTRY = {
         'label': 'Pitches per Plate Appearance',
         'description': '',
         'qualified': True, 'lowest': True,
-        'decimal_places': 1,
+        'decimal_places': 2,
         'leaders': True,
         'context': 'pitching',
     },
     'p_ip_per_gp': {
-        'name': 'IP/GP',
+        'name': 'IP/G',
         'label': 'Innings per Game',
         'description': '',
         'qualified': True,
@@ -938,7 +938,7 @@ REGISTRY = {
     },
     'p_r_rep': {
         'name': 'Rrep',
-        'label': 'Replacement Run Credit',
+        'label': 'Replacement Runs',
         'description': '',
         'decimal_places': 1,
         'context': 'pitching',
@@ -967,7 +967,7 @@ REGISTRY = {
 
     # -- League context (season aggregates, not player-facing) -----------------
     'p_r_per_g': {
-        'name': 'RA/G',
+        'name': 'R/G',
         'label': 'Runs Allowed per Game',
         'description': 'League-average runs allowed per team game',
         'decimal_places': 2,
@@ -975,15 +975,15 @@ REGISTRY = {
     },
     'rw_per_ip': {
         'name': 'RW/IP',
-        'label': 'Replacement WAR Rate per IP',
-        'description': 'WAR per inning pitched at replacement level',
+        'label': 'Replacement Wins per IP',
+        'description': 'Wins per inning pitched at replacement level',
         'decimal_places': 4,
         'context': 'pitching',
     },
     'r_sv': {
         'name': 'R_sv',
         'label': 'Save Run Value',
-        'description': 'Run value of earning a save opportunity',
+        'description': 'Run value of recording a save',
         'decimal_places': 2,
         'context': 'pitching',
     },

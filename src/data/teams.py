@@ -1,12 +1,13 @@
 import pandas as pd
 
-from data.sources import TEAMS_CSV, ROTATIONS_CSV, LINEUPS_CSV, STANDINGS_CSV
+from data.sources import TEAMS_CSV, ROTATIONS_CSV, LINEUPS_CSV, STANDINGS_CSV, SCHEDULE20_CSV
 
 teams      = None
 rotations  = None
 lineups    = None
 standings  = None
 season_map = None  # maps internal season ID -> sequential season number (1, 2, 3...)
+schedule20 = None
 
 
 def load_teams():
@@ -43,3 +44,10 @@ def load_standings():
         chunks.append(group)
     df = pd.concat(chunks)
     standings = df
+
+
+def load_schedule20():
+    global schedule20
+    df = pd.read_csv(SCHEDULE20_CSV)
+    df.columns = df.columns.str.strip()
+    schedule20 = df[['Game #', 'Day', 'Home Team', 'Home Score', 'Away Score', 'Away Team']]
