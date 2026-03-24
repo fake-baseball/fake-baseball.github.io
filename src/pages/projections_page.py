@@ -483,14 +483,19 @@ def _methodology_section():
     h3("Pitching Stats")
 
     _stat("xIP",
-          "Projected innings pitched. For SP and RP/CL: a linear regression "
-          "predicts IP/appearance from VEL + JNK + ACC, blended 5/4/3 with "
-          "actual IP/appearance history, then multiplied by a full-season "
-          "appearance count (20 GS for SP, 40 GR for RP/CL). "
+          "Projected innings pitched. For SP: a linear regression predicts "
+          "IP/start from VEL + JNK + ACC, blended 5/4/3 with actual IP/start "
+          "history, then multiplied by 20 projected starts. "
+          "For RP/CL: the same IP/appearance blend is used, but the appearance "
+          "count itself is model-driven (see xGP). "
           "SP/RP is assigned a fixed 65 IP (deployment-driven role).")
     _stat("xGS / xGP",
-          "Projected games started (SP: 20, others: 0) and games pitched "
-          "(SP: 20, RP/CL/SP-RP: 40).")
+          "Projected games started (SP: 20, others: 0) and games pitched. "
+          "SP and SP/RP use fixed counts (20 and 40 respectively). "
+          "RP/CL appearance count is projected by OLS on xRA9, fit on all "
+          "historical reliever seasons: better pitchers earn more appearances "
+          "because managers preferentially deploy effective arms. "
+          "Capped at 55, floored at 5.")
     _stat("Component rates (K, BB, HBP, HR, H per BF)",
           "Blended 5/4/3 from actual per-BF rates. Missing seasons are filled "
           "by blending with skill-model predictions (VEL, JNK, ACC) trained on "
@@ -527,9 +532,18 @@ def _methodology_section():
     _stat("xW / xL",
           "Projected wins and losses. Individual W/L history has near-zero "
           "year-over-year reproducibility (r~0.07-0.16), so xRA9 is used instead. "
-          "SP W/GS and L/GS are predicted by OLS on xRA9 (R2=0.33 and 0.27). "
-          "RP/CL L/GR is predicted by OLS on xRA9 (R2=0.12). "
-          "RP W/GR uses league average (R2=0.04, negligible spread). "
+          "SP W/GS is predicted by OLS on xRA9 + IP/GS + team RS/G: xRA9 captures "
+          "pitcher quality, IP/GS captures the 5-inning eligibility requirement for a "
+          "win (a pitcher knocked out early projects fewer wins even at the same ERA), "
+          "and team RS/G captures the run support that is the dominant driver of W/L "
+          "variance between starters. Team RS/G is taken from the batting projections. "
+          "SP L/GS is predicted by OLS on xRA9 + team RS/G (lower run support means "
+          "fewer bail-outs and more losses). "
+          "RP/CL W and L are derived from two models: total decisions per GR "
+          "(OLS on xRA9 — good relievers pitch in high-leverage spots and get more "
+          "decisions; bad relievers work blowouts and get fewer) and W-L differential "
+          "per GR (OLS on xRA9 + team RS/G). xW = (decisions + diff) / 2, "
+          "xL = (decisions - diff) / 2, ensuring bad pitchers project losing records. "
           "Starters are assigned 0 saves.")
     _stat("xSV",
           "Projected saves. CL SV/GR is predicted by OLS on xRA9 (r=-0.46 "

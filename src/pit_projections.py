@@ -11,8 +11,10 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 
 import pitching as pit_module
+import projections as proj_module
 import league as lg
 from data import players
+from data import teams as teams_data
 from constants import (PIT_SEASON_MIN_IP,
                        PROJ_SEASONS, PROJ_WEIGHTS as WEIGHTS, PROJ_WEIGHT_TOTAL as WEIGHT_TOTAL,
                        total_WAR, batter_share)
@@ -25,6 +27,8 @@ IP_MAX          = {'SP': 120, 'SP/RP': 80, 'RP': 80, 'CL': 60}
 FULL_SEASON_APP  = {'SP': 20, 'RP': 40, 'CL': 40}
 APP_COL          = {'SP': 'p_gs', 'RP': 'p_gr', 'CL': 'p_gr'}
 SPRP_FIXED_IP    = 65.0   # SP/RP gets a fixed projection; role is deployment-driven
+RA9_MIN_GS       = 15     # minimum GS to qualify for the SP RA9 model
+RA9_MIN_GR       = 20     # minimum GR to qualify for the reliever RA9 model
 
 
 def compute():
@@ -86,15 +90,30 @@ def compute():
         y                 = np.array([r[comp] for r in train_rows], dtype=float)
         comp_models[comp] = LinearRegression().fit(X_train, y)
 
-    # ── Step 2: Fit RA9 regression on all individual qualified pitcher-seasons ──
+    # ── Step 2: Fit role-specific RA9 models ─────────────────────────────────
+    # SP and reliever RA9 distributions differ at the same component rates
+    # (relievers pitch shorter stints, face each batter once, carry lower RA9).
+    # Separate models ensure xRA9 is calibrated to each role's baseline.
 
-    df_ra9 = df_qual.copy()
-    X_ra9  = df_ra9[[f'{comp}_rate' for comp in COMPONENTS]].values.astype(float)
-    y_ra9  = df_ra9['p_ra9'].values.astype(float)
+    _comp_rate_cols = [f'{comp}_rate' for comp in COMPONENTS]
 
-    ra9_model  = LinearRegression().fit(X_ra9, y_ra9)
+    df_ra9_sp = df[(df['role'] == 'SP') &
+                   (df['p_gs'] >= RA9_MIN_GS)].copy()
+    df_ra9_rp = df[df['role'].isin(['RP', 'CL', 'SP/RP']) &
+                   (df['p_gr'] >= RA9_MIN_GR)].copy()
+
+    ra9_model_sp = LinearRegression().fit(
+        df_ra9_sp[_comp_rate_cols].values.astype(float),
+        df_ra9_sp['p_ra9'].values.astype(float),
+    )
+    ra9_model_rp = LinearRegression().fit(
+        df_ra9_rp[_comp_rate_cols].values.astype(float),
+        df_ra9_rp['p_ra9'].values.astype(float),
+    )
+
     ra9_metric = {
-        'model':        ra9_model,
+        'model_sp':     ra9_model_sp,
+        'model_rp':     ra9_model_rp,
         'lg_bf_per_ip': lg_bf_per_ip,
     }
 
@@ -228,57 +247,151 @@ def compute_all():
     ) / WEIGHT_TOTAL
 
     lg_bf_per_ip = ra9_metric['lg_bf_per_ip']
-    ra9_mdl      = ra9_metric['model']
+    ra9_mdl_sp   = ra9_metric['model_sp']
+    ra9_mdl_rp   = ra9_metric['model_rp']
 
     def _role_group(role):
         return 'SP' if role == 'SP' else 'reliever'
 
+    # ── Historical data for W/L/SV models and RP appearance model ─────────────
+    df_all = pit_module.stats[pit_module.stats['stat_type'] == 'season'].copy()
+
+    # Team name <-> abbreviation mapping (needed for RS/G lookup)
+    name_to_abbr = {}
+    if teams_data.teams is not None:
+        name_to_abbr = teams_data.teams.set_index('team_name')['abbr'].to_dict()
+
+    # Historical team RS/G per (season, abbr) for SP W model
+    hist_rs = {}
+    if teams_data.standings is not None:
+        for _, srow in teams_data.standings.iterrows():
+            abbr = name_to_abbr.get(srow['teamName'])
+            if abbr:
+                games = int(srow['gamesWon']) + int(srow['gamesLost'])
+                if games > 0:
+                    hist_rs[(int(srow['Season']), abbr)] = float(srow['runsFor']) / games
+
+    # League-average RS/G (weighted blend) — fallback for free-agent SPs
+    lg_rs_per_g = sum(
+        WEIGHTS[s] * lg.season_batting.loc[s, 'r_per_g'] for s in PROJ_SEASONS
+    ) / WEIGHT_TOTAL
+
+    # Projected RS/G per team from batter projections
+    bat_rows = proj_module.compute_all()
+    proj_r_by_team = {}
+    for br in bat_rows:
+        if br['team'] == 'FREE AGENT':
+            continue
+        abbr = name_to_abbr.get(br['team'], '')
+        if abbr:
+            proj_r_by_team[abbr] = proj_r_by_team.get(abbr, 0.0) + br.get('xR', 0.0)
+    proj_rs_per_g = {abbr: total / 80.0 for abbr, total in proj_r_by_team.items()}
+
+    # SP W/GS ~ xRA9 + IP/GS + team_rs_per_g:
+    # xRA9 and IP/GS capture pitcher quality and 5-inning win eligibility;
+    # team RS/G captures the run support that drives most W/L variance.
+    sp_hist = df_all[(df_all['role'] == 'SP') & (df_all['p_gs'] >= 5)].copy()
+    sp_hist['W_rate']       = sp_hist['p_w']  / sp_hist['p_gs']
+    sp_hist['L_rate']       = sp_hist['p_l']  / sp_hist['p_gs']
+    sp_hist['ip_per_gs']    = sp_hist['p_ip'] / sp_hist['p_gs']
+    sp_hist['team_rs_per_g'] = sp_hist.apply(
+        lambda r: hist_rs.get((int(r['season']), r['team']), float('nan')), axis=1
+    )
+    sp_hist_w  = sp_hist[sp_hist['team_rs_per_g'].notna()].copy()
+    sp_w_model = LinearRegression().fit(
+        sp_hist_w[['p_ra9', 'ip_per_gs', 'team_rs_per_g']].values,
+        sp_hist_w['W_rate'].values,
+    )
+    sp_l_model = LinearRegression().fit(
+        sp_hist_w[['p_ra9', 'team_rs_per_g']].values,
+        sp_hist_w['L_rate'].values,
+    )
+
+    rp_hist = df_all[df_all['role'].isin(['RP', 'CL', 'SP/RP']) & (df_all['p_gr'] >= 10)].copy()
+    rp_hist['team_rs_per_g'] = rp_hist.apply(
+        lambda r: hist_rs.get((int(r['season']), r['team']), float('nan')), axis=1
+    )
+    rp_hist_wl = rp_hist[rp_hist['team_rs_per_g'].notna()].copy()
+    rp_hist_wl = rp_hist_wl.copy()
+    rp_hist_wl['decision_rate'] = (rp_hist_wl['p_w'] + rp_hist_wl['p_l']) / rp_hist_wl['p_gr']
+    rp_hist_wl['wl_diff_rate']  = (rp_hist_wl['p_w'] - rp_hist_wl['p_l']) / rp_hist_wl['p_gr']
+    # Total decisions per GR: good relievers pitch in high-leverage spots and get
+    # more decisions; bad relievers work blowouts and get fewer.
+    rp_dec_model = LinearRegression().fit(
+        rp_hist_wl[['p_ra9']].values,
+        rp_hist_wl['decision_rate'].values,
+    )
+    # W-L differential per GR: captures both quality (xRA9) and run support.
+    rp_wl_model = LinearRegression().fit(
+        rp_hist_wl[['p_ra9', 'team_rs_per_g']].values,
+        rp_hist_wl['wl_diff_rate'].values,
+    )
+
+    cl_hist = df_all[(df_all['role'] == 'CL') & (df_all['p_gr'] >= 10)].copy()
+    cl_hist['SV_rate'] = cl_hist['p_sv'] / cl_hist['p_gr']
+    cl_sv_model = LinearRegression().fit(cl_hist[['p_ra9']].values, cl_hist['SV_rate'].values)
+
+    lg_rp_sv_rate =(df_all[df_all['role'].isin(['RP', 'SP/RP'])]['p_sv'].sum() /
+                     df_all[df_all['role'].isin(['RP', 'SP/RP'])]['p_gr'].sum()
+                     if df_all[df_all['role'].isin(['RP', 'SP/RP'])]['p_gr'].sum() > 0 else 0.0)
+
+    # RP/CL appearance model: p_gr ~ p_ra9
+    # Better pitchers earn more appearances; replaces the fixed 40-game count.
+    rp_app_hist  = df_all[df_all['role'].isin(['RP', 'CL', 'SP/RP']) & (df_all['p_gr'] >= 5)].copy()
+    rp_app_model = LinearRegression().fit(rp_app_hist[['p_ra9']].values, rp_app_hist['p_gr'].values)
+    _RP_APP_MAX  = 55
+    _RP_APP_MIN  = 5
+
     for row in rows:
         role = row['role']
-        if role == 'SP/RP':
-            row['proj_ip'] = SPRP_FIXED_IP
-        else:
-            rg             = _role_group(role)
-            X_ip           = [[row['velocity'], row['junk'], row['accuracy']]]
-            model_ip_per_app = ip_models[rg].predict(X_ip)[0]
-            apps           = FULL_SEASON_APP.get(role, 40)
-            ip_cap         = IP_MAX.get(role, 80)
 
-            # Blend actual IP/app (5/4/3) with model for missing seasons
-            weighted_sum = 0.0
-            for s in PROJ_SEASONS:
-                actual_app = row[f'app_{s}']
-                actual_ip  = row[f'ip_{s}']
-                if actual_app > 0:
-                    ip_per_app_s = actual_ip / actual_app
-                else:
-                    ip_per_app_s = model_ip_per_app
-                weighted_sum += ip_per_app_s * WEIGHTS[s]
-            blended_ip_per_app = weighted_sum / WEIGHT_TOTAL
-
-            row['proj_ip'] = min(ip_cap, max(0.0, blended_ip_per_app * apps))
-
-        # Projected counting stats (rounded to int for display)
+        # Component rates
         K_rate   = row['p_k']
         BB_rate  = row['p_bb']
         HBP_rate = row['p_hbp']
         HR_rate  = row['p_hr']
         H_rate   = row['p_h']
 
-        out_rate = 1.0 - H_rate - BB_rate - HBP_rate
+        # xRA9 computed first: needed to determine RP/CL appearance count.
+        # Use role-specific model so xRA9 is calibrated to each role's baseline.
+        ra9_mdl      = ra9_mdl_sp if role == 'SP' else ra9_mdl_rp
+        row['xRA9']  = max(0.0, ra9_mdl.predict([[K_rate, BB_rate, HBP_rate, HR_rate, H_rate]])[0])
+
+        # Projected appearances and IP
+        if role == 'SP/RP':
+            row['proj_ip'] = SPRP_FIXED_IP
+            row['xGS'] = 0
+            row['xGP'] = 40
+        else:
+            if role == 'SP':
+                apps = FULL_SEASON_APP['SP']
+            else:  # RP, CL
+                pred_apps = rp_app_model.predict([[row['xRA9']]])[0]
+                apps = int(round(min(_RP_APP_MAX, max(_RP_APP_MIN, pred_apps))))
+            rg               = _role_group(role)
+            X_ip             = [[row['velocity'], row['junk'], row['accuracy']]]
+            model_ip_per_app = ip_models[rg].predict(X_ip)[0]
+            ip_cap           = IP_MAX.get(role, 80)
+            weighted_sum     = 0.0
+            for s in PROJ_SEASONS:
+                actual_app   = row[f'app_{s}']
+                actual_ip    = row[f'ip_{s}']
+                ip_per_app_s = actual_ip / actual_app if actual_app > 0 else model_ip_per_app
+                weighted_sum += ip_per_app_s * WEIGHTS[s]
+            blended_ip_per_app = weighted_sum / WEIGHT_TOTAL
+            row['proj_ip'] = min(ip_cap, max(0.0, blended_ip_per_app * apps))
+            row['xGS'] = apps if role == 'SP' else 0
+            row['xGP'] = apps
+
+        out_rate       = 1.0 - H_rate - BB_rate - HBP_rate
         proj_bf_per_ip = 3.0 / out_rate if out_rate > 0 else lg_bf_per_ip
-        xBF = row['proj_ip'] * proj_bf_per_ip
+        xBF            = row['proj_ip'] * proj_bf_per_ip
 
         row['xK']   = int(round(xBF * K_rate))
         row['xBB']  = int(round(xBF * BB_rate))
         row['xHBP'] = int(round(xBF * HBP_rate))
         row['xHR']  = int(round(xBF * HR_rate))
         row['xH']   = int(round(xBF * H_rate))
-
-        # xRA9 from RA9 model using blended rates; floor at 0
-        X_ra9   = [[K_rate, BB_rate, HBP_rate, HR_rate, H_rate]]
-        raw_ra9 = ra9_mdl.predict(X_ra9)[0]
-        row['xRA9']  = max(0.0, raw_ra9)
         row['xERA']  = row['xRA9'] * lg_er_ra
         row['xER']   = int(round(row['xERA'] * row['proj_ip'] / 9.0)) if row['proj_ip'] > 0 else 0
         row['xERA-'] = 100 * row['xERA'] / lg_era if lg_era > 0 else 100.0
@@ -320,60 +433,34 @@ def compute_all():
         row['_xRcorr'] = xRcorr
         row['_xRAA_corr'] = row['_xRAA'] + xRcorr   # RAA before Rlev
 
-    # ── W, L, SV models fit on all historical seasons ─────────────────────────
-    # W/L individual history has near-zero year-over-year reproducibility (r~0.07-0.16).
-    # xRA9 is a far better predictor. Models:
-    #   SP  W/GS  ~ xRA9  (R2=0.33)
-    #   SP  L/GS  ~ xRA9  (R2=0.27)
-    #   RP  L/GR  ~ xRA9  (R2=0.12)
-    #   RP  W/GR  -> league average (R2=0.04, negligible spread)
-    #   CL  SV/GR ~ xRA9  (r=-0.46)
-    #   RP  SV/GR -> league average (role-dependent, not skill)
-    df_all = pit_module.stats[pit_module.stats['stat_type'] == 'season'].copy()
-
-    sp_hist = df_all[(df_all['role'] == 'SP') & (df_all['p_gs'] >= 5)].copy()
-    sp_hist['W_rate'] = sp_hist['p_w'] / sp_hist['p_gs']
-    sp_hist['L_rate'] = sp_hist['p_l'] / sp_hist['p_gs']
-    sp_w_model = LinearRegression().fit(sp_hist[['p_ra9']].values, sp_hist['W_rate'].values)
-    sp_l_model = LinearRegression().fit(sp_hist[['p_ra9']].values, sp_hist['L_rate'].values)
-
-    rp_hist = df_all[(df_all['role'].isin(['RP', 'CL', 'SP/RP'])) & (df_all['p_gr'] >= 10)].copy()
-    rp_hist['L_rate'] = rp_hist['p_l'] / rp_hist['p_gr']
-    rp_l_model = LinearRegression().fit(rp_hist[['p_ra9']].values, rp_hist['L_rate'].values)
-
-    cl_hist = df_all[(df_all['role'] == 'CL') & (df_all['p_gr'] >= 10)].copy()
-    cl_hist['SV_rate'] = cl_hist['p_sv'] / cl_hist['p_gr']
-    cl_sv_model = LinearRegression().fit(cl_hist[['p_ra9']].values, cl_hist['SV_rate'].values)
-
-    # League averages for the flat cases (RP W/GR, RP SV/GR)
-    rp_all = df_all[df_all['role'].isin(['RP', 'CL', 'SP/RP'])]
-    lg_rp_w_rate  = rp_all['p_w'].sum() / rp_all['p_gr'].sum() if rp_all['p_gr'].sum() > 0 else 0.0
-    lg_rp_sv_rate = (df_all[df_all['role'].isin(['RP', 'SP/RP'])]['p_sv'].sum() /
-                     df_all[df_all['role'].isin(['RP', 'SP/RP'])]['p_gr'].sum()
-                     if df_all[df_all['role'].isin(['RP', 'SP/RP'])]['p_gr'].sum() > 0 else 0.0)
-
+    # ── W, L, SV ──────────────────────────────────────────────────────────────
     for row in rows:
         role = row['role']
-        apps = FULL_SEASON_APP.get(role, 40)
-        xra9 = [[row['xRA9']]]
+        apps = row['xGP']
+        xra9 = row['xRA9']
 
         if role == 'SP':
-            xW  = max(0.0, sp_w_model.predict(xra9)[0]) * apps
-            xL  = max(0.0, sp_l_model.predict(xra9)[0]) * apps
+            team_abbr = name_to_abbr.get(row['team'], '')
+            rs_per_g  = proj_rs_per_g.get(team_abbr, lg_rs_per_g)
+            ip_per_gs = row['proj_ip'] / apps if apps > 0 else 0.0
+            xW  = max(0.0, sp_w_model.predict([[xra9, ip_per_gs, rs_per_g]])[0]) * apps
+            xL  = max(0.0, sp_l_model.predict([[xra9, rs_per_g]])[0]) * apps
             xSV = 0
         else:
-            xW  = lg_rp_w_rate * apps
-            xL  = max(0.0, rp_l_model.predict(xra9)[0]) * apps
+            team_abbr  = name_to_abbr.get(row['team'], '')
+            rs_per_g   = proj_rs_per_g.get(team_abbr, lg_rs_per_g)
+            decisions  = max(0.0, rp_dec_model.predict([[xra9]])[0]) * apps
+            wl_diff    = rp_wl_model.predict([[xra9, rs_per_g]])[0] * apps
+            xW  = max(0.0, (decisions + wl_diff) / 2)
+            xL  = max(0.0, (decisions - wl_diff) / 2)
             if role == 'CL':
-                xSV = max(0.0, cl_sv_model.predict(xra9)[0]) * apps
+                xSV = max(0.0, cl_sv_model.predict([[xra9]])[0]) * apps
             else:
                 xSV = lg_rp_sv_rate * apps
 
         row['xW']  = int(round(xW))
         row['xL']  = int(round(xL))
         row['xSV'] = int(round(xSV))
-        row['xGS'] = apps if role == 'SP' else 0
-        row['xGP'] = apps
 
     # ── Final pass: Rlev and all exposed WAR components ───────────────────────
     # Precompute blended R_sv / R_no_SV by role group

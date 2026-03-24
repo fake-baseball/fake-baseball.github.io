@@ -395,7 +395,7 @@ def _player_table(rows, skills, labels, abbr_map, war_model_info, war_linear_inf
                 with tr():
                     td(a(f"{first} {last}", href=f"players/{convert_name(first, last)}.html"))
                     team = players.player_info.loc[(first, last), 'team_name']
-                    td(abbr_map[team])
+                    td(abbr_map.get(team, team))
                     for val in d['X']:
                         td(val)
                     td(_fmt_sal(d['pred_skills']))
