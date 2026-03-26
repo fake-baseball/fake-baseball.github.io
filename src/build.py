@@ -58,6 +58,7 @@ from pages.awards_page   import generate_awards
 from pages.cy_young_page  import generate_cy_young
 from pages.glossary_page  import generate_glossary
 from pages.salaries_page import generate_salaries
+from pages.dh_page import generate_dh
 
 
 def main():
@@ -72,11 +73,12 @@ def main():
     parser.add_argument("--salaries",     action="store_true", help="Build salaries page")
     parser.add_argument("--cy-young",     action="store_true", help="Build Cy Young Predictor page")
     parser.add_argument("--glossary",     action="store_true", help="Build Glossary page")
+    parser.add_argument("--dh",           action="store_true", help="Build Designated Hitter and Defense page")
     parser.add_argument("--games",   action="store_true", help="Copy game files to docs/games/")
     args = parser.parse_args()
 
     # If nothing specified, build everything.
-    build_all      = not any([args.players, args.leaders, args.seasons, args.teams, args.home, args.games, args.awards, args.projections, args.salaries, args.cy_young, args.glossary])
+    build_all      = not any([args.players, args.leaders, args.seasons, args.teams, args.home, args.games, args.awards, args.projections, args.salaries, args.cy_young, args.glossary, args.dh])
     do_players     = build_all or args.players
     do_leaders     = build_all or args.leaders
     do_seasons     = build_all or args.seasons
@@ -88,6 +90,7 @@ def main():
     do_salaries    = build_all or args.salaries
     do_cy_young    = build_all or args.cy_young
     do_glossary    = build_all or args.glossary
+    do_dh          = build_all or args.dh
 
     # ── Ensure output directories exist ──────────────────────────────────────
     Path("docs/players").mkdir(parents=True, exist_ok=True)
@@ -96,26 +99,26 @@ def main():
     Path("docs/seasons").mkdir(parents=True, exist_ok=True)
 
     # ── Raw data (needed by most pages) ──────────────────────────────────────
-    need_raw = do_players or do_leaders or do_seasons or do_teams or do_awards or do_projections or do_salaries or do_cy_young
+    need_raw = do_players or do_leaders or do_seasons or do_teams or do_awards or do_projections or do_salaries or do_cy_young or do_dh
     if need_raw:
         print("Loading raw data...")
         load_batting()
         load_pitching()
 
     # ── League averages (needed by players, leaders, seasons) ─────────────
-    need_lg = do_players or do_leaders or do_seasons or do_teams or do_awards or do_projections or do_salaries or do_cy_young
+    need_lg = do_players or do_leaders or do_seasons or do_teams or do_awards or do_projections or do_salaries or do_cy_young or do_dh
     if need_lg:
         print("Computing league averages...")
         league.compute_league()
 
     # ── Player roster info (needed by players, leaders, teams) ────────────
-    need_player_info = do_players or do_leaders or do_teams or do_projections or do_salaries
+    need_player_info = do_players or do_leaders or do_teams or do_projections or do_salaries or do_dh
     if need_player_info:
         print("Loading player/roster info...")
         load_player_info()
 
     # ── Per-player stats (needed by players, leaders, seasons) ───────────
-    need_stats = do_players or do_leaders or do_seasons or do_teams or do_awards or do_projections or do_salaries or do_cy_young
+    need_stats = do_players or do_leaders or do_seasons or do_teams or do_awards or do_projections or do_salaries or do_cy_young or do_dh
 
     # ── Standings (needed by pitching.compute for VB, and by season/team pages) ─
     if need_stats or do_seasons or do_teams:
@@ -173,7 +176,20 @@ def main():
 
     if do_home:
         print("Generating home page...")
-        generate_home()
+        sections = {k for k, v in {
+            'players':     do_players,
+            'leaders':     do_leaders,
+            'seasons':     do_seasons,
+            'teams':       do_teams,
+            'games':       do_games,
+            'awards':      do_awards,
+            'projections': do_projections,
+            'dh':          do_dh,
+            'salaries':    do_salaries,
+            'cy_young':    do_cy_young,
+            'glossary':    do_glossary,
+        }.items() if v}
+        generate_home(sections)
 
     if do_awards:
         print("Generating awards page...")
@@ -194,6 +210,10 @@ def main():
     if do_glossary:
         print("Generating Glossary page...")
         generate_glossary()
+
+    if do_dh:
+        print("Generating Designated Hitter and Defense page...")
+        generate_dh()
 
     if do_leaders:
         print("Generating leaders pages...")

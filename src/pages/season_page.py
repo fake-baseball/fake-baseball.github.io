@@ -92,7 +92,7 @@ def _standings_section(season_num):
         )
         split = _split_records(sched, div_map, conf_map, winning_teams)
 
-    extra_cols = ['Div', 'Conf', 'Inter', '1-Run', 'Blowout', 'Home', 'Away', 'vs.500',
+    extra_cols = ['Div', 'Conf', 'Inter', '1-Run', 'Blowout', 'Home', 'Away', 'vs. >500',
                   '1st Half', '2nd Half', 'SHO'] if split else []
 
     h2("Standings")

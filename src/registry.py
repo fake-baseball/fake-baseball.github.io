@@ -550,7 +550,6 @@ REGISTRY = {
         'label': 'Cy Young Points',
         'description': '((5*IP/9)-ER) + (K/12) + (SV*2.5) + SHO + ((W*6)-(L*2)) + (VB*12)',
         'decimal_places': 1,
-        'leaders': True,
         'context': 'pitching',
     },
     # -- Victory Bonus ---------------------------------------------------------
@@ -1024,10 +1023,15 @@ REGISTRY = {
     'velocity': {'name': 'VEL',    'type': 'integer', 'align': 'right', 'context': 'meta'},
     'junk':     {'name': 'JNK',    'type': 'integer', 'align': 'right', 'context': 'meta'},
     'accuracy': {'name': 'ACC',    'type': 'integer', 'align': 'right', 'context': 'meta'},
-    'pos':      {'name': 'Pos',    'type': 'text',    'align': 'left',  'context': 'meta'},
     'dh_off':   {'name': 'OFF',    'type': 'stat',    'align': 'right', 'decimal_places': 3, 'leading_zero': True,  'context': 'meta'},
     'dh_def':   {'name': 'DEF',    'type': 'stat',    'align': 'right', 'decimal_places': 3, 'leading_zero': True,  'context': 'meta'},
-    'p_dh':     {'name': 'P(DH)',  'type': 'stat',    'align': 'right', 'decimal_places': 1, 'leading_zero': True, 'percentage': True, 'context': 'meta'},
+    'p_dh':       {'name': 'P(DH)',    'type': 'stat', 'align': 'right', 'decimal_places': 1, 'leading_zero': True, 'percentage': True, 'context': 'meta'},
+    'rpos_per_gb':  {'name': 'Rpos/G',   'type': 'stat', 'align': 'right', 'decimal_places': 3, 'leading_zero': True,  'context': 'meta'},
+    'rpos_per_80g': {'name': 'Rpos/80G', 'type': 'stat', 'align': 'right', 'decimal_places': 2, 'leading_zero': False, 'context': 'meta'},
+    'rdef_attr':    {'name': 'Rdef(A)',   'type': 'stat', 'align': 'right', 'decimal_places': 1, 'leading_zero': True,  'context': 'meta'},
+    'rdef_e20':     {'name': 'Rdef(E20)', 'type': 'stat', 'align': 'right', 'decimal_places': 1, 'leading_zero': True,  'context': 'meta'},
+    'rdef_old':     {'name': 'Rdef(S20)', 'type': 'stat', 'align': 'right', 'decimal_places': 1, 'leading_zero': True,  'context': 'meta'},
+    'rdef':         {'name': 'Rdef',     'type': 'stat', 'align': 'right', 'decimal_places': 1, 'leading_zero': True,  'context': 'meta'},
 }
 
 # -- Fill in defaults -----------------------------------------------------------

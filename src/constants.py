@@ -15,9 +15,23 @@ runs_CS = -0.45
 
 # Fielding
 ratio_GF   = 8/9
-runs_E        = -0.7
-runs_PB       = -0.45
+runs_E        = -0.7   # used in Seasons 1-20 Rdef calculation
+runs_PB       = -0.45  # used in Seasons 1-20 Rdef calculation
+runs_E_new    = -0.4   # used in new attribute-based Rdef model (Season 21+)
 DEF_IMPACT = 0.5
+
+# MLB average errors per game by position (2021-2025, all 30 teams)
+# Source: mlb_errors.csv
+mlb_E_rate = {
+    'SS': 0.0933,
+    '3B': 0.0863,
+    'C':  0.0567,
+    '2B': 0.0562,
+    '1B': 0.0413,
+    'RF': 0.0234,
+    'LF': 0.0212,
+    'CF': 0.0205,
+}
 
 # Pitching
 runs_SV          = 0.5

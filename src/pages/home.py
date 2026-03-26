@@ -6,18 +6,24 @@ from dominate.tags import *
 from util import make_doc
 
 
-def generate_home():
+def generate_home(sections):
+    _LINKS = [
+        ('players',     "Players",              "players/index.html"),
+        ('leaders',     "Leaders",              "leaders/index.html"),
+        ('seasons',     "Seasons",              "seasons/"),
+        ('teams',       "Teams",                "teams/index.html"),
+        ('games',       "Games",                "games/index.html"),
+        ('awards',      "Awards",               "awards.html"),
+        ('projections', "Projections",          "projections.html"),
+        ('dh',          "Positional Adjustments", "dh.html"),
+        ('salaries',    "Salaries",             "salaries.html"),
+        ('cy_young',    "Cy Young Predictor",   "cy_young.html"),
+        ('glossary',    "Glossary",             "glossary.html"),
+    ]
     doc = make_doc("BFBL Homepage", css='style.css')
     with doc:
         h1("Bryonato's Fake Baseball League")
-        h2(a("Players", href="players/index.html"))
-        h2(a("Leaders", href="leaders/index.html"))
-        h2(a("Seasons", href="seasons/"))
-        h2(a("Teams", href="teams/index.html"))
-        h2(a("Games", href="games/index.html"))
-        h2(a("Awards", href="awards.html"))
-        h2(a("Projections", href="projections.html"))
-        h2(a("Salaries", href="salaries.html"))
-        h2(a("Cy Young Predictor", href="cy_young.html"))
-        h2(a("Glossary", href="glossary.html"))
+        for key, label, href in _LINKS:
+            if key in sections:
+                h2(a(label, href=href))
     Path("docs/index.html").write_text(str(doc))
