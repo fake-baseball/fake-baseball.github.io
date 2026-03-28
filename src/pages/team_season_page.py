@@ -119,7 +119,7 @@ def generate_team_season_page(team_name, season_num, abbr):
                         with tr():
                             td(int(day) if day is not None else game_num)
                             td('H' if home else 'A')
-                            td(a(opp, href=f"../../teams/{opp_slug}/20.html"))
+                            td(a(opp, href=f"../../teams/{opp_slug}/{season_num}.html"))
                             td(r)
                             td(ra)
                             td('W' if win else 'L')

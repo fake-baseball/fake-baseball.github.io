@@ -32,14 +32,18 @@ def _pit_summary_table(stats, proj_row):
             return fmt_ip(val)
         return fmt_round(val, meta['decimal_places'], meta['leading_zero'], meta['percentage'])
 
-    s20    = stats[(stats['season'] == LAST_COMPLETED_SEASON) & (stats['stat_type'] == 'season')]
+    s_cur  = stats[(stats['season'] == CURRENT_SEASON)        & (stats['stat_type'] == 'season')]
+    s_last = stats[(stats['season'] == LAST_COMPLETED_SEASON) & (stats['stat_type'] == 'season')]
+    s_row  = s_cur if not s_cur.empty else s_last
     career = stats[stats['stat_type'] == 'career']
 
     rows_data = []
-    if not s20.empty:
-        rows_data.append((f'Season {LAST_COMPLETED_SEASON}', s20.iloc[0]))
+    if not s_row.empty:
+        label = CURRENT_SEASON if not s_cur.empty else LAST_COMPLETED_SEASON
+        rows_data.append((f'Season {label}', s_row.iloc[0]))
     if proj_row is not None:
-        rows_data.append(('Projected', proj_row.iloc[0]))
+        # rows_data.append(('Projected', proj_row.iloc[0]))
+        pass
     if not career.empty:
         rows_data.append(('Career', career.iloc[0]))
 

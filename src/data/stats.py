@@ -288,7 +288,7 @@ def pitching_stream_rows(first, last):
         curr_outs = _int(snap, 'outsPitched')
         prev_outs = _int(prev, 'outsPitched') if prev is not None else 0
         diff_outs = curr_outs - prev_outs
-        row['p_ip'] = diff_outs // 3 + (diff_outs % 3) / 10
+        row['p_ip'] = diff_outs / 3.0
         # Cumulative rate stats
         ip_true  = _int(snap, 'outsPitched') / 3.0
         er_cum   = _int(snap, 'earnedRuns')
