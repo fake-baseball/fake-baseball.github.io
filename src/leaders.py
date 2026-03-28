@@ -4,6 +4,8 @@ Also computes season-best tables used for bolding on player pages.
 """
 import pandas as pd
 
+import league as lg
+
 from constants import (
     BAT_SEASON_MIN_PA,   BAT_CAREER_MIN_PA,
     BR_SEASON_MIN_SBATT, BR_CAREER_MIN_SBATT,
@@ -21,13 +23,20 @@ _BAT_CONTEXTS = {'batting', 'baserunning', 'fielding'}
 _ALL_BAT_META = {k: v for k, v in REGISTRY.items() if v.get('context') in _BAT_CONTEXTS}
 
 
+def _qual_mask(df, qual_col):
+    """Boolean mask for rows meeting the per-season pro-rated qualification threshold."""
+    base = SEASON_THRESHOLDS[qual_col]
+    thresholds = df['season'].map(lambda s: base * lg.season_scale.get(s, 1.0))
+    return df[qual_col] >= thresholds
+
+
 # ── Batting leaders ──────────────────────────────────────────────────────────
 
 def get_batting_leaders(stat, season=None, worst=False, num=10, team=None, teams=None):
     import batting
     meta = _ALL_BAT_META[stat]
     ascending = meta['lowest'] ^ worst
-    df = batting.stats[batting.stats[meta['qual_col']] >= SEASON_THRESHOLDS[meta['qual_col']]] if meta['qualified'] else batting.stats
+    df = batting.stats[_qual_mask(batting.stats, meta['qual_col'])] if meta['qualified'] else batting.stats
     if season is None:
         df = df[df['stat_type'] == 'season']
     else:
@@ -81,7 +90,7 @@ def get_pitching_leaders(stat, season=None, worst=False, num=10, team=None, team
     import pitching
     meta = REGISTRY[stat]
     ascending = meta['lowest'] ^ worst
-    df = pitching.stats[pitching.stats['p_ip'] >= PIT_SEASON_MIN_IP] if meta['qualified'] else pitching.stats
+    df = pitching.stats[_qual_mask(pitching.stats, 'p_ip')] if meta['qualified'] else pitching.stats
     if season is None:
         df = df[df['stat_type'] == 'season']
     else:
@@ -181,9 +190,8 @@ def _compute_leaders(data, stat_dicts):
     _qual_cache = {}
     def _get_qual(qual_col):
         if qual_col not in _qual_cache:
-            threshold = SEASON_THRESHOLDS[qual_col]
             if qual_col in data.columns:
-                _qual_cache[qual_col] = data[data[qual_col] >= threshold]
+                _qual_cache[qual_col] = data[_qual_mask(data, qual_col)]
             else:
                 _qual_cache[qual_col] = data.iloc[0:0]  # empty
         return _qual_cache[qual_col]

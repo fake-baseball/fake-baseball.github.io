@@ -44,6 +44,8 @@ num_games       = 80
 num_teams       = 30
 replacement_level = 1/6
 
+TOTAL_SEASON_GAMES = num_teams * num_games // 2  # 1200: distinct games in a full season
+
 total_WAR    = (0.5 - replacement_level) * num_games * num_teams
 batter_share = 13/21
 starter_share = 2/3
@@ -81,11 +83,14 @@ FLD_CAREER_MIN_GF    = 250
 PIT_SEASON_MIN_IP    = PIT_IP_PER_GAME   * num_games
 PIT_CAREER_MIN_IP    = 500.0
 
+# Current in-progress season; last completed season (projections are based on this)
+CURRENT_SEASON        = 21
+LAST_COMPLETED_SEASON = 20
+
 # Projection seasons and Marcel-style weights (most recent to oldest)
-PROJ_SEASONS     = [18, 19, 20]
-PROJ_WEIGHTS     = {18: 3, 19: 4, 20: 5}
+PROJ_SEASONS      = [LAST_COMPLETED_SEASON - 2, LAST_COMPLETED_SEASON - 1, LAST_COMPLETED_SEASON]
+PROJ_WEIGHTS      = {LAST_COMPLETED_SEASON - 2: 3, LAST_COMPLETED_SEASON - 1: 4, LAST_COMPLETED_SEASON: 5}
 PROJ_WEIGHT_TOTAL = sum(PROJ_WEIGHTS.values())
 
-# Season range
-# TODO: derive SEASON_RANGE from data (max season number) rather than hardcoding
-SEASON_RANGE = range(1, 21)
+# Season range (all seasons including current)
+SEASON_RANGE = range(1, CURRENT_SEASON + 1)

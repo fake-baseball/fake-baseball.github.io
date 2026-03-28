@@ -15,7 +15,8 @@ from data import players
 from data import teams as teams_data
 from constants import (BAT_SEASON_MIN_PA, scale_wOBA, num_games,
                        PROJ_SEASONS, PROJ_WEIGHTS as WEIGHTS, PROJ_WEIGHT_TOTAL as WEIGHT_TOTAL,
-                       total_WAR, batter_share, runs_SB, runs_CS, park_factors)
+                       total_WAR, batter_share, runs_SB, runs_CS, park_factors,
+                       CURRENT_SEASON, LAST_COMPLETED_SEASON)
 from formulas import compute_tb, compute_avg, compute_obp, compute_slg, compute_ops, compute_woba
 
 # Component names as they appear in batting.stats (final column names)
@@ -58,7 +59,10 @@ def compute():
             group.loc[group['season'] == s, f'{comp}_rate'].iloc[0] * WEIGHTS[s]
             for s in PROJ_SEASONS
         ) / WEIGHT_TOTAL for comp in COMPONENTS}
-        pi = players.player_info.loc[(first, last)]
+        try:
+            pi = players.player_info_proj.loc[(first, last)]
+        except KeyError:
+            pi = players.player_info.loc[(first, last)]
         train_rows.append({
             'first': first, 'last': last,
             'power': int(pi['power']), 'contact': int(pi['contact']), 'speed': int(pi['speed']),
@@ -77,7 +81,10 @@ def compute():
     for (first, last) in active:
         if players.player_info.loc[(first, last)]['ppos'] == 'P':
             continue
-        pi       = players.player_info.loc[(first, last)]
+        try:
+            pi = players.player_info_proj.loc[(first, last)]
+        except KeyError:
+            pi = players.player_info.loc[(first, last)]
         power    = int(pi['power'])
         contact  = int(pi['contact'])
         speed    = int(pi['speed'])
@@ -131,17 +138,17 @@ PA_MAX             = 300
 
 
 def fit_pa_model():
-    """Fit PA ~ POW + CON + SPD + FLD + ARM for active position players using Season 20 data.
+    """Fit PA ~ POW + CON + SPD + FLD + ARM for active position players using last completed season data.
 
     Returns dict with keys: model, r2, rmse, coefs, intercept, n.
     """
     s20 = bat_module.stats[
-        (bat_module.stats['season'] == 20) &
+        (bat_module.stats['season'] == LAST_COMPLETED_SEASON) &
         (bat_module.stats['stat_type'] == 'season') &
         (bat_module.stats['pa'] > 0)
     ].copy()
 
-    pi = players.player_info.reset_index()
+    pi = players.player_info_proj.reset_index()
     pi = pi[pi['ppos'] != 'P'][['first_name', 'last_name'] + PA_FEATURES]
     merged = s20.merge(pi, left_on=['First Name', 'Last Name'],
                            right_on=['first_name', 'last_name'])
@@ -208,7 +215,7 @@ def compute_all():
     lg_slg_20  = _lg_avg('slg')
 
     s20 = bat_module.stats[
-        (bat_module.stats['season'] == 20) &
+        (bat_module.stats['season'] == LAST_COMPLETED_SEASON) &
         (bat_module.stats['stat_type'] == 'season') &
         (bat_module.stats['pa'] > 0) &
         (bat_module.stats['gb'] > 0)

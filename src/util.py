@@ -141,6 +141,7 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
     import leaders as leaders_mod
     from data import teams as teams_data
     from leaders import SEASON_THRESHOLDS
+    import league as lg
 
     _always_hidden = {'stat_type', 'First Name', 'Last Name'}
     _hidden = _always_hidden | (set(hidden) if hidden else set())
@@ -242,9 +243,10 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
                                     try:
                                         fval     = float(raw_val)
                                         qual_col = meta.get('qual_col', 'pa')
+                                        threshold = SEASON_THRESHOLDS.get(qual_col, 0) * lg.season_scale.get(season, 1.0)
                                         qualifies = (
                                             not meta['qualified']
-                                            or raw_row.get(qual_col, 0) >= SEASON_THRESHOLDS.get(qual_col, 0)
+                                            or raw_row.get(qual_col, 0) >= threshold
                                         )
                                         if qualifies and season in overall_ldr.index and col in overall_ldr.columns:
                                             best_o = float(overall_ldr.loc[season, col])

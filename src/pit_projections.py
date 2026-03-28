@@ -17,7 +17,7 @@ from data import players
 from data import teams as teams_data
 from constants import (PIT_SEASON_MIN_IP,
                        PROJ_SEASONS, PROJ_WEIGHTS as WEIGHTS, PROJ_WEIGHT_TOTAL as WEIGHT_TOTAL,
-                       total_WAR, batter_share)
+                       total_WAR, batter_share, CURRENT_SEASON, LAST_COMPLETED_SEASON)
 
 # Component names as they appear in pitching.stats (final column names after rename)
 COMPONENTS   = ['p_k', 'p_bb', 'p_hbp', 'p_hr', 'p_h']   # per-BF rates
@@ -77,7 +77,10 @@ def compute():
             group.loc[group['season'] == s, f'{comp}_rate'].iloc[0] * WEIGHTS[s]
             for s in PROJ_SEASONS
         ) / WEIGHT_TOTAL for comp in COMPONENTS}
-        pi = players.player_info.loc[(first, last)]
+        try:
+            pi = players.player_info_proj.loc[(first, last)]
+        except KeyError:
+            pi = players.player_info.loc[(first, last)]
         train_rows.append({
             'first': first, 'last': last,
             'velocity': int(pi['velocity']), 'junk': int(pi['junk']), 'accuracy': int(pi['accuracy']),
@@ -121,7 +124,10 @@ def compute():
 
     rows = []
     for (first, last) in pit_keys:
-        pi       = players.player_info.loc[(first, last)]
+        try:
+            pi = players.player_info_proj.loc[(first, last)]
+        except KeyError:
+            pi = players.player_info.loc[(first, last)]
         velocity = int(pi['velocity'])
         junk     = int(pi['junk'])
         accuracy = int(pi['accuracy'])
@@ -176,18 +182,18 @@ def compute():
 
 
 def fit_ip_model():
-    """Fit IP/appearance ~ VEL + JNK + ACC for each role group using Season 20 data.
+    """Fit IP/appearance ~ VEL + JNK + ACC for each role group using last completed season data.
 
     Role groups: 'SP' (uses p_gs), 'SP/RP' (uses p_gp), 'reliever' (RP+CL, uses p_gr).
     Returns dict keyed by role group, each value a dict: model, r2, rmse, coefs, intercept, n.
     """
     s20 = pit_module.stats[
-        (pit_module.stats['season'] == 20) &
+        (pit_module.stats['season'] == LAST_COMPLETED_SEASON) &
         (pit_module.stats['stat_type'] == 'season') &
         (pit_module.stats['p_ip'] > 0)
     ].copy()
 
-    pi = players.player_info.reset_index()
+    pi = players.player_info_proj.reset_index()
     pi = pi[pi['ppos'] == 'P'][['first_name', 'last_name'] + IP_FEATURES]
     merged = s20.merge(pi, left_on=['First Name', 'Last Name'],
                            right_on=['first_name', 'last_name'])

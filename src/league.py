@@ -12,6 +12,7 @@ from constants import (
     runs_SV, SPRP_INNING_SHARE,
     batter_WAR, starter_WAR, reliever_WAR, RUNS_PER_WIN,
     num_games,
+    CURRENT_SEASON, TOTAL_SEASON_GAMES,
 )
 from formulas import (
     _div,
@@ -37,11 +38,22 @@ team_defense    = None
 role_pitching   = None
 role_leverage   = None
 role_innings    = None
+season_scale    = {}  # season -> float: 1.0 for completed seasons, fraction for in-progress
+
+
+def _completed_games_s21():
+    """Return the number of completed games in Season 21 from the schedule CSV."""
+    from data.sources import season21_latest
+    path = season21_latest('schedule')
+    if path is None:
+        return 0
+    sched = pd.read_csv(path)
+    return int(sched.dropna(subset=['home_score', 'away_score']).shape[0])
 
 
 def compute_league():
     global pos_fielding, pos_adjustment, season_batting, season_pitching
-    global team_defense, role_pitching, role_leverage, role_innings
+    global team_defense, role_pitching, role_leverage, role_innings, season_scale
 
     from data import stats as raw
     batters  = raw.batting_stats
@@ -97,15 +109,25 @@ def compute_league():
     compute_woba(sb)
     compute_sb_pct(sb)
     sb['ops']     = sb['obp'] + sb['slg']
-    sb['g']       = batters.groupby('season')['team'].nunique() * num_games
+    # Season scale: 1.0 for completed seasons, X = completed_games/TOTAL_SEASON_GAMES for in-progress
+    s_scale = {s: 1.0 for s in sb.index}
+    if CURRENT_SEASON in sb.index:
+        s_scale[CURRENT_SEASON] = _completed_games_s21() / TOTAL_SEASON_GAMES
+    season_scale = s_scale
+
+    sb['g'] = batters.groupby('season')['team'].nunique() * num_games
+    if CURRENT_SEASON in sb.index:
+        sb.loc[CURRENT_SEASON, 'g'] *= s_scale[CURRENT_SEASON]
     sb['r_per_g'] = _div(sb['r'], sb['g'])
     sb['wrc']     = (((sb['woba'] - sb['woba'].mean()) / scale_wOBA) + (sb['r'] / sb['pa'])) * sb['pa']
     sb['lg_wsb']  = _div(
         sb['sb'] * runs_SB + sb['cs'] * runs_CS,
         sb['b_1b'] + sb['bb'] + sb['hbp'],
     )
-    sb['r_per_w']  = RUNS_PER_WIN * sb['r'] / sb['r'].mean()
-    sb['rw_per_pa'] = batter_WAR / sb['pa']
+    # Use per-game run rate (not total) so partial seasons don't distort r_per_w
+    sb['r_per_w']   = RUNS_PER_WIN * sb['r_per_g'] / sb['r_per_g'].mean()
+    scale_s = sb.index.map(lambda s: s_scale.get(s, 1.0))
+    sb['rw_per_pa'] = batter_WAR * scale_s / sb['pa']
     sb['rr_per_pa'] = sb['rw_per_pa'] * sb['r_per_w']
     sb['r_per_pa']  = _div(sb['r'], sb['pa'])
     season_batting = sb
@@ -137,7 +159,9 @@ def compute_league():
     compute_p_p_per_ip(sp)
     compute_p_p_per_pa(sp)
     compute_p_gr(sp)
-    sp['g']        = pitchers.groupby('season')['team'].nunique() * num_games
+    sp['g'] = pitchers.groupby('season')['team'].nunique() * num_games
+    if CURRENT_SEASON in sp.index:
+        sp.loc[CURRENT_SEASON, 'g'] *= s_scale[CURRENT_SEASON]
     sp['p_r_per_g'] = _div(sp['p_ra'], sp['g'])
     season_pitching = sp
 
@@ -181,13 +205,16 @@ def compute_league():
     def ip_adjusted(row):
         season = row.name[0]
         role   = row.name[1]
+        sc  = s_scale.get(season, 1.0)
+        sw  = starter_WAR  * sc
+        rw  = reliever_WAR * sc
         if role == 'SP':
-            return starter_WAR / (row['p_ip'] + sprp_innings.get(season, 0) * SPRP_INNING_SHARE)
+            return sw / (row['p_ip'] + sprp_innings.get(season, 0) * SPRP_INNING_SHARE)
         elif role == 'RP':
-            return reliever_WAR / (row['p_ip'] + sprp_innings.get(season, 0) * (1 - SPRP_INNING_SHARE))
+            return rw / (row['p_ip'] + sprp_innings.get(season, 0) * (1 - SPRP_INNING_SHARE))
         elif role == 'SP/RP':
-            sp_war = starter_WAR  / (sp_innings.get(season, 0) + sprp_innings.get(season, 0) * SPRP_INNING_SHARE)
-            rp_war = reliever_WAR / (rp_innings.get(season, 0) + sprp_innings.get(season, 0) * (1 - SPRP_INNING_SHARE))
+            sp_war = sw / (sp_innings.get(season, 0) + sprp_innings.get(season, 0) * SPRP_INNING_SHARE)
+            rp_war = rw / (rp_innings.get(season, 0) + sprp_innings.get(season, 0) * (1 - SPRP_INNING_SHARE))
             return (sp_war + rp_war) / 2
         else:
             raise ValueError(f"Unmatched role: {role}")

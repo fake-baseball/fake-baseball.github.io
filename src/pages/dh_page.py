@@ -8,7 +8,7 @@ import projections as proj_module
 import batting as bat_module
 from data import players
 from data import teams as teams_data
-from constants import num_games, runs_E_new, runs_PB, mlb_E_rate
+from constants import num_games, runs_E_new, runs_PB, mlb_E_rate, CURRENT_SEASON, LAST_COMPLETED_SEASON
 
 from util import make_doc, render_table, fmt_round
 from registry import REGISTRY
@@ -261,8 +261,8 @@ def generate_dh():
     for r in rows:
         r['_team_abbr'] = abbr_map.get(r['team'], r['team']) if r['team'] != 'FREE AGENT' else None
 
-    # Season 20 error/PB rates per player
-    edf = bat_module.stats[(bat_module.stats['season'] == 20) & (bat_module.stats['gb'] > 0)].copy()
+    # Last completed season error/PB rates per player
+    edf = bat_module.stats[(bat_module.stats['season'] == LAST_COMPLETED_SEASON) & (bat_module.stats['gb'] > 0)].copy()
     edf['e_rate'] = edf['e'] / edf['gb']
     edf['pb_rate'] = edf['pb'] / edf['gb']
     e_rate_map = {}
@@ -271,12 +271,12 @@ def generate_dh():
             'e_rate':  row['e_rate'],
             'pb_rate': row['pb_rate'],
         }
-    # League-average PB/GB for catchers from Season 20
+    # League-average PB/GB for catchers from current season
     cat_df = edf[edf['pos1'] == 'C']
     lg_pb_rate = cat_df['pb_rate'].mean() if len(cat_df) > 0 else 0.0
 
-    # Old model Rdef from Season 20
-    s20 = bat_module.stats[bat_module.stats['season'] == 20][['First Name', 'Last Name', 'r_def']]
+    # Old model Rdef from current season
+    s20 = bat_module.stats[(bat_module.stats['season'] == LAST_COMPLETED_SEASON)][['First Name', 'Last Name', 'r_def']]
     old_rdef_map = {(row['First Name'], row['Last Name']): row['r_def'] for _, row in s20.iterrows()}
     for r in rows:
         r['_dh_rdef_old'] = old_rdef_map.get((r['first'], r['last']))
@@ -379,12 +379,12 @@ def generate_dh():
           "Secondary positions use the same scale factor and league mean as the corresponding primary position. "
           "Positive values mean above-average defense; negative values mean below-average.")
         h3("Rdef(E20)")
-        p("Error-based defensive correction using Season 20 data. Compares a player's actual error "
+        p(f"Error-based defensive correction using Season {LAST_COMPLETED_SEASON} data. Compares a player's actual error "
           "rate (errors per game batted) against the MLB positional average error rate (2021-2025), "
           "weighted by their probability of playing each position. "
           "Formula: (actual_E_rate - expected_E_rate) x xGB x runs_E, "
           "where runs_E = -0.4 runs per error. "
-          "For catchers, a passed ball correction is also applied using the Season 20 league-average "
+          f"For catchers, a passed ball correction is also applied using the Season {LAST_COMPLETED_SEASON} league-average "
           "PB rate as the baseline. Positive values indicate fewer errors than positionally expected.")
         h3("Rdef")
         p("Total defensive runs above average: Rdef(A) + Rdef(E20). "

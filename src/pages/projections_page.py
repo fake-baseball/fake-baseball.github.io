@@ -174,7 +174,7 @@ def _top50_section(rows, pit_rows, ppos_map):
                             f"{r['xK']} K, {r['xSV']} SV, {war} WAR")
             li(f"{r['first']} {r['last']} ({pos}, {abbr}): {line}")
 
-from constants import replacement_level
+from constants import replacement_level, CURRENT_SEASON, LAST_COMPLETED_SEASON
 
 
 def _rookie_war_list(bat_rookies, pit_rookies, ppos_map, n=10):
@@ -299,9 +299,9 @@ def generate_projections():
         h3("Team Projections")
         _team_summary_table(team_rows_sorted)
 
-        # WAR delta: xWAR vs Season 20 WAR
+        # WAR delta: xWAR vs last season WAR
         bat_s20 = bat_module.stats[
-            (bat_module.stats['season'] == 20) & (bat_module.stats['stat_type'] == 'season')
+            (bat_module.stats['season'] == LAST_COMPLETED_SEASON) & (bat_module.stats['stat_type'] == 'season')
         ].set_index(['First Name', 'Last Name'])
         bat_deltas = []
         for r in rows:
@@ -311,7 +311,7 @@ def generate_projections():
                 bat_deltas.append((r['first'], r['last'], s20_war, r['xWAR'], r['xWAR'] - s20_war))
         bat_deltas.sort(key=lambda x: x[4], reverse=True)
 
-        h3("WAR Delta (xWAR - S20 WAR)")
+        h3(f"WAR Delta (xWAR - S{LAST_COMPLETED_SEASON} WAR)")
         p("Bounce-back candidates (top 10):")
         _war_delta_table(bat_deltas[:10])
         p("Regression candidates (bottom 10):")
@@ -329,9 +329,9 @@ def generate_projections():
         h3("Team Projections")
         _pit_team_summary_table(pit_team_rows_sorted)
 
-        # WAR delta: xWAR vs Season 20 WAR
+        # WAR delta: xWAR vs last season WAR
         pit_s20 = pit_module.stats[
-            (pit_module.stats['season'] == 20) & (pit_module.stats['stat_type'] == 'season')
+            (pit_module.stats['season'] == LAST_COMPLETED_SEASON) & (pit_module.stats['stat_type'] == 'season')
         ].set_index(['First Name', 'Last Name'])
         pit_deltas = []
         for r in pit_rows:
@@ -341,7 +341,7 @@ def generate_projections():
                 pit_deltas.append((r['first'], r['last'], s20_war, r['xWAR'], r['xWAR'] - s20_war))
         pit_deltas.sort(key=lambda x: x[4], reverse=True)
 
-        h3("WAR Delta (xWAR - S20 WAR)")
+        h3(f"WAR Delta (xWAR - S{LAST_COMPLETED_SEASON} WAR)")
         p("Bounce-back candidates (top 10):")
         _war_delta_table(pit_deltas[:10])
         p("Regression candidates (bottom 10):")
@@ -382,9 +382,9 @@ def _methodology_section():
             b(f"{name}: ")
             span(desc)
 
-    _stat("xPA", "Projected plate appearances. Predicted by OLS regression on "
-          "POW + CON + SPD + FLD + ARM skill ratings, fit on Season 20 data. "
-          "Capped at 300.")
+    _stat("xPA", f"Projected plate appearances. Predicted by OLS regression on "
+          f"POW + CON + SPD + FLD + ARM skill ratings, fit on Season {LAST_COMPLETED_SEASON} data. "
+          f"Capped at 300.")
     _stat("Component rates (1B, 2B, 3B, HR, K, BB, HBP, SB, CS per PA)",
           "Blended 5/4/3 from the player's actual per-PA rates in each projection "
           "season. For seasons where the player did not reach the PA minimum, "
@@ -408,8 +408,8 @@ def _methodology_section():
           "player's team park factor (same formula as actual wRC+), then "
           "scaled to 100 x league average.")
     _stat("xGB",
-          "Projected games batted = xPA / league-average PA-per-game (from Season 20), "
-          "rounded to an integer and capped at 0-80.")
+          f"Projected games batted = xPA / league-average PA-per-game (from Season {LAST_COMPLETED_SEASON}), "
+          f"rounded to an integer and capped at 0-80.")
     _stat("xHR / xK / xSB / xCS",
           "Counting stats = round(xPA x blended rate).")
     _stat("xR",

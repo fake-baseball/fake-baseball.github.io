@@ -4,8 +4,7 @@ from pathlib import Path
 from dominate.tags import *
 import batting as bat_module
 import pitching as pit_module
-import projections as proj_module
-import pit_projections as pit_proj_module
+from constants import CURRENT_SEASON
 from data import teams as teams_data
 from data import players
 from registry import REGISTRY
@@ -16,13 +15,14 @@ _POSITION_COLS = ['Name', '#', 'pos1', 'pos2', 'bats', 'power', 'contact', 'spee
 
 
 def _batter_stats(first, last):
-    """Returns dict of formatted stats for the most recent season, or None."""
+    """Returns dict of season 21 stats, or None if no games played."""
     df = bat_module.stats
-    mask = (df['First Name'] == first) & (df['Last Name'] == last) & (df['stat_type'] == 'season')
+    mask = ((df['First Name'] == first) & (df['Last Name'] == last) &
+            (df['stat_type'] == 'season') & (df['season'] == CURRENT_SEASON))
     rows = df[mask]
     if rows.empty:
         return None
-    row = rows.loc[rows['season'].idxmax()]
+    row = rows.iloc[0]
     def _fmt(stat, val):
         m = REGISTRY[stat]
         return fmt_round(val, m['decimal_places'], m['leading_zero'])
@@ -35,28 +35,11 @@ def _batter_stats(first, last):
     }
 
 
-def _batter_proj(first, last, proj_by_player):
-    """Returns dict of formatted projected stats, or None."""
-    proj = proj_by_player.get((first, last))
-    if proj is None:
-        return None
-    def _fmt(stat, val):
-        m = REGISTRY[stat]
-        return fmt_round(val, m['decimal_places'], m['leading_zero'])
-    return {
-        'AVG': _fmt('avg', proj['xAVG']),
-        'HR':  int(round(proj['xHR'])),
-        'RBI': int(round(proj['xRBI'])),
-        'OPS': _fmt('ops', proj['xOPS']),
-        'WAR': _fmt('war', proj['xWAR']),
-    }
-
-
-def _pitcher_s20(first, last):
-    """Returns dict of Season 20 pitcher stats, or None."""
+def _pitcher_stats(first, last):
+    """Returns dict of season 21 pitcher stats, or None if no games played."""
     df = pit_module.stats
     mask = ((df['First Name'] == first) & (df['Last Name'] == last) &
-            (df['stat_type'] == 'season') & (df['season'] == 20))
+            (df['stat_type'] == 'season') & (df['season'] == CURRENT_SEASON))
     rows = df[mask]
     if rows.empty:
         return None
@@ -74,56 +57,28 @@ def _pitcher_s20(first, last):
     }
 
 
-def _pitcher_proj(first, last, proj_by_player):
-    """Returns dict of formatted projected pitcher stats, or None."""
-    proj = proj_by_player.get((first, last))
-    if proj is None:
-        return None
-    def _fmt(stat, val):
-        m = REGISTRY[stat]
-        return fmt_round(val, m['decimal_places'], m['leading_zero'])
-    return {
-        'W-L': f"{int(round(proj['xW']))}-{int(round(proj['xL']))}",
-        'SV':  int(round(proj['xSV'])),
-        'ERA': _fmt('p_era', proj['xERA']),
-        'IP':  f"{proj['proj_ip']:.1f}",
-        'K':   int(round(proj['xK'])),
-        'WAR': _fmt('p_war', proj['xWAR']),
-    }
-
-
 def _pitcher_table(players_list, stat_rows):
     """Transposed pitcher stat table. players_list: list of (col_label, first, last)."""
-    proj_rows = pit_proj_module.compute_all()
-    proj_by_player = {(r['first'], r['last']): r for r in proj_rows}
     data = [
-        (label, first, last, _pitcher_s20(first, last), _pitcher_proj(first, last, proj_by_player))
+        (label, first, last, _pitcher_stats(first, last))
         for label, first, last in players_list
     ]
     with table(border=0):
         with thead():
             with tr():
                 th()
-                for _, first, last, _, _ in data:
+                for _, first, last, _ in data:
                     th(f"{first} {last}")
             with tr():
                 th()
-                for label, _, _, _, _ in data:
+                for label, _, _, _ in data:
                     th(label)
         with tbody():
             for stat in stat_rows:
                 with tr():
                     th(stat)
-                    for _, _, _, s20, proj in data:
-                        if s20 is None:
-                            if proj is not None:
-                                td(f"({proj[stat]})")
-                            else:
-                                td('-')
-                        elif proj is not None:
-                            td(f"{s20[stat]} ({proj[stat]})")
-                        else:
-                            td(s20[stat])
+                    for _, _, _, s21 in data:
+                        td(s21[stat] if s21 is not None else '-')
 
 
 def _pitcher_statline(first, last):
@@ -193,40 +148,28 @@ def generate_team_page(team_name, roster, team_info):
         p(f"{team_info['conference_name']} - {team_info['division_name']}")
         h2("Starters")
         h3("Lineup")
-        proj_rows = proj_module.compute_all()
-        proj_by_player = {(r['first'], r['last']): r for r in proj_rows}
         players_data = [
             (row['firstName'], row['lastName'], row['pos'],
-             _batter_stats(row['firstName'], row['lastName']),
-             _batter_proj(row['firstName'], row['lastName'], proj_by_player))
+             _batter_stats(row['firstName'], row['lastName']))
             for _, row in lineup.iterrows()
         ]
-        _PROJ_STATS = {'AVG', 'HR', 'RBI', 'OPS', 'WAR'}
         stat_rows = ['AVG', 'HR', 'RBI', 'OPS', 'WAR']
         with table(border=0):
             with thead():
                 with tr():
                     th()
-                    for first, last, pos, _, _ in players_data:
+                    for first, last, pos, _ in players_data:
                         th(f"{first} {last}")
                 with tr():
                     th()
-                    for _, _, pos, _, _ in players_data:
+                    for _, _, pos, _ in players_data:
                         th(pos)
             with tbody():
                 for stat in stat_rows:
                     with tr():
                         th(stat)
-                        for _, _, _, stats, proj in players_data:
-                            if stats is None:
-                                if stat in _PROJ_STATS and proj is not None:
-                                    td(f"({proj[stat]})")
-                                else:
-                                    td('-')
-                            elif stat in _PROJ_STATS and proj is not None:
-                                td(f"{stats[stat]} ({proj[stat]})")
-                            else:
-                                td(stats[stat])
+                        for _, _, _, stats in players_data:
+                            td(stats[stat] if stats is not None else '-')
         h3("Rotation")
         rotation_list = [
             (f"SP{int(row['rotation'])}", row['firstName'], row['lastName'])

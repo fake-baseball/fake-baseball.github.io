@@ -8,6 +8,7 @@ from dominate.tags import *
 
 RIDGE_ALPHAS = [0.01, 0.1, 1, 10, 100, 1000, 10000]
 
+from constants import CURRENT_SEASON, LAST_COMPLETED_SEASON
 from util import make_doc, convert_name
 from data import players
 from data import teams as teams_data
@@ -409,9 +410,9 @@ def _player_table(rows, skills, labels, abbr_map, war_model_info, war_linear_inf
 
 
 def _build_war_map(stats_df, war_col='WAR'):
-    """Return {(first, last): WAR} from Season 20 season rows."""
+    """Return {(first, last): WAR} from current season rows."""
     s20 = stats_df[
-        (stats_df['season'] == 20) & (stats_df['stat_type'] == 'season')
+        (stats_df['season'] == LAST_COMPLETED_SEASON) & (stats_df['stat_type'] == 'season')
     ]
     return {
         (row['First Name'], row['Last Name']): float(row[war_col])
@@ -457,7 +458,7 @@ def _methodology_section():
       "-- each regressing log(salary) on projected WAR:")
     with ul():
         li("Projected WAR (xWAR from the Marcel-style projection system) is used as the "
-           "predictor rather than Season 20 actual WAR. Contracts are forward-looking bets on "
+           f"predictor rather than Season {LAST_COMPLETED_SEASON} actual WAR. Contracts are forward-looking bets on "
            "future performance, so the projected distribution better matches the salary-setting "
            "context than realized outcomes.")
         li("Only players with projected WAR > 0 are included in the fit. Replacement-level "
@@ -468,7 +469,7 @@ def _methodology_section():
            "exponentially more than a 1-WAR player, reflecting both the scarcity of elite "
            "performance and the convex value of wins near playoff thresholds.")
         li("Duan's smearing correction is applied on back-transformation, as in the skills model.")
-        li("Pred (WAR) in the player table applies the fitted model to the player's Season 20 "
+        li(f"Pred (WAR) in the player table applies the fitted model to the player's Season {LAST_COMPLETED_SEASON} "
            "actual WAR -- a backward-looking view. Pred (Proj WAR) applies the same model to "
            "their projected WAR -- a forward-looking view.")
 
@@ -496,7 +497,7 @@ def _methodology_section():
         li("Pred (Skills): the salary the skills model says this player should earn, given "
            "their skill ratings. Positive Diff (Skills) means the player is underpaid relative "
            "to what the market model implies for their skills; negative means overpaid.")
-        li("Pred (WAR): the salary implied by the player's Season 20 actual WAR. This is a "
+        li(f"Pred (WAR): the salary implied by the player's Season {LAST_COMPLETED_SEASON} actual WAR. This is a "
            "backward-looking measure -- useful for evaluating whether last season's performance "
            "was fairly compensated.")
         li("Pred (Proj WAR): the salary implied by the player's projected WAR. This is the "

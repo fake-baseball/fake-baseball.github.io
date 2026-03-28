@@ -9,6 +9,7 @@ from dominate.util import raw
 import batting
 import leaders
 import projections as proj_module
+from constants import CURRENT_SEASON, LAST_COMPLETED_SEASON
 from data import players
 from data import teams as teams_data
 from registry import REGISTRY
@@ -25,19 +26,19 @@ _SUMMARY_COLS = [
 
 
 def _summary_table(stats, proj_row):
-    """Render BB-ref style summary strip: Season 20, Projected, Career."""
+    """Render BB-ref style summary strip: current season, Projected, Career."""
     def _fmt(col, val):
         meta = _ALL_BAT.get(col)
         if meta is None or (isinstance(val, float) and np.isnan(val)):
             return '-'
         return fmt_round(val, meta['decimal_places'], meta['leading_zero'], meta['percentage'])
 
-    s20    = stats[(stats['season'] == 20) & (stats['stat_type'] == 'season')]
+    s20    = stats[(stats['season'] == LAST_COMPLETED_SEASON) & (stats['stat_type'] == 'season')]
     career = stats[stats['stat_type'] == 'career']
 
     rows_data = []
     if not s20.empty:
-        rows_data.append(('Season 20', s20.iloc[0]))
+        rows_data.append((f'Season {LAST_COMPLETED_SEASON}', s20.iloc[0]))
     if proj_row is not None:
         rows_data.append(('Projected', proj_row.iloc[0]))
     if not career.empty:

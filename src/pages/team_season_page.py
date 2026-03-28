@@ -5,6 +5,7 @@ from dominate.tags import *
 
 import batting as bat_module
 import pitching as pit_module
+from constants import CURRENT_SEASON
 from data import teams as teams_data
 from util import make_doc, render_table, fmt_round
 
@@ -82,19 +83,20 @@ def generate_team_season_page(team_name, season_num, abbr):
         h3("Standard Pitching")
         render_table(_prep(pit_stats, _PIT_COLS), depth=2)
 
-        if season_num == 20 and teams_data.schedule20 is not None:
+        if teams_data.schedules.get(season_num) is not None:
             h2("Game Log")
-            sched = teams_data.schedule20
+            sched = teams_data.schedules[season_num]
             games = sched[(sched['Home Team'] == team_name) | (sched['Away Team'] == team_name)].copy()
             games = games.sort_values('Game #').reset_index(drop=True)
-            w_count = l_count = 0
+            w_count = l_count = streak_char = streak_len = 0
             with table(border=0):
                 with thead():
                     with tr():
-                        for col in ['#', 'Day', 'H/A', 'Opponent', 'R', 'RA', 'W/L', 'Record']:
+                        for col in ['#', 'H/A', 'Opponent', 'R', 'RA', 'W/L', 'Record']:
                             th(col)
+                        th('Streak', style='text-align:left')
                 with tbody():
-                    for _, g in games.iterrows():
+                    for game_num, (_, g) in enumerate(games.iterrows(), start=1):
                         home = g['Home Team'] == team_name
                         opp  = g['Away Team'] if home else g['Home Team']
                         r    = int(g['Home Score'] if home else g['Away Score'])
@@ -102,18 +104,27 @@ def generate_team_season_page(team_name, season_num, abbr):
                         win  = r > ra
                         if win:
                             w_count += 1
+                            if streak_char == 'W':
+                                streak_len += 1
+                            else:
+                                streak_char, streak_len = 'W', 1
                         else:
                             l_count += 1
+                            if streak_char == 'L':
+                                streak_len += 1
+                            else:
+                                streak_char, streak_len = 'L', 1
+                        day  = g.get('Day')
                         opp_slug = opp.replace(' ', '')
                         with tr():
-                            td(int(g['Game #']))
-                            td(int(g['Day']))
+                            td(int(day) if day is not None else game_num)
                             td('H' if home else 'A')
                             td(a(opp, href=f"../../teams/{opp_slug}/20.html"))
                             td(r)
                             td(ra)
                             td('W' if win else 'L')
                             td(f"{w_count}-{l_count}")
+                            td('+' * streak_len if streak_char == 'W' else '\u2212' * streak_len, style='text-align:left')
 
     slug = team_name.replace(' ', '')
     Path(f"docs/teams/{slug}/{season_num}.html").write_text(str(doc))

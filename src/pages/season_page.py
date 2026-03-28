@@ -6,6 +6,7 @@ from dominate.tags import *
 import pandas as pd
 
 import league as lg
+from constants import CURRENT_SEASON, num_games, SEASON_RANGE
 from data import teams as teams_data
 from util import make_doc, render_table, fmt_round, fmt_rdiff
 from registry import REGISTRY
@@ -30,10 +31,10 @@ def _split_records(sched, div_map, conf_map, winning_teams):
     Shutout W = games where team held opponent to 0; L = games where team was held to 0.
     """
     keys = ['div', 'conf', 'inter', 'one_run', 'blowout', 'home', 'away', 'vs500',
-            'first_half', 'second_half', 'shutout']
+            'first_half', 'second_half', 'last10', 'shutout']
     records = {t: {k: [0, 0] for k in keys} for t in div_map}
 
-    # Count total games per team to determine the half-season boundary.
+    HALF = num_games // 2  # first half = games 1-40, second half = games 41-80
     total_games = {t: 0 for t in div_map}
     for _, g in sched.iterrows():
         total_games[g['Home Team']] += 1
@@ -63,8 +64,10 @@ def _split_records(sched, div_map, conf_map, winning_teams):
             records[team]['home' if is_home else 'away'][idx] += 1
             if opp in winning_teams:
                 records[team]['vs500'][idx] += 1
-            half = 'first_half' if game_count[team] <= total_games[team] // 2 else 'second_half'
+            half = 'first_half' if game_count[team] <= HALF else 'second_half'
             records[team][half][idx] += 1
+            if game_count[team] > total_games[team] - 10:
+                records[team]['last10'][idx] += 1
             if os == 0:
                 records[team]['shutout'][0] += 1  # team shut out opponent (always a win)
             if ts == 0:
@@ -81,7 +84,7 @@ def _standings_section(season_num):
     ).map(lambda v: f"{v:.3f}".lstrip('0'))
     season_rows['Diff'] = season_rows['runsFor'] - season_rows['runsAgainst']
 
-    sched = teams_data.schedule20 if season_num == 20 else None
+    sched = teams_data.schedules.get(season_num)
     split = None
     if sched is not None:
         teams_df = teams_data.teams
@@ -92,7 +95,7 @@ def _standings_section(season_num):
         )
         split = _split_records(sched, div_map, conf_map, winning_teams)
 
-    extra_cols = ['Div', 'Conf', 'Inter', '1-Run', 'Blowout', 'Home', 'Away', 'vs. >500',
+    extra_cols = ['L10', 'Div', 'Conf', 'Inter', '1-Run', 'Blowout', 'Home', 'Away', 'vs. >.500',
                   '1st Half', '2nd Half', 'SHO'] if split else []
 
     h2("Standings")
@@ -106,7 +109,7 @@ def _standings_section(season_num):
                         for col in ['Team', 'W', 'L', 'Pct', 'GB', 'RS', 'RA', 'Diff'] + extra_cols:
                             th(col)
                 with tbody():
-                    for _, row in div_group.sort_values('gamesWon', ascending=False).iterrows():
+                    for _, row in div_group.sort_values(['gamesWon', 'Diff'], ascending=[False, False]).iterrows():
                         slug = row['teamName'].replace(' ', '')
                         with tr():
                             td(a(row['teamName'], href=f"../teams/{slug}/{season_num}.html"))
@@ -119,6 +122,7 @@ def _standings_section(season_num):
                             td(fmt_rdiff(row['Diff']))
                             if split:
                                 rec = split[row['teamName']]
+                                td(_fmt_rec(*rec['last10']))
                                 td(_fmt_rec(*rec['div']))
                                 td(_fmt_rec(*rec['conf']))
                                 td(_fmt_rec(*rec['inter']))
@@ -130,6 +134,44 @@ def _standings_section(season_num):
                                 td(_fmt_rec(*rec['first_half']))
                                 td(_fmt_rec(*rec['second_half']))
                                 td(_fmt_rec(*rec['shutout']))
+
+    _wildcard_section(season_num, season_rows, split)
+
+
+def _wildcard_section(season_num, season_rows, split):
+    wc = season_rows[season_rows['GB'] != 0].copy()
+    if wc.empty:
+        return
+    h2("Wild Card")
+    for conf_name, conf_group in wc.groupby('conference_name', sort=False):
+        h3(conf_name)
+        conf_group = conf_group.copy()
+        leader = conf_group.sort_values(['gamesWon', 'gamesLost'], ascending=[False, True]).iloc[0]
+        max_w, min_l = leader['gamesWon'], leader['gamesLost']
+        conf_group['WC_GB'] = ((max_w - conf_group['gamesWon']) + (conf_group['gamesLost'] - min_l)) / 2
+        conf_group = conf_group.sort_values(['WC_GB', 'Diff'], ascending=[True, False])
+        wc_cols = ['Team', 'W', 'L', 'Pct', 'GB', 'RS', 'RA', 'Diff']
+        if split:
+            wc_cols.append('L10')
+        with table(border=0):
+            with thead():
+                with tr():
+                    for col in wc_cols:
+                        th(col)
+            with tbody():
+                for _, row in conf_group.iterrows():
+                    slug = row['teamName'].replace(' ', '')
+                    with tr():
+                        td(a(row['teamName'], href=f"../teams/{slug}/{season_num}.html"))
+                        td(row['gamesWon'])
+                        td(row['gamesLost'])
+                        td(row['Pct'])
+                        td(_fmt_gb(row['WC_GB']))
+                        td(row['runsFor'])
+                        td(row['runsAgainst'])
+                        td(fmt_rdiff(row['Diff']))
+                        if split:
+                            td(_fmt_rec(*split[row['teamName']]['last10']))
 
 
 def _league_stats_section(season_num):
@@ -198,7 +240,7 @@ def _leaders_section(season_num):
 
 
 def _h2h_matrix(season_num):
-    sched = teams_data.schedule20
+    sched = teams_data.schedules.get(season_num)
     if sched is None:
         return
     h2("Head-to-Head")
@@ -238,15 +280,27 @@ def _h2h_matrix(season_num):
                             td('—')
                         else:
                             rec = records.get((row_team, col_team), [0, 0])
-                            td(f"{rec[0]}-{rec[1]}")
+                            td(f"{rec[0]}-{rec[1]}" if rec[0] or rec[1] else '')
 
 
 def generate_season_page(season_num):
+    all_seasons = sorted(SEASON_RANGE)
+    idx         = all_seasons.index(season_num)
+    prev_season = all_seasons[idx - 1] if idx > 0 else None
+    next_season = all_seasons[idx + 1] if idx < len(all_seasons) - 1 else None
+
     doc = make_doc(f"Season {season_num}")
     with doc:
         h1(f"Season {season_num}")
+        with p():
+            if prev_season:
+                a(f"<< Season {prev_season}", href=f"{prev_season}.html")
+            if prev_season and next_season:
+                span(" | ")
+            if next_season:
+                a(f"Season {next_season} >>", href=f"{next_season}.html")
         _standings_section(season_num)
         _leaders_section(season_num)
-        if season_num == 20:
+        if season_num == CURRENT_SEASON:
             _h2h_matrix(season_num)
     Path(f"docs/seasons/{season_num}.html").write_text(str(doc))
