@@ -55,7 +55,8 @@ def _pit_summary_table(stats, proj_row):
                     td(label)
                     for _, col in _PIT_SUMMARY_COLS:
                         td(_fmt(col, row[col]))
-from util import fmt_round, render_table, convert_name, make_doc
+from util import fmt_round, fmt_ip, render_table, convert_name, make_doc
+from data.stats import pitching_stream_rows
 
 
 def _pit_proj_row(first, last, cols):
@@ -112,6 +113,50 @@ def _pit_proj_row(first, last, cols):
         if xbb > 0:
             d['p_k_per_bb'] = xk / xbb
     return pd.DataFrame([d])
+
+
+_PIT_STREAM_COLS = [
+    'stream', 'p_w', 'p_l', 'p_win_pct', 'p_era', 'p_gp', 'p_gs', 'p_cg', 'p_sho', 'p_sv', 'p_ip',
+    'p_h', 'p_ra', 'p_er', 'p_hr', 'p_bb', 'p_k', 'p_hbp', 'p_wp', 'p_bf', 'p_whip',
+    'stat_type',
+]
+
+
+def _pit_streams_section(first, last):
+    stream_rows = pitching_stream_rows(first, last)
+    if not stream_rows:
+        return
+
+    frames = []
+    for row in stream_rows:
+        d = {c: np.nan for c in _PIT_STREAM_COLS}
+        d['stream']    = row['stream']
+        d['stat_type'] = 'season'
+        for key in ('p_w', 'p_l', 'p_win_pct', 'p_era', 'p_gp', 'p_gs', 'p_cg', 'p_sho', 'p_sv',
+                    'p_ip', 'p_h', 'p_ra', 'p_er', 'p_hr', 'p_bb', 'p_k', 'p_hbp', 'p_wp', 'p_bf', 'p_whip'):
+            if key in row:
+                d[key] = row[key]
+        frames.append(d)
+
+    # Season total row from the already-computed stats (includes WAR, ERA-, FIP, etc.)
+    s21 = pitching.stats[
+        (pitching.stats['First Name'] == first) &
+        (pitching.stats['Last Name']  == last)  &
+        (pitching.stats['season'] == CURRENT_SEASON) &
+        (pitching.stats['stat_type'] == 'season')
+    ]
+    if not s21.empty:
+        total = s21.iloc[0].reindex(_PIT_STREAM_COLS).copy()
+        total['stream']    = 'Season'
+        total['stat_type'] = 'career'
+        frames.append(total.to_dict())
+
+    if not frames:
+        return
+
+    stream_df = pd.DataFrame(frames, columns=_PIT_STREAM_COLS)
+    h2("Stream-by-stream stats")
+    render_table(stream_df)
 
 
 def generate_pitcher_page(first_name, last_name):
@@ -199,6 +244,9 @@ def generate_pitcher_page(first_name, last_name):
             'p_ra', 'p_r_def', 'p_ra9', 'p_ra9_def', 'p_r_lev', 'p_r_corr',
             'p_raa', 'p_raa_lev', 'p_waa', 'p_r_rep', 'p_rar', 'p_war', 'stat_type',
         ]])
+
+        if active:
+            _pit_streams_section(first_name, last_name)
 
         h2("Awards")
 

@@ -1009,6 +1009,7 @@ REGISTRY = {
     'player':   {'name': 'Player', 'type': 'link',    'align': 'left',  'context': 'meta'},
     'team':     {'name': 'Team',   'type': 'text',    'align': 'left',  'context': 'meta'},
     'season':   {'name': 'Season', 'type': 'text',    'align': 'right', 'context': 'meta'},
+    'stream':   {'name': 'Stream', 'type': 'text',    'align': 'right', 'context': 'meta'},
     'age':      {'name': 'Age',    'type': 'integer', 'align': 'right', 'context': 'meta'},
     'pos1':     {'name': 'PP',     'type': 'text',    'align': 'left',  'context': 'meta'},
     'pos2':     {'name': '2P',     'type': 'text',    'align': 'left',  'context': 'meta'},

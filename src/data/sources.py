@@ -32,3 +32,8 @@ def season21_earliest(prefix):
     """Path to the lowest-numbered season21 file for this prefix."""
     files = _season21_files(prefix)
     return files[0] if files else None
+
+
+def season21_all(prefix):
+    """Sorted list of ALL sheets/season21/{prefix}_NN.csv paths."""
+    return _season21_files(prefix)

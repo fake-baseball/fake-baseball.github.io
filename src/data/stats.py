@@ -4,7 +4,7 @@ import pandas as pd
 
 from formulas import compute_tb, compute_xbh, compute_bip_bat, compute_gf, compute_sb_att
 from formulas import compute_p_bip, compute_p_gr
-from data.sources import BATTERS_CSV, PITCHERS_CSV, TEAMS_CSV, season21_latest
+from data.sources import BATTERS_CSV, PITCHERS_CSV, TEAMS_CSV, season21_latest, season21_all
 
 # Integer position codes used in season21 files
 _POS_MAP  = {1:'P', 2:'C', 3:'1B', 4:'2B', 5:'3B', 6:'SS', 7:'LF', 8:'CF', 9:'RF'}
@@ -32,7 +32,7 @@ def load_batting():
         'GB', 'GP', 'PA', 'AB', 'H', 'HR', 'R', '1B', '2B', '3B', 'RBI',
         'SB', 'CS', 'BB', 'K', 'SH', 'SF', 'HBP', 'E', 'PB',
     ]]
-    data['2P'] = data['2P'].fillna(value="None")
+    data['2P'] = data['2P'].fillna(value="")
     data = data.rename(columns={
         'PP': 'pos1', '2P': 'pos2',
         'Team': 'team', 'Age': 'age', 'Season': 'season',
@@ -71,7 +71,7 @@ def _load_season21_batting():
     d['team']    = raw['mostRecentTeam'].map(abbr)
     d['age']     = raw['age']
     d['pos1']    = raw['primaryPosition'].map(_POS_MAP)
-    d['pos2']    = raw['secondaryPosition'].fillna(0).astype(int).map(_SPOS_MAP).fillna('None')
+    d['pos2']    = raw['secondaryPosition'].fillna(0).astype(int).map(_SPOS_MAP).fillna('')
     d['gb']      = raw['gamesBatting']
     d['b_gp']    = raw['gamesPlayed']
     d['ab']      = raw['atBats']
@@ -164,3 +164,142 @@ def _load_season21_pitching():
     d['p_ra']   = raw['runsAllowed']
     d['p_wp']   = raw['wildPitches']
     return d
+
+
+def batting_stream_rows(first, last):
+    """Return stream-by-stream season 21 batting rows for one player.
+
+    Each element is a dict with counting stat diffs and cumulative rate stats.
+    Streams are numbered sequentially from 1 regardless of which file index
+    the player first appears in.
+    Returns an empty list if the player has no season 21 batting data.
+    """
+    files = season21_all('batting')
+    if not files:
+        return []
+
+    _MAP = {
+        'gamesBatting': 'gb',
+        'atBats': 'ab', 'runs': 'r', 'hits': 'h',
+        'doubles': 'b_2b', 'triples': 'b_3b', 'homeruns': 'hr',
+        'rbi': 'rbi', 'stolenBases': 'sb', 'caughtStealing': 'cs',
+        'baseOnBalls': 'bb', 'strikeOuts': 'k',
+        'hitByPitch': 'hbp', 'sacrificeHits': 'sh', 'sacrificeFlies': 'sf',
+        'errors': 'e', 'passedBalls': 'pb',
+    }
+
+    def _int(snap, col):
+        v = snap[col]
+        return int(v) if not pd.isna(v) else 0
+
+    snapshots = []
+    for path in files:
+        raw = pd.read_csv(path)
+        mask = (raw['firstName'] == first) & (raw['lastName'] == last)
+        snapshots.append(raw[mask].iloc[0] if mask.any() else None)
+
+    if all(s is None for s in snapshots):
+        return []
+
+    import os
+    rows = []
+    prev = None
+    for path, snap in zip(files, snapshots):
+        if snap is None:
+            prev = None
+            continue
+        file_num = int(os.path.basename(path).rsplit('_', 1)[1].split('.')[0])
+        row = {'stream': file_num}
+        for raw_col, key in _MAP.items():
+            curr = _int(snap, raw_col)
+            pv   = _int(prev, raw_col) if prev is not None else 0
+            row[key] = curr - pv
+        row['pa'] = row['ab'] + row['bb'] + row['hbp'] + row['sh'] + row['sf']
+        row['tb'] = row['h'] + row['b_2b'] + 2 * row['b_3b'] + 3 * row['hr']
+        # Cumulative rate stats
+        h   = _int(snap, 'hits')
+        ab  = _int(snap, 'atBats')
+        bb  = _int(snap, 'baseOnBalls')
+        hbp = _int(snap, 'hitByPitch')
+        sf  = _int(snap, 'sacrificeFlies')
+        d2  = _int(snap, 'doubles')
+        d3  = _int(snap, 'triples')
+        xhr = _int(snap, 'homeruns')
+        tb_cum = (h - d2 - d3 - xhr) + 2*d2 + 3*d3 + 4*xhr
+        row['avg'] = h / ab if ab > 0 else 0.0
+        obp_d = ab + bb + hbp + sf
+        row['obp'] = (h + bb + hbp) / obp_d if obp_d > 0 else 0.0
+        row['slg'] = tb_cum / ab if ab > 0 else 0.0
+        row['ops'] = row['obp'] + row['slg']
+        prev = snap
+        rows.append(row)
+
+    return rows
+
+
+def pitching_stream_rows(first, last):
+    """Return stream-by-stream season 21 pitching rows for one player.
+
+    Each element is a dict with counting stat diffs and cumulative rate stats.
+    Streams are numbered sequentially from 1 regardless of which file index
+    the player first appears in.
+    Returns an empty list if the player has no season 21 pitching data.
+    """
+    files = season21_all('pitching')
+    if not files:
+        return []
+
+    _MAP = {
+        'wins': 'p_w', 'losses': 'p_l', 'games': 'p_gp', 'gamesStarted': 'p_gs',
+        'completeGames': 'p_cg', 'shutouts': 'p_sho', 'saves': 'p_sv',
+        'hits': 'p_h', 'earnedRuns': 'p_er', 'homeRuns': 'p_hr',
+        'baseOnBalls': 'p_bb', 'strikeOuts': 'p_k',
+        'battersHitByPitch': 'p_hbp', 'totalPitches': 'p_tp',
+        'battersFaced': 'p_bf', 'runsAllowed': 'p_ra', 'wildPitches': 'p_wp',
+    }
+
+    def _int(snap, col):
+        v = snap[col]
+        return int(v) if not pd.isna(v) else 0
+
+    snapshots = []
+    for path in files:
+        raw = pd.read_csv(path)
+        mask = (raw['firstName'] == first) & (raw['lastName'] == last)
+        snapshots.append(raw[mask].iloc[0] if mask.any() else None)
+
+    if all(s is None for s in snapshots):
+        return []
+
+    import os
+    rows = []
+    prev = None
+    for path, snap in zip(files, snapshots):
+        if snap is None:
+            prev = None
+            continue
+        file_num = int(os.path.basename(path).rsplit('_', 1)[1].split('.')[0])
+        row = {'stream': file_num}
+        for raw_col, key in _MAP.items():
+            curr = _int(snap, raw_col)
+            pv   = _int(prev, raw_col) if prev is not None else 0
+            row[key] = curr - pv
+        # IP: diff outs converted to display notation
+        curr_outs = _int(snap, 'outsPitched')
+        prev_outs = _int(prev, 'outsPitched') if prev is not None else 0
+        diff_outs = curr_outs - prev_outs
+        row['p_ip'] = diff_outs // 3 + (diff_outs % 3) / 10
+        # Cumulative rate stats
+        ip_true  = _int(snap, 'outsPitched') / 3.0
+        er_cum   = _int(snap, 'earnedRuns')
+        bb_cum   = _int(snap, 'baseOnBalls')
+        h_cum    = _int(snap, 'hits')
+        w_cum    = _int(snap, 'wins')
+        l_cum    = _int(snap, 'losses')
+        row['p_era']     = (er_cum * 9.0) / ip_true if ip_true > 0 else 0.0
+        row['p_whip']    = (bb_cum + h_cum) / ip_true if ip_true > 0 else 0.0
+        row['p_win_pct'] = w_cum / (w_cum + l_cum) if (w_cum + l_cum) > 0 else np.nan
+        prev = snap
+        rows.append(row)
+
+    return rows

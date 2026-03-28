@@ -14,6 +14,7 @@ from data import players
 from data import teams as teams_data
 from registry import REGISTRY
 from util import fmt_round, render_table, convert_name, make_doc
+from data.stats import batting_stream_rows
 
 _BAT_CONTEXTS = {'batting', 'baserunning', 'fielding'}
 _ALL_BAT = {k: v for k, v in REGISTRY.items() if v.get('context') in _BAT_CONTEXTS}
@@ -126,6 +127,51 @@ def _bat_proj_row(first, last, cols):
     return pd.DataFrame([d])
 
 
+_BAT_STREAM_COLS = [
+    'stream', 'gb', 'pa', 'ab', 'r', 'h', 'b_2b', 'b_3b', 'hr', 'rbi',
+    'sb', 'cs', 'bb', 'k', 'avg', 'obp', 'slg', 'ops', 
+    'tb', 'hbp', 'sh', 'sf', 'stat_type',
+]
+
+
+def _bat_streams_section(first, last):
+    stream_rows = batting_stream_rows(first, last)
+    if not stream_rows:
+        return
+
+    frames = []
+    for row in stream_rows:
+        d = {c: np.nan for c in _BAT_STREAM_COLS}
+        d['stream']    = row['stream']
+        d['stat_type'] = 'season'
+        for key in ('gb', 'pa', 'ab', 'r', 'h', 'b_2b', 'b_3b', 'hr', 'rbi',
+                    'sb', 'cs', 'bb', 'k', 'hbp', 'sh', 'sf', 'tb',
+                    'avg', 'obp', 'slg', 'ops'):
+            if key in row:
+                d[key] = row[key]
+        frames.append(d)
+
+    # Season total row from the already-computed stats (includes OPS+, etc.)
+    s21 = batting.stats[
+        (batting.stats['First Name'] == first) &
+        (batting.stats['Last Name']  == last)  &
+        (batting.stats['season'] == CURRENT_SEASON) &
+        (batting.stats['stat_type'] == 'season')
+    ]
+    if not s21.empty:
+        total = s21.iloc[0].reindex(_BAT_STREAM_COLS).copy()
+        total['stream']    = 'Season'
+        total['stat_type'] = 'career'
+        frames.append(total.to_dict())
+
+    if not frames:
+        return
+
+    stream_df = pd.DataFrame(frames, columns=_BAT_STREAM_COLS)
+    h2("Stream-by-stream stats")
+    render_table(stream_df)
+
+
 def generate_batter_page(first_name, last_name):
     if (first_name, last_name) in players.player_info.index:
         active        = True
@@ -171,7 +217,7 @@ def generate_batter_page(first_name, last_name):
         else:
             strong("Retired")
             pos = f"Position: {primary_pos}"
-            if secondary_pos and secondary_pos != "None":
+            if secondary_pos:
                 pos += f" (Secondary: {secondary_pos})"
             p(pos)
             p(f"Retirement Season: {retirement_season}")
@@ -222,6 +268,9 @@ def generate_batter_page(first_name, last_name):
             'season', 'age', 'team', 'gb', 'pa',
             'r_bat', 'r_br', 'r_def', 'r_pos', 'r_corr', 'r_rep', 'raa', 'rar', 'waa', 'war', 'stat_type',
         ]])
+
+        if active:
+            _bat_streams_section(first_name, last_name)
 
         h2("Awards")
 
