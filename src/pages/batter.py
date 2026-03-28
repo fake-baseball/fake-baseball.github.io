@@ -168,7 +168,7 @@ def _bat_streams_section(first, last):
         return
 
     stream_df = pd.DataFrame(frames, columns=_BAT_STREAM_COLS)
-    h2("Stream-by-stream stats")
+    h2("Stream Log")
     render_table(stream_df)
 
 
