@@ -12,6 +12,42 @@
     <p>Retirement Season: Unknown</p>
     <p>Retirement Age: Unknown</p>
     <hr>
+    <table class="summary">
+      <thead>
+        <tr>
+          <th></th>
+          <th>WAR</th>
+          <th>W</th>
+          <th>L</th>
+          <th>ERA</th>
+          <th>ERA-</th>
+          <th>G</th>
+          <th>GS</th>
+          <th>SV</th>
+          <th>IP</th>
+          <th>BB</th>
+          <th>SO</th>
+          <th>WHIP</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Career</td>
+          <td>0.5</td>
+          <td>5</td>
+          <td>4</td>
+          <td>4.86</td>
+          <td>119</td>
+          <td>39</td>
+          <td>0</td>
+          <td>3</td>
+          <td>53.2</td>
+          <td>32</td>
+          <td>51</td>
+          <td>1.53</td>
+        </tr>
+      </tbody>
+    </table>
     <h2>Stats</h2>
     <h3>Standard Pitching</h3>
     <table>
@@ -20,33 +56,79 @@
           <th>Season</th>
           <th>Age</th>
           <th>Team</th>
-          <th>WAR</th>
-          <th>W</th>
-          <th>L</th>
-          <th>WIN%</th>
-          <th>ERA</th>
-          <th>GP</th>
-          <th>GS</th>
-          <th>CG</th>
-          <th>SHO</th>
-          <th>SV</th>
-          <th>IP</th>
-          <th>H</th>
-          <th>RA</th>
-          <th>ER</th>
-          <th>HR</th>
-          <th>BB</th>
-          <th>K</th>
-          <th>HBP</th>
-          <th>WP</th>
-          <th>BF</th>
-          <th>ERA-</th>
-          <th>FIP</th>
-          <th>WHIP</th>
+          <th>
+            <abbr title="Wins Above Replacement">WAR</abbr>
+          </th>
+          <th>
+            <abbr title="Wins">W</abbr>
+          </th>
+          <th>
+            <abbr title="Losses">L</abbr>
+          </th>
+          <th>
+            <abbr title="Win Percentage">Win%</abbr>
+          </th>
+          <th>
+            <abbr title="Earned Run Average">ERA</abbr>
+          </th>
+          <th>
+            <abbr title="Games Pitched">G</abbr>
+          </th>
+          <th>
+            <abbr title="Games Started">GS</abbr>
+          </th>
+          <th>
+            <abbr title="Complete Games">CG</abbr>
+          </th>
+          <th>
+            <abbr title="Shutouts">SHO</abbr>
+          </th>
+          <th>
+            <abbr title="Saves">SV</abbr>
+          </th>
+          <th>
+            <abbr title="Innings Pitched">IP</abbr>
+          </th>
+          <th>
+            <abbr title="Hits Allowed">H</abbr>
+          </th>
+          <th>
+            <abbr title="Runs Allowed">R</abbr>
+          </th>
+          <th>
+            <abbr title="Earned Runs Allowed">ER</abbr>
+          </th>
+          <th>
+            <abbr title="Home Runs Allowed">HR</abbr>
+          </th>
+          <th>
+            <abbr title="Bases on Balls">BB</abbr>
+          </th>
+          <th>
+            <abbr title="Strikeouts">K</abbr>
+          </th>
+          <th>
+            <abbr title="Hit by Pitch">HBP</abbr>
+          </th>
+          <th>
+            <abbr title="Wild Pitches">WP</abbr>
+          </th>
+          <th>
+            <abbr title="Batters Faced">BF</abbr>
+          </th>
+          <th>
+            <abbr title="Adjusted ERA">ERA-</abbr>
+          </th>
+          <th>
+            <abbr title="Fielding Independent Pitching">FIP</abbr>
+          </th>
+          <th>
+            <abbr title="Walks and Hits per Inning">WHIP</abbr>
+          </th>
         </tr>
       </thead>
       <tbody>
-        <tr>
+        <tr class="season">
           <td>10</td>
           <td>19</td>
           <td>PAL</td>
@@ -74,7 +156,7 @@
           <td>4.28</td>
           <td>1.53</td>
         </tr>
-        <tr>
+        <tr class="career">
           <td>Career</td>
           <td></td>
           <td>1TM</td>
@@ -102,7 +184,7 @@
           <td>4.28</td>
           <td>1.53</td>
         </tr>
-        <tr>
+        <tr class="team">
           <td>1 Szn</td>
           <td></td>
           <td>PAL</td>
@@ -132,190 +214,264 @@
         </tr>
       </tbody>
     </table>
-    <h3>Advanced Pitching</h3><table class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th>Season</th>
-      <th>Age</th>
-      <th>Team</th>
-      <th>IP</th>
-      <th>ERA</th>
-      <th>FIP</th>
-      <th>RA9</th>
-      <th>BAA</th>
-      <th>OBPA</th>
-      <th>BIP</th>
-      <th>BABIP</th>
-      <th>H/9</th>
-      <th>HR/9</th>
-      <th>K/9</th>
-      <th>BB/9</th>
-      <th>K/BB</th>
-      <th>K%</th>
-      <th>BB%</th>
-      <th>P/GP</th>
-      <th>P/IP</th>
-      <th>P/PA</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>10</td>
-      <td>19</td>
-      <td>PAL</td>
-      <td>53.2</td>
-      <td>4.86</td>
-      <td>4.28</td>
-      <td>5.20</td>
-      <td>.245</td>
-      <td>.356</td>
-      <td>148</td>
-      <td>.304</td>
-      <td>8.4</td>
-      <td>0.8</td>
-      <td>8.6</td>
-      <td>5.4</td>
-      <td>1.59</td>
-      <td>21.3</td>
-      <td>13.4</td>
-      <td>23.5</td>
-      <td>17.1</td>
-      <td>3.8</td>
-    </tr>
-    <tr>
-      <td>Career</td>
-      <td></td>
-      <td>1TM</td>
-      <td>53.2</td>
-      <td>4.86</td>
-      <td>4.28</td>
-      <td>5.20</td>
-      <td>.245</td>
-      <td>.356</td>
-      <td>148</td>
-      <td>.304</td>
-      <td>8.4</td>
-      <td>0.8</td>
-      <td>8.6</td>
-      <td>5.4</td>
-      <td>1.59</td>
-      <td>21.3</td>
-      <td>13.4</td>
-      <td>23.5</td>
-      <td>17.1</td>
-      <td>3.8</td>
-    </tr>
-    <tr>
-      <td>1 Szn</td>
-      <td></td>
-      <td>PAL</td>
-      <td>53.2</td>
-      <td>4.86</td>
-      <td>4.28</td>
-      <td>5.20</td>
-      <td>.245</td>
-      <td>.356</td>
-      <td>148</td>
-      <td>.304</td>
-      <td>8.4</td>
-      <td>0.8</td>
-      <td>8.6</td>
-      <td>5.4</td>
-      <td>1.59</td>
-      <td>21.3</td>
-      <td>13.4</td>
-      <td>23.5</td>
-      <td>17.1</td>
-      <td>3.8</td>
-    </tr>
-  </tbody>
-</table>
-    <h3>Value Pitching</h3><table class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th>Season</th>
-      <th>Age</th>
-      <th>Team</th>
-      <th>IP</th>
-      <th>GP</th>
-      <th>GS</th>
-      <th>RA</th>
-      <th>Rdef</th>
-      <th>RA9</th>
-      <th>RA9def</th>
-      <th>Rlev</th>
-      <th>Rcorr</th>
-      <th>RAA</th>
-      <th>RAAlev</th>
-      <th>WAA</th>
-      <th>Rrep</th>
-      <th>RAR</th>
-      <th>WAR</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>10</td>
-      <td>19</td>
-      <td>PAL</td>
-      <td>53.2</td>
-      <td>39</td>
-      <td>0</td>
-      <td>31</td>
-      <td>-0.7</td>
-      <td>5.20</td>
-      <td>5.09</td>
-      <td>0.7</td>
-      <td>0.0</td>
-      <td>-4.4</td>
-      <td>-3.7</td>
-      <td>-0.4</td>
-      <td>8.5</td>
-      <td>4.8</td>
-      <td>0.5</td>
-    </tr>
-    <tr>
-      <td>Career</td>
-      <td></td>
-      <td>1TM</td>
-      <td>53.2</td>
-      <td>39</td>
-      <td>0</td>
-      <td>31</td>
-      <td>-0.7</td>
-      <td>5.20</td>
-      <td>5.09</td>
-      <td>0.7</td>
-      <td>0.0</td>
-      <td>-4.4</td>
-      <td>-3.7</td>
-      <td>-0.4</td>
-      <td>8.5</td>
-      <td>4.8</td>
-      <td>0.5</td>
-    </tr>
-    <tr>
-      <td>1 Szn</td>
-      <td></td>
-      <td>PAL</td>
-      <td>53.2</td>
-      <td>39</td>
-      <td>0</td>
-      <td>31</td>
-      <td>-0.7</td>
-      <td>5.20</td>
-      <td>5.09</td>
-      <td>0.7</td>
-      <td>0.0</td>
-      <td>-4.4</td>
-      <td>-3.7</td>
-      <td>-0.4</td>
-      <td>8.5</td>
-      <td>4.8</td>
-      <td>0.5</td>
-    </tr>
-  </tbody>
-</table>
+    <h3>Advanced Pitching</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Season</th>
+          <th>Age</th>
+          <th>Team</th>
+          <th>
+            <abbr title="Innings Pitched">IP</abbr>
+          </th>
+          <th>
+            <abbr title="Earned Run Average">ERA</abbr>
+          </th>
+          <th>
+            <abbr title="Fielding Independent Pitching">FIP</abbr>
+          </th>
+          <th>
+            <abbr title="Runs Allowed per 9 Innings">RA9</abbr>
+          </th>
+          <th>
+            <abbr title="Batting Average Allowed">AVG</abbr>
+          </th>
+          <th>
+            <abbr title="On-Base Percentage Allowed">OBP</abbr>
+          </th>
+          <th>
+            <abbr title="Balls in Play">BIP</abbr>
+          </th>
+          <th>
+            <abbr title="Batting Average on Balls in Play">BABIP</abbr>
+          </th>
+          <th>
+            <abbr title="Hits per 9 Innings">H/9</abbr>
+          </th>
+          <th>
+            <abbr title="Home Runs per 9 Innings">HR/9</abbr>
+          </th>
+          <th>
+            <abbr title="Strikeouts per 9 Innings">K/9</abbr>
+          </th>
+          <th>
+            <abbr title="Walks per 9 Innings">BB/9</abbr>
+          </th>
+          <th>
+            <abbr title="Strikeout-to-Walk Ratio">K/BB</abbr>
+          </th>
+          <th>
+            <abbr title="Strikeout Rate">K%</abbr>
+          </th>
+          <th>
+            <abbr title="Walk Rate">BB%</abbr>
+          </th>
+          <th>
+            <abbr title="Pitches per Game">P/G</abbr>
+          </th>
+          <th>
+            <abbr title="Innings per Game">IP/G</abbr>
+          </th>
+          <th>
+            <abbr title="Pitches per Inning">P/IP</abbr>
+          </th>
+          <th>
+            <abbr title="Pitches per Plate Appearance">P/PA</abbr>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="season">
+          <td>10</td>
+          <td>19</td>
+          <td>PAL</td>
+          <td>53.2</td>
+          <td>4.86</td>
+          <td>4.28</td>
+          <td>5.20</td>
+          <td>.245</td>
+          <td>.356</td>
+          <td>148</td>
+          <td>.304</td>
+          <td>8.4</td>
+          <td>0.8</td>
+          <td>8.6</td>
+          <td>5.4</td>
+          <td>1.59</td>
+          <td>21.3</td>
+          <td>13.4</td>
+          <td>23.5</td>
+          <td>1.4</td>
+          <td>17.1</td>
+          <td>3.84</td>
+        </tr>
+        <tr class="career">
+          <td>Career</td>
+          <td></td>
+          <td>1TM</td>
+          <td>53.2</td>
+          <td>4.86</td>
+          <td>4.28</td>
+          <td>5.20</td>
+          <td>.245</td>
+          <td>.356</td>
+          <td>148</td>
+          <td>.304</td>
+          <td>8.4</td>
+          <td>0.8</td>
+          <td>8.6</td>
+          <td>5.4</td>
+          <td>1.59</td>
+          <td>21.3</td>
+          <td>13.4</td>
+          <td>23.5</td>
+          <td>1.4</td>
+          <td>17.1</td>
+          <td>3.84</td>
+        </tr>
+        <tr class="team">
+          <td>1 Szn</td>
+          <td></td>
+          <td>PAL</td>
+          <td>53.2</td>
+          <td>4.86</td>
+          <td>4.28</td>
+          <td>5.20</td>
+          <td>.245</td>
+          <td>.356</td>
+          <td>148</td>
+          <td>.304</td>
+          <td>8.4</td>
+          <td>0.8</td>
+          <td>8.6</td>
+          <td>5.4</td>
+          <td>1.59</td>
+          <td>21.3</td>
+          <td>13.4</td>
+          <td>23.5</td>
+          <td>1.4</td>
+          <td>17.1</td>
+          <td>3.84</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3>Value Pitching</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Season</th>
+          <th>Age</th>
+          <th>Team</th>
+          <th>
+            <abbr title="Innings Pitched">IP</abbr>
+          </th>
+          <th>
+            <abbr title="Games Pitched">G</abbr>
+          </th>
+          <th>
+            <abbr title="Games Started">GS</abbr>
+          </th>
+          <th>
+            <abbr title="Runs Allowed">R</abbr>
+          </th>
+          <th>
+            <abbr title="Defense Adjustment">Rdef</abbr>
+          </th>
+          <th>
+            <abbr title="Runs Allowed per 9 Innings">RA9</abbr>
+          </th>
+          <th>
+            <abbr title="Defense-Adjusted RA9">RA9def</abbr>
+          </th>
+          <th>
+            <abbr title="Leverage Runs">Rlev</abbr>
+          </th>
+          <th>
+            <abbr title="Correction Runs">Rcorr</abbr>
+          </th>
+          <th>
+            <abbr title="Runs Above Average">RAA</abbr>
+          </th>
+          <th>
+            <abbr title="Leverage-Adjusted Runs Above Average">RAAlev</abbr>
+          </th>
+          <th>
+            <abbr title="Wins Above Average">WAA</abbr>
+          </th>
+          <th>
+            <abbr title="Replacement Runs">Rrep</abbr>
+          </th>
+          <th>
+            <abbr title="Runs Above Replacement">RAR</abbr>
+          </th>
+          <th>
+            <abbr title="Wins Above Replacement">WAR</abbr>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="season">
+          <td>10</td>
+          <td>19</td>
+          <td>PAL</td>
+          <td>53.2</td>
+          <td>39</td>
+          <td>0</td>
+          <td>31</td>
+          <td>-0.7</td>
+          <td>5.20</td>
+          <td>5.09</td>
+          <td>0.7</td>
+          <td>0.0</td>
+          <td>-4.4</td>
+          <td>-3.7</td>
+          <td>-0.4</td>
+          <td>8.5</td>
+          <td>4.8</td>
+          <td>0.5</td>
+        </tr>
+        <tr class="career">
+          <td>Career</td>
+          <td></td>
+          <td>1TM</td>
+          <td>53.2</td>
+          <td>39</td>
+          <td>0</td>
+          <td>31</td>
+          <td>-0.7</td>
+          <td>5.20</td>
+          <td>5.09</td>
+          <td>0.7</td>
+          <td>0.0</td>
+          <td>-4.4</td>
+          <td>-3.7</td>
+          <td>-0.4</td>
+          <td>8.5</td>
+          <td>4.8</td>
+          <td>0.5</td>
+        </tr>
+        <tr class="team">
+          <td>1 Szn</td>
+          <td></td>
+          <td>PAL</td>
+          <td>53.2</td>
+          <td>39</td>
+          <td>0</td>
+          <td>31</td>
+          <td>-0.7</td>
+          <td>5.20</td>
+          <td>5.09</td>
+          <td>0.7</td>
+          <td>0.0</td>
+          <td>-4.4</td>
+          <td>-3.7</td>
+          <td>-0.4</td>
+          <td>8.5</td>
+          <td>4.8</td>
+          <td>0.5</td>
+        </tr>
+      </tbody>
+    </table>
     <h2>Awards</h2>
   </body>
 </html>

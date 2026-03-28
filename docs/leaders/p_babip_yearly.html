@@ -5,165 +5,234 @@
     <link href="../style.css" rel="stylesheet">
   </head>
   <body>
-    <h1>Yearly Leaders for BABIP Against</h1><table class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>Player</th>
-      <th>BABIP</th>
-      <th>IP</th>
-      <th>Team</th>
-    </tr>
-    <tr>
-      <th>Season</th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>1</th>
-      <td><a href="../players/GeronimoArkansas.html">Geronimo Arkansas</a></td>
-      <td>.232</td>
-      <td>112.2</td>
-      <td>PAL</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td><a href="../players/SamuelMaclary.html">Samuel Maclary</a></td>
-      <td>.222</td>
-      <td>114.2</td>
-      <td>NYN</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td><a href="../players/ThiagoBoyd.html">Thiago Boyd</a></td>
-      <td>.228</td>
-      <td>110.1</td>
-      <td>PIT</td>
-    </tr>
-    <tr>
-      <th>4</th>
-      <td><a href="../players/AugustineAnaya.html">Augustine Anaya</a></td>
-      <td>.214</td>
-      <td>104.1</td>
-      <td>VAL</td>
-    </tr>
-    <tr>
-      <th>5</th>
-      <td><a href="../players/BestoLove.html">Besto Love</a></td>
-      <td>.230</td>
-      <td>110.1</td>
-      <td>BUS</td>
-    </tr>
-    <tr>
-      <th>6</th>
-      <td><a href="../players/BestoLove.html">Besto Love</a></td>
-      <td>.226</td>
-      <td>99.0</td>
-      <td>BUS</td>
-    </tr>
-    <tr>
-      <th>7</th>
-      <td><a href="../players/AubrielleWallace.html">Aubrielle Wallace</a></td>
-      <td>.225</td>
-      <td>113.2</td>
-      <td>PIT</td>
-    </tr>
-    <tr>
-      <th>8</th>
-      <td><a href="../players/FabianMcMenamin.html">Fabian McMenamin</a></td>
-      <td>.239</td>
-      <td>96.0</td>
-      <td>HON</td>
-    </tr>
-    <tr>
-      <th>9</th>
-      <td><a href="../players/TannerCarr.html">Tanner Carr</a></td>
-      <td>.223</td>
-      <td>112.1</td>
-      <td>MUN</td>
-    </tr>
-    <tr>
-      <th>10</th>
-      <td><a href="../players/BraydonEasy.html">Braydon Easy</a></td>
-      <td>.212</td>
-      <td>108.0</td>
-      <td>CAR</td>
-    </tr>
-    <tr>
-      <th>11</th>
-      <td><a href="../players/JaxenBell.html">Jaxen Bell</a></td>
-      <td>.230</td>
-      <td>81.2</td>
-      <td>PDX</td>
-    </tr>
-    <tr>
-      <th>12</th>
-      <td><a href="../players/DeeBartlett.html">Dee Bartlett</a></td>
-      <td>.246</td>
-      <td>104.2</td>
-      <td>DUB</td>
-    </tr>
-    <tr>
-      <th>13</th>
-      <td><a href="../players/PyperGovender.html">Pyper Govender</a></td>
-      <td>.248</td>
-      <td>110.1</td>
-      <td>HON</td>
-    </tr>
-    <tr>
-      <th>14</th>
-      <td><a href="../players/WardenHernandez.html">Warden Hernandez</a></td>
-      <td>.221</td>
-      <td>113.1</td>
-      <td>JAK</td>
-    </tr>
-    <tr>
-      <th>15</th>
-      <td><a href="../players/BenteBerg.html">Bente Berg</a></td>
-      <td>.233</td>
-      <td>105.0</td>
-      <td>VAL</td>
-    </tr>
-    <tr>
-      <th>16</th>
-      <td><a href="../players/LuciferCurly.html">Lucifer Curly</a></td>
-      <td>.228</td>
-      <td>104.2</td>
-      <td>NYN</td>
-    </tr>
-    <tr>
-      <th>17</th>
-      <td><a href="../players/ReefTriggerfish.html">Reef Triggerfish</a></td>
-      <td>.238</td>
-      <td>102.1</td>
-      <td>HON</td>
-    </tr>
-    <tr>
-      <th>18</th>
-      <td><a href="../players/SomnerLyons.html">Somner Lyons</a></td>
-      <td>.227</td>
-      <td>108.1</td>
-      <td>PDX</td>
-    </tr>
-    <tr>
-      <th>19</th>
-      <td><a href="../players/BryantWiley.html">Bryant Wiley</a></td>
-      <td>.187</td>
-      <td>94.1</td>
-      <td>BOS</td>
-    </tr>
-    <tr>
-      <th>20</th>
-      <td><a href="../players/SigorineLabelle.html">Sigorine Labelle</a></td>
-      <td>.232</td>
-      <td>105.1</td>
-      <td>PIT</td>
-    </tr>
-  </tbody>
-</table>
+    <h1>Yearly Leaders for Batting Average on Balls in Play (Best)</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>Season</th>
+          <th>Player</th>
+          <th>Role</th>
+          <th>
+            <abbr title="Batting Average on Balls in Play">BABIP</abbr>
+          </th>
+          <th>
+            <abbr title="Innings Pitched">IP</abbr>
+          </th>
+          <th>Team</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="">
+          <td>1</td>
+          <td>
+            <a href="../players/GeronimoArkansas.html">Geronimo Arkansas</a>
+          </td>
+          <td>SP</td>
+          <td>.232</td>
+          <td>112.2</td>
+          <td>PAL</td>
+        </tr>
+        <tr class="">
+          <td>2</td>
+          <td>
+            <a href="../players/SamuelMaclary.html">Samuel Maclary</a>
+          </td>
+          <td>SP</td>
+          <td>.222</td>
+          <td>114.2</td>
+          <td>NYN</td>
+        </tr>
+        <tr class="">
+          <td>3</td>
+          <td>
+            <a href="../players/ThiagoBoyd.html">Thiago Boyd</a>
+          </td>
+          <td>SP</td>
+          <td>.228</td>
+          <td>110.1</td>
+          <td>PIT</td>
+        </tr>
+        <tr class="">
+          <td>4</td>
+          <td>
+            <a href="../players/AugustineAnaya.html">Augustine Anaya</a>
+          </td>
+          <td>SP</td>
+          <td>.214</td>
+          <td>104.1</td>
+          <td>VAL</td>
+        </tr>
+        <tr class="">
+          <td>5</td>
+          <td>
+            <a href="../players/BestoLove.html">Besto Love</a>
+          </td>
+          <td>SP</td>
+          <td>.230</td>
+          <td>110.1</td>
+          <td>BUS</td>
+        </tr>
+        <tr class="">
+          <td>6</td>
+          <td>
+            <a href="../players/BestoLove.html">Besto Love</a>
+          </td>
+          <td>SP</td>
+          <td>.226</td>
+          <td>99.0</td>
+          <td>BUS</td>
+        </tr>
+        <tr class="">
+          <td>7</td>
+          <td>
+            <a href="../players/AubrielleWallace.html">Aubrielle Wallace</a>
+          </td>
+          <td>SP</td>
+          <td>.225</td>
+          <td>113.2</td>
+          <td>PIT</td>
+        </tr>
+        <tr class="">
+          <td>8</td>
+          <td>
+            <a href="../players/FabianMcMenamin.html">Fabian McMenamin</a>
+          </td>
+          <td>SP</td>
+          <td>.239</td>
+          <td>96.0</td>
+          <td>HON</td>
+        </tr>
+        <tr class="">
+          <td>9</td>
+          <td>
+            <a href="../players/TannerCarr.html">Tanner Carr</a>
+          </td>
+          <td>SP</td>
+          <td>.223</td>
+          <td>112.1</td>
+          <td>MUN</td>
+        </tr>
+        <tr class="">
+          <td>10</td>
+          <td>
+            <a href="../players/BraydonEasy.html">Braydon Easy</a>
+          </td>
+          <td>SP</td>
+          <td>.212</td>
+          <td>108.0</td>
+          <td>CAR</td>
+        </tr>
+        <tr class="">
+          <td>11</td>
+          <td>
+            <a href="../players/JaxenBell.html">Jaxen Bell</a>
+          </td>
+          <td>SP</td>
+          <td>.230</td>
+          <td>81.2</td>
+          <td>PDX</td>
+        </tr>
+        <tr class="">
+          <td>12</td>
+          <td>
+            <a href="../players/DeeBartlett.html">Dee Bartlett</a>
+          </td>
+          <td>SP</td>
+          <td>.246</td>
+          <td>104.2</td>
+          <td>DUB</td>
+        </tr>
+        <tr class="">
+          <td>13</td>
+          <td>
+            <a href="../players/PyperGovender.html">Pyper Govender</a>
+          </td>
+          <td>SP</td>
+          <td>.248</td>
+          <td>110.1</td>
+          <td>HON</td>
+        </tr>
+        <tr class="">
+          <td>14</td>
+          <td>
+            <a href="../players/WardenHernandez.html">Warden Hernandez</a>
+          </td>
+          <td>SP</td>
+          <td>.221</td>
+          <td>113.1</td>
+          <td>JAK</td>
+        </tr>
+        <tr class="">
+          <td>15</td>
+          <td>
+            <a href="../players/BenteBerg.html">Bente Berg</a>
+          </td>
+          <td>SP</td>
+          <td>.233</td>
+          <td>105.0</td>
+          <td>VAL</td>
+        </tr>
+        <tr class="">
+          <td>16</td>
+          <td>
+            <a href="../players/LuciferCurly.html">Lucifer Curly</a>
+          </td>
+          <td>SP</td>
+          <td>.228</td>
+          <td>104.2</td>
+          <td>NYN</td>
+        </tr>
+        <tr class="">
+          <td>17</td>
+          <td>
+            <a href="../players/ReefTriggerfish.html">Reef Triggerfish</a>
+          </td>
+          <td>SP</td>
+          <td>.238</td>
+          <td>102.1</td>
+          <td>HON</td>
+        </tr>
+        <tr class="">
+          <td>18</td>
+          <td>
+            <a href="../players/SomnerLyons.html">Somner Lyons</a>
+          </td>
+          <td>SP</td>
+          <td>.227</td>
+          <td>108.1</td>
+          <td>PDX</td>
+        </tr>
+        <tr class="">
+          <td>19</td>
+          <td>
+            <a href="../players/BryantWiley.html">Bryant Wiley</a>
+          </td>
+          <td>SP</td>
+          <td>.187</td>
+          <td>94.1</td>
+          <td>BOS</td>
+        </tr>
+        <tr class="">
+          <td>20</td>
+          <td>
+            <a href="../players/SigorineLabelle.html">Sigorine Labelle</a>
+          </td>
+          <td>SP</td>
+          <td>.232</td>
+          <td>105.1</td>
+          <td>PIT</td>
+        </tr>
+        <tr class="">
+          <td>21</td>
+          <td>
+            <a href="../players/JosephineEngels.html">Josephine Engels</a>
+          </td>
+          <td>SP</td>
+          <td>.152</td>
+          <td>14.0</td>
+          <td>SPT</td>
+        </tr>
+      </tbody>
+    </table>
   </body>
 </html>
