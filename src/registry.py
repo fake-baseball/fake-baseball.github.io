@@ -38,7 +38,7 @@ REGISTRY = {
         'label': 'Wins Above Replacement',
         'description': '',
         'decimal_places': 1,
-        'leaders': True,
+        'leaders': True, 'has_worst': True,
         'context': 'batting',
     },
     # -- Counting --------------------------------------------------------------
@@ -541,7 +541,7 @@ REGISTRY = {
         'label': 'Wins Above Replacement',
         'description': '',
         'decimal_places': 1,
-        'leaders': True,
+        'leaders': True, 'has_worst': True,
         'context': 'pitching',
     },
     # -- Cy Young Predictor ----------------------------------------------------

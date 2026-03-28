@@ -10,7 +10,7 @@ def generate_home(sections):
     _LINKS = [
         ('players',     "Players",              "players/index.html"),
         ('leaders',     "Leaders",              "leaders/index.html"),
-        ('seasons',     "Seasons",              "seasons/"),
+        ('seasons',     "Seasons",              "seasons/index.html"),
         ('teams',       "Teams",                "teams/index.html"),
         ('games',       "Games",                "games/index.html"),
         ('awards',      "Awards",               "awards.html"),

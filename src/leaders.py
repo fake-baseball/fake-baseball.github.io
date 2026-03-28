@@ -11,7 +11,7 @@ from constants import (
     BR_SEASON_MIN_SBATT, BR_CAREER_MIN_SBATT,
     FLD_SEASON_MIN_GF,   FLD_CAREER_MIN_GF,
     PIT_SEASON_MIN_IP,   PIT_CAREER_MIN_IP,
-    SEASON_RANGE,
+    SEASON_RANGE, CURRENT_SEASON,
 )
 
 from registry import REGISTRY
@@ -39,6 +39,7 @@ def get_batting_leaders(stat, season=None, worst=False, num=10, team=None, teams
     df = batting.stats[_qual_mask(batting.stats, meta['qual_col'])] if meta['qualified'] else batting.stats
     if season is None:
         df = df[df['stat_type'] == 'season']
+        df = df[df['season'] != CURRENT_SEASON]
     else:
         df = df[df['season'] == season]
     if team is not None:
@@ -93,6 +94,7 @@ def get_pitching_leaders(stat, season=None, worst=False, num=10, team=None, team
     df = pitching.stats[_qual_mask(pitching.stats, 'p_ip')] if meta['qualified'] else pitching.stats
     if season is None:
         df = df[df['stat_type'] == 'season']
+        df = df[df['season'] != CURRENT_SEASON]
     else:
         df = df[df['season'] == season]
     if team is not None:
