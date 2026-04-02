@@ -19,14 +19,12 @@ def read_s21(path):
             raw[col] = raw[col].replace(TEAM_NAME_CORRECTIONS)
     return raw
 
-BATTERS_CSV          = "sheets/MGL's BFBL with WAR - [Batters] by Season.csv"
-PITCHERS_CSV         = "sheets/MGL's BFBL with WAR - [Pitchers] by Season.csv"
-RETIRED_BATTERS_CSV  = "sheets/MGL's BFBL with WAR - Career Totals [Batters].csv"
-RETIRED_PITCHERS_CSV = "sheets/MGL's BFBL with WAR - Career Totals [Pitchers].csv"
+BATTERS_CSV          = "sheets/batters_season.csv"
+PITCHERS_CSV         = "sheets/pitchers_season.csv"
+RETIRED_BATTERS_CSV  = "sheets/batters_career.csv"
+RETIRED_PITCHERS_CSV = "sheets/pitchers_career.csv"
 PLAYERS_CSV          = "sheets/players.csv"
 TEAMS_CSV            = "sheets/teams.csv"
-ROTATIONS_CSV        = "sheets/rotations.csv"
-LINEUPS_CSV          = "sheets/lineups.csv"
 STANDINGS_CSV        = "sheets/standings.csv"
 SCHEDULE20_CSV       = "sheets/schedule20.csv"
 

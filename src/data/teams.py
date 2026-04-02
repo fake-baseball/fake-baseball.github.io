@@ -1,7 +1,7 @@
 import pandas as pd
 
 from constants import CURRENT_SEASON
-from data.sources import TEAMS_CSV, ROTATIONS_CSV, LINEUPS_CSV, STANDINGS_CSV, SCHEDULE20_CSV
+from data.sources import TEAMS_CSV, STANDINGS_CSV, SCHEDULE20_CSV
 from data.sources import season21_latest, read_s21
 
 teams      = None
