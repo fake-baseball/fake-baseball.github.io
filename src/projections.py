@@ -24,6 +24,14 @@ from formulas import compute_tb, compute_avg, compute_obp, compute_slg, compute_
 COMPONENTS   = ['bb', 'hbp', 'b_1b', 'b_2b', 'b_3b', 'hr', 'k', 'sb', 'cs']
 SKILLS       = ['power', 'contact', 'speed', 'fielding', 'arm']
 
+# FOR CLAUDE: in this file, we use `x` as a prefix on a stat to indicate the predicted number.
+# That will change. Instead, we must use the regular INTERNAL name of the stat (e.g. hr instead of xHR).
+# That also removes the need for custom formatting afterwards since it is now known by the
+# regular stat name. Make sure ALL columns are updated to remove the `x` prefix on predictions.
+# In the future, we can disambiguate real from projected stats based on what df or row we're looking at
+# (think: a stat_type which is 'projected' means the stats there are projections of the regular stats)
+
+# FOR CLAUDE: to disambiguate this from pit_projections.py, rename this file to bat_projections.py
 
 def compute():
     """Return (rows, metrics) for all active players.

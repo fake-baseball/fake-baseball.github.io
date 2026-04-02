@@ -89,6 +89,7 @@ def generate_team_season_page(team_name, season_num, abbr):
             games = sched[(sched['Home Team'] == team_name) | (sched['Away Team'] == team_name)].copy()
             games = games.sort_values('Game #').reset_index(drop=True)
             w_count = l_count = streak_char = streak_len = 0
+            # FOR CLAUDE: use render_table and update columns to registry.py (if not already done)
             with table(border=0):
                 with thead():
                     with tr():

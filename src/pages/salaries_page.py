@@ -20,7 +20,12 @@ PIT_SKILLS  = ['velocity', 'junk', 'accuracy']
 BAT_LABELS  = {'power': 'POW', 'contact': 'CON', 'speed': 'SPD', 'fielding': 'FLD', 'arm': 'ARM'}
 PIT_LABELS  = {'velocity': 'VEL', 'junk': 'JNK', 'accuracy': 'ACC'}
 
+# FOR CLAUDE: move core calculation logic to a new file `src/salaries.py`
+# and leave this page as only the table creating part
 
+# FOR CLAUDE: salary should probably be parsed as part of the data loading section in 
+# src/data/*.py so that internally, we have the real number. Then, add salary as 
+# a new stat in src/registry.py and ensure that when displayed in a table, it reproduces this format.
 def _parse_salary(val):
     """Parse '$1.3m' -> 1.3 (millions)."""
     s = str(val).strip().lower().lstrip('$').rstrip('m')
@@ -513,6 +518,7 @@ def _methodology_section():
 
 
 def generate_salaries():
+    # FOR CLAUDE: move import to top of level
     import projections as proj_module
     import pit_projections as pit_proj_module
 

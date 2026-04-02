@@ -16,9 +16,12 @@ def _extract_title(path):
 
 _STYLESHEET = '<link rel="stylesheet" href="../style.css">'
 
-
+# FOR CLAUDE: you are loading and manipulating files here, while src/pages should ONLY
+# be for displaying pages. Create a new file in src/data that loads these .html files
+# and injects the CSS there, and have it available as a global array you can use here
 def generate_games():
     """Copy game files to docs/games/ (injecting stylesheet) and generate docs/games/index.html."""
+    # FOR CLAUDE: move imports to top-level
     from dominate.tags import h1, ul, li, a
     from util import make_doc
 

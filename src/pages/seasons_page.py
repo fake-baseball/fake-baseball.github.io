@@ -45,6 +45,7 @@ def generate_seasons():
 
     # ── Rates ─────────────────────────────────────────────────────────────────
 
+    # FOR CLAUDE: wouldn't it be easier to just use indexing here instead of building new df?
     rates = pd.DataFrame({
         'r_per_g':    sb['r_per_g'],
         'avg':        sb['avg'],
@@ -78,6 +79,7 @@ def generate_seasons():
 
         h2("Counting Stats")
         h3("Offense")
+        # FOR CLAUDE: use render_table instead of raw().to_html
         raw(_link_index(off_count).to_html(border=0, index=True, escape=False))
         h3("Defense")
         raw(_link_index(def_count).to_html(border=0, index=True, escape=False))

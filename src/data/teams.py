@@ -12,6 +12,16 @@ season_map = None  # maps internal season ID -> sequential season number (1, 2, 
 schedule20 = None  # season 20 schedule (kept for backward compatibility)
 schedules  = {}    # {season_num: schedule_df} for all seasons with schedule data
 
+# FOR_CLAUDE: we should add columns encountered here as stats in registry.py, so that
+# down the line we can use `render_table` to format things correctly, and so that there's
+# consistency between columns things exist. Note that there's discrepancies between how the
+# same piece of data can be found (for example: "First Name", "firstName", and "first_name")
+# By tying it to the registry, we can ensure all column names are the same. Here, in src/data
+# we rename columns at load-time to the internally expected names by the registry to get ahead
+# of any data wrangling nightmares. Remember to follow the naming convention when there is
+# overloaded stats (e.g. `r` would be split up as `p_r` (pitcher runs allowed), `b_r` (batter runs scored),
+# and `t_r` (team runs scored). Please do another pass through all data-loading files as well
+# to ensure this convention is met.
 
 def load_teams():
     global teams

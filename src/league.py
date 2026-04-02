@@ -14,10 +14,12 @@ from constants import (
     num_games,
     CURRENT_SEASON, TOTAL_SEASON_GAMES,
 )
+# FOR CLAUDE: to avoid clogging up the formulas import here, do this:
+# import formulas as f
 from formulas import (
     _div,
-    wOBA_num, wOBA_denom, compute_woba,
-    compute_avg, compute_obp, compute_slg, compute_sb_pct,
+    compute_woba,
+    compute_avg, compute_obp, compute_slg, compute_ops, compute_sb_pct,
     compute_e_per_gf, compute_pb_per_gf,
     compute_p_bip, compute_p_babip,
     compute_p_era, compute_p_ra9, compute_p_whip,
@@ -38,7 +40,7 @@ team_defense    = None
 role_pitching   = None
 role_leverage   = None
 role_innings    = None
-season_scale    = {}  # season -> float: 1.0 for completed seasons, fraction for in-progress
+season_scale    = {}  # season -> float: amount of season completed (1.0 = complete)
 
 
 def _completed_games_s21():
@@ -60,61 +62,61 @@ def compute_league():
     pitchers = raw.pitching_stats
 
     # ── Fielding averages by position ────────────────────────────────────────
-    # batting_stats now uses final column names (e, pb, gf) after load_batting()
     fld = batters.groupby(['pos1', 'pos2']).agg({'e': 'sum', 'pb': 'sum', 'gf': 'sum'})  # fielding rates by position
     compute_e_per_gf(fld)
     compute_pb_per_gf(fld)
     pos_fielding = fld[['e_per_gf', 'pb_per_gf']]
 
     # ── Positional wOBA adjustments ──────────────────────────────────────────
-    # batting_stats uses final names; wOBA_num/denom use final names (bb, hbp, b_1b, etc.)
-    overall_wOBA = _div(wOBA_num(batters).sum(), wOBA_denom(batters).sum())
+    overall_agg = batters[['bb', 'hbp', 'b_1b', 'b_2b', 'b_3b', 'hr', 'ab', 'sf']].sum()
+    compute_woba(overall_agg)
+    overall_wOBA = overall_agg['woba']
 
-    wOBA_by_PP = (  # all-time wOBA per primary position, used for stabilization
-        batters.groupby('pos1')[['bb', 'hbp', 'b_1b', 'b_2b', 'b_3b', 'hr', 'ab', 'sf']]
-        .apply(lambda x: _div(wOBA_num(x).sum(), wOBA_denom(x).sum()))
-        .to_dict()
-    )
+    # all-time wOBA per primary position, used for stabilization
+    wOBA_by_PP_df = batters.groupby('pos1')[['bb', 'hbp', 'b_1b', 'b_2b', 'b_3b', 'hr', 'ab', 'sf']].sum()
+    compute_woba(wOBA_by_PP_df)
+    wOBA_by_PP = wOBA_by_PP_df['woba'].to_dict()
 
-    posadj = (  # positional wOBA and run adjustment (r_pos) by (pos1, pos2)
+    # positional wOBA and run adjustment (r_pos) by (pos1, pos2)
+    posadj = (
         batters.groupby(['pos1', 'pos2'])
         .agg({'bb': 'sum', 'hbp': 'sum', 'b_1b': 'sum', 'b_2b': 'sum', 'b_3b': 'sum',
               'hr': 'sum', 'ab': 'sum', 'sf': 'sum', 'pa': 'sum', 'gb': 'sum'})
         .reset_index()
     )
-    posadj['wOBA_raw'] = _div(wOBA_num(posadj), wOBA_denom(posadj))
+    compute_woba(posadj)
+    posadj.rename(columns={'woba': 'wOBA_raw'}, inplace=True)  # before stabilization
     posadj['wOBA'] = posadj.apply(
         lambda row: (
             (row['pa'] * row['wOBA_raw'] + MIN_PA * wOBA_by_PP[row['pos1']]) / (row['pa'] + MIN_PA)
             if row['pa'] < MIN_PA else row['wOBA_raw']
         ),
         axis=1,
-    )
+    ) # after primary position stabilization
     posadj['r_pos'] = ((overall_wOBA - posadj['wOBA']) / scale_wOBA) * (posadj['pa'] / posadj['gb']) * num_games
     posadj.set_index(['pos1', 'pos2'], inplace=True)
     pos_adjustment = posadj[['pa', 'wOBA_raw', 'wOBA', 'r_pos']]
 
     # ── Season-level batting aggregates ─────────────────────────────────────
-    sb = batters.groupby('season').agg({  # season batting totals
-        'pa': 'sum', 'ab': 'sum', 'r': 'sum', 'h': 'sum',
-        'b_1b': 'sum', 'b_2b': 'sum', 'b_3b': 'sum', 'hr': 'sum', 'rbi': 'sum',
-        'sb': 'sum', 'cs': 'sum', 'bb': 'sum', 'k': 'sum',
-        'tb': 'sum', 'hbp': 'sum', 'sh': 'sum', 'sf': 'sum', 'bip': 'sum',
-        'e': 'sum', 'pb': 'sum',
-    })
-    # season_batting uses final batting column names; use final-name formula functions
+    sb = batters.groupby('season')[[  # season batting totals
+        'pa', 'ab', 'r', 'h',
+        'b_1b', 'b_2b', 'b_3b', 'hr', 'rbi',
+        'sb', 'cs', 'bb', 'k',
+        'tb', 'hbp', 'sh', 'sf', 'bip',
+        'e', 'pb',
+    ]].sum()
     compute_avg(sb)
     compute_obp(sb)
     compute_slg(sb)
     compute_woba(sb)
     compute_sb_pct(sb)
-    sb['ops']     = sb['obp'] + sb['slg']
-    # Season scale: 1.0 for completed seasons, X = completed_games/TOTAL_SEASON_GAMES for in-progress
+    compute_ops(sb)
     s_scale = {s: 1.0 for s in sb.index}
     if CURRENT_SEASON in sb.index:
         s_scale[CURRENT_SEASON] = _completed_games_s21() / TOTAL_SEASON_GAMES
     season_scale = s_scale
 
+    # FOR CLAUDE: move as many calculations as reasonable to formulas.py, making sure that registry.py is also updated with these stats
     sb['g'] = batters.groupby('season')['team'].nunique() * num_games
     if CURRENT_SEASON in sb.index:
         sb.loc[CURRENT_SEASON, 'g'] *= s_scale[CURRENT_SEASON]
@@ -133,7 +135,7 @@ def compute_league():
     season_batting = sb
 
     # ── Season-level pitching aggregates ────────────────────────────────────
-    # pitchers DataFrame now uses final p_-prefixed column names after load_pitching()
+    # FOR CLAUDE: don't use agg, and instead use indexing + sum()
     sp = pitchers.groupby('season').agg({  # season pitching totals
         'p_gp': 'sum', 'p_gs': 'sum', 'p_cg': 'sum', 'p_sho': 'sum', 'p_sv': 'sum',
         'p_ip': 'sum', 'p_h': 'sum', 'p_k': 'sum', 'p_bb': 'sum', 'p_er': 'sum',
@@ -159,6 +161,7 @@ def compute_league():
     compute_p_p_per_ip(sp)
     compute_p_p_per_pa(sp)
     compute_p_gr(sp)
+    # FOR CLAUDE: again, abstract to formulas.py as reasonable
     sp['g'] = pitchers.groupby('season')['team'].nunique() * num_games
     if CURRENT_SEASON in sp.index:
         sp.loc[CURRENT_SEASON, 'g'] *= s_scale[CURRENT_SEASON]
@@ -166,6 +169,7 @@ def compute_league():
     season_pitching = sp
 
     # ── Team defense BABIP ───────────────────────────────────────────────────
+    # FOR CLAUDE: again, use indexing + sum()
     td = pitchers.groupby(['season', 'team']).agg(  # team defense: BABIP vs league average
         {'p_h': 'sum', 'p_hr': 'sum', 'p_bb': 'sum', 'p_hbp': 'sum', 'p_bf': 'sum', 'p_k': 'sum'})
     compute_p_bip(td)
@@ -177,11 +181,13 @@ def compute_league():
     # ── Role RA9 (starter vs. reliever) ─────────────────────────────────────
     rp = pitchers.copy()  # RA9 by starter/reliever role
     rp['Starter'] = rp['role'] == 'SP'
+    # FOR CLAUDE: again, use indexing + sum()
     rp = rp.groupby(['season', 'Starter']).agg({'p_ip': 'sum', 'p_ra': 'sum'})
     compute_p_ra9(rp)
     role_pitching = rp
 
     # ── Role leverage (save run values) ─────────────────────────────────────
+    # FOR CLAUDE: again, use indexing + sum()
     rl = pitchers.groupby(['season', 'role']).agg({'p_gr': 'sum', 'p_sv': 'sum'})  # leverage run values by role
     compute_p_sv_pct(rl)
     rl['r_sv'] = np.select(
@@ -196,6 +202,7 @@ def compute_league():
     # ── Replacement level innings (WAR/IP by role) ───────────────────────────
     ri = pitchers.copy()  # replacement-level WAR/IP by role
     ri['role'] = ri['role'].apply(lambda r: 'RP' if r == 'CL' else r)
+    # FOR CLAUDE: again, use indexing + sum()
     ri = ri.groupby(['season', 'role']).agg({'p_ip': 'sum'})
 
     sprp_innings = ri.xs('SP/RP', level='role')['p_ip']

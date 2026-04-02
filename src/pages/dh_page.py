@@ -13,6 +13,9 @@ from constants import num_games, runs_E_new, runs_PB, mlb_E_rate, CURRENT_SEASON
 from util import make_doc, render_table, fmt_round
 from registry import REGISTRY
 
+# FOR CLAUDE: the core calculations should be moved to src. src/pages should ONLY
+# include stuff for actually displaying stuff on pages
+
 # Positional adjustments (runs/80-game season), rounded to nearest 1.5
 _RPOS = {
     'C':   +7.0,

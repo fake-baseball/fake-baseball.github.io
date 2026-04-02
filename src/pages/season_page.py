@@ -23,7 +23,8 @@ def _fmt_gb(v):
 def _fmt_rec(w, l):
     return f"{w}-{l}"
 
-
+# FOR CLAUDE: move the calculation logic to a new file `src/seasons.py` and
+# ensure that logic in this file is only related to displaying it
 def _split_records(sched, div_map, conf_map, winning_teams):
     """Return dict: team -> split W-L records, each a [w, l] list.
 
@@ -103,6 +104,12 @@ def _standings_section(season_num):
         h3(conf_name)
         for div_name, div_group in conf_group.groupby('division_name', sort=False):
             h4(div_name)
+            # FOR CLAUDE: use render_table here too. You may want to add to 
+            # src/registry.py team-based stats (i.e. all the records) and use the
+            # utility there (perhaps update to render_table required) to make sure
+            # that the records are formatted as records properly
+            # When you add team-based columns to src/registry.py, remember to follow
+            # our rules for the names of the slugs (something like RA would be t_ra, for example)
             with table(border=0):
                 with thead():
                     with tr():
@@ -153,6 +160,7 @@ def _wildcard_section(season_num, season_rows, split):
         wc_cols = ['Team', 'W', 'L', 'Pct', 'GB', 'RS', 'RA', 'Diff']
         if split:
             wc_cols.append('L10')
+        # FOR CLAUDE: like identified above, use render_table after refactoring column names
         with table(border=0):
             with thead():
                 with tr():
@@ -182,6 +190,7 @@ def _league_stats_section(season_num):
 
     h3("Batting")
     bat_cols = ['AVG', 'OBP', 'SLG', 'OPS', 'wOBA', 'R/G', 'HR', 'BB', 'K']
+    # FOR CLAUDE: use render_table PLEASE
     with table(border=0):
         with thead():
             with tr():
@@ -207,6 +216,7 @@ def _league_stats_section(season_num):
         ('p_bb_per_9','p_bb_per_9', 'BB/9'),
         ('p_babip',  'BABIP', 'BABIP'),
     ]
+    # FOR CLAUDE: use render_table PLEASE
     with table(border=0):
         with thead():
             with tr():
@@ -238,7 +248,7 @@ def _leaders_section(season_num):
         rows = ld.get_pitching_leaders(stat, season=season_num, num=5)
         _leader_table(stat, rows)
 
-
+# FOR CLAUDE: move head-to-head table builder to src/seasons.py, only keep display logic here
 def _h2h_matrix(season_num):
     sched = teams_data.schedules.get(season_num)
     if sched is None:

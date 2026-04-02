@@ -7,6 +7,7 @@ from util import make_doc
 
 
 def generate_home(sections):
+    # FOR CLAUDE: move _LINKS to top-level
     _LINKS = [
         ('players',     "Players",              "players/index.html"),
         ('leaders',     "Leaders",              "leaders/index.html"),

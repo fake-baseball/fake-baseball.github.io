@@ -14,13 +14,15 @@ from data import teams as teams_data
 from constants import CURRENT_SEASON, LAST_COMPLETED_SEASON
 from registry import REGISTRY
 
+# FOR CLAUDE: the summary table can be identified from the internal column names only, then
+# render_table can take care of displaying that for you
 _PIT_SUMMARY_COLS = [
     ('WAR',   'p_war'),  ('W',    'p_w'),   ('L',  'p_l'),   ('ERA', 'p_era'),
     ('ERA-',  'p_era_minus'), ('G',    'p_gp'),  ('GS', 'p_gs'),  ('SV',  'p_sv'),
     ('IP',    'p_ip'), ('BB', 'p_bb'), ('SO', 'p_k'),   ('WHIP', 'p_whip'),
 ]
 
-
+# FOR CLAUDE: use render_table here PLEASE
 def _pit_summary_table(stats, proj_row):
     """Render BB-ref style summary strip: current season, Projected, Career."""
     def _fmt(col, val):
@@ -63,6 +65,8 @@ from util import fmt_round, fmt_ip, render_table, convert_name, make_doc
 from data.stats import pitching_stream_rows
 
 
+# FOR CLAUDE: as stated before, refactoring pit_projections.py there will obviate the
+# need to convert column names here
 def _pit_proj_row(first, last, cols):
     """Return a single-row DataFrame for the projected season, or None."""
     rows = pit_proj_module.compute_all()

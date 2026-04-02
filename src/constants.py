@@ -15,9 +15,9 @@ runs_CS = -0.45
 
 # Fielding
 ratio_GF   = 8/9
-runs_E        = -0.7   # used in Seasons 1-20 Rdef calculation
-runs_PB       = -0.45  # used in Seasons 1-20 Rdef calculation
-runs_E_new    = -0.4   # used in new attribute-based Rdef model (Season 21+)
+runs_E     = -0.7   # used in Seasons 1-20 Rdef calculation
+runs_PB    = -0.45  # used in Seasons 1-20 Rdef calculation
+runs_E_new = -0.4   # used in new attribute-based Rdef model (Season 21+)
 DEF_IMPACT = 0.5
 
 # MLB average errors per game by position (2021-2025, all 30 teams)
@@ -34,20 +34,20 @@ mlb_E_rate = {
 }
 
 # Pitching
-runs_SV          = 0.5
-SPRP_INNING_SHARE  = 0.5
+runs_SV           = 0.5
+SPRP_INNING_SHAR E= 0.5
 
 # WAR framework
 # TODO: RUNS_PER_WIN should be calculated from league run data rather than hardcoded
-RUNS_PER_WIN    = 9.86107227952777
-num_games       = 80
-num_teams       = 30
+RUNS_PER_WIN      = 9.86107227952777
+num_games         = 80
+num_teams         = 30
 replacement_level = 1/6
 
-TOTAL_SEASON_GAMES = num_teams * num_games // 2  # 1200: distinct games in a full season
+TOTAL_SEASON_GAMES = num_teams * num_games // 2
 
-total_WAR    = (0.5 - replacement_level) * num_games * num_teams
-batter_share = 13/21
+total_WAR     = (0.5 - replacement_level) * num_games * num_teams
+batter_share  = 13/21
 starter_share = 2/3
 
 batter_WAR   = total_WAR * batter_share
@@ -69,10 +69,10 @@ park_factors = {team: value / 100 for team, value in park_factors.items()}
 # NOTE: we implicitly assume league-average park factor is 100
 
 # Qualification thresholds
-BAT_PA_PER_GAME      = 2.7    # minimum PA/G for single-season batting rate-stat qualification
-BR_SBATT_PER_GAME    = 0.1    # minimum SB attempts/G for single-season baserunning qualification
-FLD_GF_PER_GAME      = 0.67   # minimum GF/G for single-season fielding qualification
-PIT_IP_PER_GAME      = 1.0    # minimum IP/G for single-season pitching rate-stat qualification
+BAT_PA_PER_GAME      = 2.7
+BR_SBATT_PER_GAME    = 0.1
+FLD_GF_PER_GAME      = 0.67
+PIT_IP_PER_GAME      = 1.0
 
 BAT_SEASON_MIN_PA    = BAT_PA_PER_GAME   * num_games
 BAT_CAREER_MIN_PA    = 1500
@@ -83,7 +83,7 @@ FLD_CAREER_MIN_GF    = 250
 PIT_SEASON_MIN_IP    = PIT_IP_PER_GAME   * num_games
 PIT_CAREER_MIN_IP    = 500.0
 
-# Current in-progress season; last completed season (projections are based on this)
+# Seasons for projections
 CURRENT_SEASON        = 21
 LAST_COMPLETED_SEASON = 20
 

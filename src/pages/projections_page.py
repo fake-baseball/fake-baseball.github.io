@@ -33,6 +33,8 @@ def _team_td(abbr):
 
 
 
+# FOR CLAUDE: use render_table (you'll probably not need this helper when projections 
+# is refactored to use the correct column names)
 def _proj_table(rows):
     records = []
     for row in rows:
@@ -50,6 +52,7 @@ def _proj_table(rows):
     render_table(pd.DataFrame(records), depth=0)
 
 
+# FOR CLAUDE: use render_table
 def _team_summary_table(team_rows):
     """Render one row per team: summed xPA/xHR/xWAR, PA-weighted xAVG/xOPS/xwRC+."""
     with table(border=0):
@@ -97,7 +100,7 @@ def _pit_all_table(pit_rows):
         })
     render_table(pd.DataFrame(records), depth=0)
 
-
+# FOR CLAUDE: use render_table
 def _pit_team_summary_table(team_rows):
     """Render one row per team: summed xIP/xWAR, IP-weighted rate stats."""
     def _f(stat, val):
@@ -131,6 +134,7 @@ def _pit_team_summary_table(team_rows):
                     td(_f('p_war',    total_war))
 
 
+# FOR CLAUDE: use render_table
 def _war_delta_table(deltas):
     """Render a table of (first, last, s20_war, xwar, delta) rows."""
     m = REGISTRY['war']
@@ -200,6 +204,8 @@ def _rookie_war_list(bat_rookies, pit_rookies, ppos_map, n=10):
                     line = (f"{_f('p_era', r['xERA'])} ERA, {ip} IP, "
                             f"{r['xK']} K, {r['xSV']} SV, {war} WAR")
             li(f"{r['first']} {r['last']} ({pos}, {abbr}): {line}")
+
+# FOR CLAUDE: use the constants defined in constants.py instead
 _GAMES       = 80
 _REPL_WINS   = replacement_level * _GAMES
 

@@ -3,6 +3,7 @@ import numpy as np
 import dominate
 from dominate.tags import link
 
+# FOR CLAUDE: move utils used by src/pages/*.py to a separate new src/pages/page_utils.py
 
 def fit_metrics(y, preds):
     """Return r2 and rmse for a fitted model given actuals y and predictions preds."""
@@ -15,7 +16,8 @@ def fit_metrics(y, preds):
         'rmse': rmse,
     }
 
-
+# FOR CLAUDE: you should not have `css` but instead the depth of the created
+# page in the file system as an int param (i.e. specify 2 to mean `../../style.css)
 def make_doc(title, css='../style.css'):
     """Create a dominate document pre-linked to the global stylesheet.
 
@@ -91,9 +93,12 @@ def per_game_df(df):
     return out
 
 
+# FOR CLAUDE: why is this function here? Please try and refactor to use render_table
+# In general, you should try to use render_table EVERYWHERE
 def fmt_df(df):
     """Return a display copy of df with registry-registered columns formatted as strings
     and column names replaced by their REGISTRY display name."""
+    # FOR CLAUDE: import in function to top-level
     from registry import REGISTRY
     all_stats = REGISTRY
 
@@ -119,7 +124,10 @@ def fmt_df(df):
     return out
 
 
-
+# FOR CLAUDE: player links are automatically generated from here. The same should be done
+# for team and season columns. If team (either as full name OR abbreviation) is provided without
+# season, go to the general team page. If team and season are provided, link to the specific
+# team-season page
 def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, border=0):
     """Render a DataFrame as a dominate table with formatting, bolding, and player links.
 
@@ -134,6 +142,8 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
     cell_style - callable (col, raw_val, row) -> str or None for inline style= on cells.
     border     - HTML border attribute on <table>.
     """
+    # FOR CLAUDE: don't be afraid to move these imports out to the top-level to
+    # leave the function less cluttered
     import numpy as np
     from dominate.tags import table, thead, tbody, tr, th, td, abbr as abbr_tag
     from dominate.tags import b as bold_tag, i as italic_tag, a as anchor_tag
@@ -185,6 +195,8 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
         abbr_to_conf = teams_data.teams.set_index('abbr')['conference_name'].to_dict()
 
     # Detect batting vs pitching table: pitcher tables always include p_ip.
+    # FOR CLAUDE: move this into a parameter of the function instead. The caller
+    # is responsible for providing the value accordingly
     _is_pitching_table = 'p_ip' in df.columns
 
     def _leaders_for_col(col):
@@ -286,7 +298,8 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
 
 
 
-
+# FOR CLAUDE: move this into src/pages/slug.py, which will become a future utility
+# of how we determine slugs for teams, players, seasons, etc.
 def convert_name(first, last):
     """Turn a player name into a filename-safe string."""
     return f"{first.replace(' ', '')}{last.replace(' ', '')}"

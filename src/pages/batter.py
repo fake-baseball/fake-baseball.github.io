@@ -19,13 +19,15 @@ from data.stats import batting_stream_rows
 _BAT_CONTEXTS = {'batting', 'baserunning', 'fielding'}
 _ALL_BAT = {k: v for k, v in REGISTRY.items() if v.get('context') in _BAT_CONTEXTS}
 
+# FOR CLAUDE: the summary table can be identified from the internal column names only, then
+# render_table can take care of displaying that for you
 _SUMMARY_COLS = [
     ('WAR', 'war'), ('AB', 'ab'), ('H', 'h'), ('HR', 'hr'),
     ('BA',  'avg'), ('R',  'r'),  ('RBI', 'rbi'), ('SB', 'sb'),
     ('OBP', 'obp'), ('SLG', 'slg'), ('OPS', 'ops'), ('OPS+', 'ops_plus'),
 ]
 
-
+# FOR CLAUDE: use render_table here PLEASE
 def _summary_table(stats, proj_row):
     """Render BB-ref style summary strip: current season, Projected, Career."""
     def _fmt(col, val):
@@ -70,6 +72,8 @@ def _bat_proj_row(first, last, cols):
     if proj is None:
         return None
 
+    # FOR CLAUDE: once you refactor projections to use internal column names, this
+    # is mostly basically not going to be needed (for the renaming stuff)
     pa    = proj['proj_pa']
     bb    = int(round(pa * proj['bb']))
     hbp   = int(round(pa * proj['hbp']))

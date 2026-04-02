@@ -26,6 +26,7 @@ def _batter_stats(first, last):
     def _fmt(stat, val):
         m = REGISTRY[stat]
         return fmt_round(val, m['decimal_places'], m['leading_zero'])
+    # FOR CLAUDE: use registry formatting everywhere, don't just blindly assume int
     return {
         'AVG': _fmt('avg', row['avg']),
         'HR':  int(row['hr']),
@@ -47,6 +48,7 @@ def _pitcher_stats(first, last):
     def _fmt(stat, val):
         m = REGISTRY[stat]
         return fmt_round(val, m['decimal_places'], m['leading_zero'])
+    # FOR CLAUDE: use registry formatting everywhere, don't just blindly assume int
     return {
         'W-L': f"{int(row['p_w'])}-{int(row['p_l'])}",
         'SV':  int(row['p_sv']),
@@ -81,6 +83,7 @@ def _pitcher_table(players_list, stat_rows):
                         td(s21[stat] if s21 is not None else '-')
 
 
+# FOR CLAUDE: this function is unused, remove it.
 def _pitcher_statline(first, last):
     df = pit_module.stats
     mask = (df['First Name'] == first) & (df['Last Name'] == last) & (df['stat_type'] == 'season')
@@ -98,7 +101,10 @@ def _pitcher_statline(first, last):
 
 
 
-
+# FOR CLAUDE: (kinda a big overarching thing I just realized) investigate any discrepancy 
+# between the column names for "First Name" and "Last Name". From loading, we should fix it
+# to ALWAYS be first_name and last_name so we NEVER have to do any renaming ANYWHERE within
+# the core or display logic. You can add them as stats to src/registry.py if it's not there
 def _roster_table(group, cols, link_col='Name'):
     df = group.rename(columns={'first_name': 'First Name', 'last_name': 'Last Name'}).copy()
     df['player'] = ''
@@ -116,6 +122,9 @@ def generate_team_page(team_name, roster, team_info):
     position = roster[roster['ppos'] != 'P'].sort_values(['last_name', 'first_name']).copy()
 
     # Rename columns to REGISTRY keys (or display labels for non-REGISTRY columns)
+    # FOR CLAUDE: ensure that BEFORE we get to this point (i.e. in src/data/*.py), the
+    # columns have already been renamed appropriately. Then, src/registry.py can contain
+    # the display column name which is handled by render_table
     for df in (pitchers, position):
         df.rename(columns={
             'jersey':     '#',
@@ -153,6 +162,7 @@ def generate_team_page(team_name, roster, team_info):
              _batter_stats(row['firstName'], row['lastName']))
             for _, row in lineup.iterrows()
         ]
+        # FOR CLAUDE: abstract this into a _lineup_table function like you did _pitcher_table
         stat_rows = ['AVG', 'HR', 'RBI', 'OPS', 'WAR']
         with table(border=0):
             with thead():
@@ -201,6 +211,7 @@ def generate_team_page(team_name, roster, team_info):
         total_pct  = f"{total_w / (total_w + total_l):.3f}".lstrip('0')
         total_diff = fmt_rdiff(total_rs - total_ra)
         p(f"Lifetime: {total_w}-{total_l} ({total_pct}), {total_rs} RS, {total_ra} RA, {total_diff} Diff")
+        # FOR CLAUDE: use render_table (after column name adjustments and registry refactors are done)
         with table(border=0):
             with thead():
                 with tr():

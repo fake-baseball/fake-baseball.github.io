@@ -19,6 +19,13 @@ from constants import (PIT_SEASON_MIN_IP,
                        PROJ_SEASONS, PROJ_WEIGHTS as WEIGHTS, PROJ_WEIGHT_TOTAL as WEIGHT_TOTAL,
                        total_WAR, batter_share, CURRENT_SEASON, LAST_COMPLETED_SEASON)
 
+# FOR CLAUDE: in this file, we use `x` as a prefix on a stat to indicate the predicted number.
+# That will change. Instead, we must use the regular INTERNAL name of the stat (e.g. hr instead of xHR).
+# That also removes the need for custom formatting afterwards since it is now known by the
+# regular stat name. Make sure ALL columns are updated to remove the `x` prefix on predictions.
+# In the future, we can disambiguate real from projected stats based on what df or row we're looking at
+# (think: a stat_type which is 'projected' means the stats there are projections of the regular stats)
+
 # Component names as they appear in pitching.stats (final column names after rename)
 COMPONENTS   = ['p_k', 'p_bb', 'p_hbp', 'p_hr', 'p_h']   # per-BF rates
 SKILLS          = ['velocity', 'junk', 'accuracy']
@@ -29,7 +36,6 @@ APP_COL          = {'SP': 'p_gs', 'RP': 'p_gr', 'CL': 'p_gr'}
 SPRP_FIXED_IP    = 65.0   # SP/RP gets a fixed projection; role is deployment-driven
 RA9_MIN_GS       = 15     # minimum GS to qualify for the SP RA9 model
 RA9_MIN_GR       = 20     # minimum GR to qualify for the reliever RA9 model
-
 
 def compute():
     """Return (rows, comp_metrics, ra9_metric) for all active pitchers.

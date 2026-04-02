@@ -144,6 +144,7 @@ def generate_leaders():
 
     # ── Leaders index page ────────────────────────────────────────────────────
 
+    # FOR CLAUDE: round numbers down to the nearest integer before displaying
     qual_notes = {
         'batting':     (f"For rate statistics, single-season records require {BAT_SEASON_MIN_PA:,} PA "
                         f"and career/active leaders require {BAT_CAREER_MIN_PA:,} PA."),
