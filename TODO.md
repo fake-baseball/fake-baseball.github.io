@@ -7,61 +7,71 @@
 - [ ] Current season standings snapshot (division leaders)
 - [ ] Recent game results
 - [ ] Stat leaders snapshot (top 3-5 in key categories)
-- [ ] Links to all major sections
+- [X] Links to all major sections
 
 ## Players
-- [ ] Players landing page — alphabetical list with search/filter, basic stats (team, position, WAR)
+- [X] Players landing page — alphabetical list with search/filter, basic stats (team, position, WAR)
+- [ ] Player search by name
 - [ ] Individual player page
-  - [ ] Header: name, team, position, age, handedness, salary
-  - [ ] Career stat tables (standard, advanced, value) — batting or pitching depending on role
-  - [ ] Season-by-season breakdown
-  - [ ] Career totals row
+  - [X] Header: name, team, position, age, handedness, salary
+  - [X] Career stat tables (standard, advanced, value) — batting or pitching depending on role
+  - [X] Season-by-season breakdown
+  - [X] Career totals row
   - [ ] Multi-team season handling (per-team + combined)
   - [ ] Awards and honors received
-  - [ ] WAR chart by season
+  - [X] WAR chart by season
   - [ ] Percentile rankings vs. league (like Baseball Savant)
 
 ## Teams
 - [ ] Teams landing page — list of all teams grouped by division/conference, with current season record and key stats
+  - [ ] Images
+  - [ ] Historical franchises
+  - [ ] Franchise summaries
 - [ ] Individual team page
-  - [ ] Header: team name, division, conference
-  - [ ] Current season record, standings position
-  - [ ] Starting lineup with recent stats
-  - [ ] Starting rotation with recent stats
-  - [ ] Full roster table (pitchers + position players)
-  - [ ] Team season stat totals (offense and pitching)
-  - [ ] Top players by WAR
+  - [X] Header: team name, division, conference
+  - [X] Current season record
+  - [ ] standings position
+  - [X] Starting lineup with recent stats
+  - [X] Starting rotation with recent stats
+  - [X] Full roster table (pitchers + position players)
 - [ ] Individual team-season page
-  - [ ] Season record
-  - [ ] Roster that season
-  - [ ] Batting and pitching stat tables for that season
+  - [X] Season record
+  - [X] Roster that season
+  - [X] Batting and pitching stat tables for that season
   - [ ] Awards won that season
-  - [ ] Game log for that season
+  - [X] Game log for that season
 
 ## Seasons
-- [ ] Seasons landing page — list of all seasons with league-wide stat totals, links to individual season pages
+- [X] Seasons landing page — list of all seasons with league-wide stat totals, links to individual season pages
+  - [ ] at the top should be winners
+  - [ ] Historical Totals
 - [ ] Individual season page
-  - [ ] League-wide batting and pitching totals
-  - [ ] Standings (by division and conference)
+  - [ ] Team batting and pitching totals
+  - [X] Standings (by division and conference)
   - [ ] Stat leaders for the season (top 5 per key category)
   - [ ] Award winners (MVP, Cy Young, Rookie of the Year, etc.)
   - [ ] Notable events / transactions
   - [ ] Game results
+  - [ ] magic numbers
+  - [ ] playoff % projections
 
 ## Leaders
-- [ ] Leaders landing page — index of all stat categories with links
-- [ ] Individual leader page
-  - [ ] Single-season records (all-time top N)
-  - [ ] Yearly leaders (one per season)
-  - [ ] Career leaders
-  - [ ] Active leaders
+- [X] Leaders landing page — index of all stat categories with links
+- [X] Individual leader page
+  - [X] Single-season records (all-time top N)
+  - [X] Yearly leaders (one per season)
+  - [X] Career leaders
+  - [X] Active leaders
+  - [ ] By league
+  - [ ] Yearly top 10s
 
 ## Games
-- [ ] Games landing page — list of all games by season, with date, teams, score
+- [ ] Games landing page
+  - [ ] list of all games by season, with date, teams, score
 - [ ] Individual game page
-  - [ ] Box score (batting and pitching lines for both teams)
-  - [ ] Line score (runs by inning)
-  - [ ] Game notes / summary
+  - [X] Box score (batting and pitching lines for both teams)
+  - [X] Line score (runs by inning)
+  - [X] Game notes / summary
   - [ ] Links to player pages for participants
 - [ ] Clickable links on player, team names
 
