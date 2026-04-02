@@ -2,7 +2,7 @@ import pandas as pd
 
 from constants import CURRENT_SEASON
 from data.sources import TEAMS_CSV, ROTATIONS_CSV, LINEUPS_CSV, STANDINGS_CSV, SCHEDULE20_CSV
-from data.sources import season21_latest
+from data.sources import season21_latest, read_s21
 
 teams      = None
 rotations  = None
@@ -20,13 +20,13 @@ def load_teams():
 
 def load_rotations():
     global rotations
-    df = pd.read_csv(season21_latest('rotations'))
+    df = read_s21(season21_latest('rotations'))
     rotations = df.rename(columns={'slot': 'rotation'})[['teamName', 'rotation', 'firstName', 'lastName', 'role']]
 
 
 def load_lineups():
     global lineups
-    df = pd.read_csv(season21_latest('lineups'))
+    df = read_s21(season21_latest('lineups'))
     lineups = df[df['lineupType'] == 'DH'][['teamName', 'battingOrder', 'firstName', 'lastName', 'pos']].copy()
 
 
@@ -62,7 +62,7 @@ def _standings_from_schedule21():
     path = season21_latest('schedule')
     if path is None:
         return None
-    sched = pd.read_csv(path)
+    sched = read_s21(path)
     # Only completed games (non-null scores)
     played = sched.dropna(subset=['home_score', 'away_score']).copy()
     if played.empty:
@@ -108,7 +108,7 @@ def _load_schedule21():
     path = season21_latest('schedule')
     if path is None:
         return
-    raw = pd.read_csv(path)
+    raw = read_s21(path)
     raw.columns = raw.columns.str.strip()
     played = raw.dropna(subset=['home_score', 'away_score']).copy()
     if played.empty:

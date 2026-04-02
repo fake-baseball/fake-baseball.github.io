@@ -4,7 +4,8 @@ import pandas as pd
 
 from formulas import compute_tb, compute_xbh, compute_bip_bat, compute_gf, compute_sb_att
 from formulas import compute_p_bip, compute_p_gr
-from data.sources import BATTERS_CSV, PITCHERS_CSV, TEAMS_CSV, season21_latest, season21_all
+from data.sources import BATTERS_CSV, PITCHERS_CSV, TEAMS_CSV, season21_latest, season21_all, read_s21
+from constants import weight_BB, weight_HBP, weight_1B, weight_2B, weight_3B, weight_HR
 
 # Integer position codes used in season21 files
 _POS_MAP  = {1:'P', 2:'C', 3:'1B', 4:'2B', 5:'3B', 6:'SS', 7:'LF', 8:'CF', 9:'RF'}
@@ -59,7 +60,7 @@ def _load_season21_batting():
     path = season21_latest('batting')
     if path is None:
         return None
-    raw = pd.read_csv(path)
+    raw = read_s21(path)
     if raw.empty:
         return None
 
@@ -129,7 +130,7 @@ def _load_season21_pitching():
     path = season21_latest('pitching')
     if path is None:
         return None
-    raw = pd.read_csv(path)
+    raw = read_s21(path)
     if raw.empty:
         return None
 
@@ -194,7 +195,7 @@ def batting_stream_rows(first, last):
 
     snapshots = []
     for path in files:
-        raw = pd.read_csv(path)
+        raw = read_s21(path)
         mask = (raw['firstName'] == first) & (raw['lastName'] == last)
         snapshots.append(raw[mask].iloc[0] if mask.any() else None)
 
@@ -222,15 +223,21 @@ def batting_stream_rows(first, last):
         bb  = _int(snap, 'baseOnBalls')
         hbp = _int(snap, 'hitByPitch')
         sf  = _int(snap, 'sacrificeFlies')
+        k   = _int(snap, 'strikeOuts')
         d2  = _int(snap, 'doubles')
         d3  = _int(snap, 'triples')
         xhr = _int(snap, 'homeruns')
-        tb_cum = (h - d2 - d3 - xhr) + 2*d2 + 3*d3 + 4*xhr
+        s1  = h - d2 - d3 - xhr
+        tb_cum = s1 + 2*d2 + 3*d3 + 4*xhr
         row['avg'] = h / ab if ab > 0 else 0.0
         obp_d = ab + bb + hbp + sf
         row['obp'] = (h + bb + hbp) / obp_d if obp_d > 0 else 0.0
         row['slg'] = tb_cum / ab if ab > 0 else 0.0
         row['ops'] = row['obp'] + row['slg']
+        bip = ab - k - xhr + sf
+        row['babip'] = (h - xhr) / bip if bip > 0 else 0.0
+        woba_d = ab + bb + hbp + sf
+        row['woba'] = (weight_BB*bb + weight_HBP*hbp + weight_1B*s1 + weight_2B*d2 + weight_3B*d3 + weight_HR*xhr) / woba_d if woba_d > 0 else 0.0
         prev = snap
         rows.append(row)
 
@@ -264,7 +271,7 @@ def pitching_stream_rows(first, last):
 
     snapshots = []
     for path in files:
-        raw = pd.read_csv(path)
+        raw = read_s21(path)
         mask = (raw['firstName'] == first) & (raw['lastName'] == last)
         snapshots.append(raw[mask].iloc[0] if mask.any() else None)
 
@@ -294,11 +301,26 @@ def pitching_stream_rows(first, last):
         er_cum   = _int(snap, 'earnedRuns')
         bb_cum   = _int(snap, 'baseOnBalls')
         h_cum    = _int(snap, 'hits')
+        k_cum    = _int(snap, 'strikeOuts')
+        hr_cum   = _int(snap, 'homeRuns')
+        hbp_cum  = _int(snap, 'battersHitByPitch')
+        bf_cum   = _int(snap, 'battersFaced')
         w_cum    = _int(snap, 'wins')
         l_cum    = _int(snap, 'losses')
         row['p_era']     = (er_cum * 9.0) / ip_true if ip_true > 0 else 0.0
         row['p_whip']    = (bb_cum + h_cum) / ip_true if ip_true > 0 else 0.0
         row['p_win_pct'] = w_cum / (w_cum + l_cum) if (w_cum + l_cum) > 0 else np.nan
+        p_bip = bf_cum - bb_cum - k_cum - hr_cum - hbp_cum
+        row['p_babip'] = (h_cum - hr_cum) / p_bip if p_bip > 0 else 0.0
+        if ip_true > 0:
+            import league as lg
+            from constants import CURRENT_SEASON
+            cfip_index = lg.season_pitching.index
+            cfip_season = CURRENT_SEASON if CURRENT_SEASON in cfip_index else cfip_index.max()
+            cfip = lg.season_pitching.loc[cfip_season, 'p_cfip']
+            row['p_fip'] = (13*hr_cum + 3*(bb_cum + hbp_cum) - 2*k_cum) / ip_true + cfip
+        else:
+            row['p_fip'] = np.nan
         prev = snap
         rows.append(row)
 

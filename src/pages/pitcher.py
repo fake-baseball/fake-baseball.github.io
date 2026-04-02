@@ -120,8 +120,8 @@ def _pit_proj_row(first, last, cols):
 
 
 _PIT_STREAM_COLS = [
-    'stream', 'p_w', 'p_l', 'p_win_pct', 'p_era', 'p_gp', 'p_gs', 'p_cg', 'p_sho', 'p_sv', 'p_ip',
-    'p_h', 'p_ra', 'p_er', 'p_hr', 'p_bb', 'p_k', 'p_hbp', 'p_wp', 'p_bf', 'p_whip',
+    'stream', 'p_w', 'p_l', 'p_win_pct', 'p_era', 'p_fip', 'p_gp', 'p_gs', 'p_cg', 'p_sho', 'p_sv', 'p_ip',
+    'p_h', 'p_ra', 'p_er', 'p_hr', 'p_bb', 'p_k', 'p_hbp', 'p_wp', 'p_bf', 'p_tp', 'p_whip', 'p_babip',
     'stat_type',
 ]
 
@@ -136,8 +136,9 @@ def _pit_streams_section(first, last):
         d = {c: np.nan for c in _PIT_STREAM_COLS}
         d['stream']    = row['stream']
         d['stat_type'] = 'season'
-        for key in ('p_w', 'p_l', 'p_win_pct', 'p_era', 'p_gp', 'p_gs', 'p_cg', 'p_sho', 'p_sv',
-                    'p_ip', 'p_h', 'p_ra', 'p_er', 'p_hr', 'p_bb', 'p_k', 'p_hbp', 'p_wp', 'p_bf', 'p_whip'):
+        for key in ('p_w', 'p_l', 'p_win_pct', 'p_era', 'p_fip', 'p_gp', 'p_gs', 'p_cg', 'p_sho', 'p_sv',
+                    'p_ip', 'p_h', 'p_ra', 'p_er', 'p_hr', 'p_bb', 'p_k', 'p_hbp', 'p_wp', 'p_bf', 'p_tp',
+                    'p_whip', 'p_babip'):
             if key in row:
                 d[key] = row[key]
         frames.append(d)
@@ -239,7 +240,7 @@ def generate_pitcher_page(first_name, last_name):
             'season', 'age', 'team', 'p_ip',
             'p_era', 'p_fip', 'p_ra9', 'p_baa', 'p_obpa', 'p_bip', 'p_babip',
             'p_h_per_9', 'p_hr_per_9', 'p_k_per_9', 'p_bb_per_9', 'p_k_per_bb', 'p_k_pct', 'p_bb_pct',
-            'p_p_per_gp', 'p_ip_per_gp', 'p_p_per_ip', 'p_p_per_pa', 'stat_type',
+            'p_tp', 'p_p_per_gp', 'p_ip_per_gp', 'p_p_per_ip', 'p_p_per_pa', 'stat_type',
         ]])
 
         h3("Value Pitching")

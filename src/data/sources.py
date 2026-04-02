@@ -1,6 +1,23 @@
 """Paths to all source data files (relative to the project root)."""
 import glob
 import os
+import pandas as pd
+
+# Known team name discrepancies in season21 export files -> correct name
+TEAM_NAME_CORRECTIONS = {
+    'Dakar-Yoff Mariners': 'Yoff-Mariners Dakar',
+}
+
+_TEAM_COLS = ('mostRecentTeam', 'teamName', 'Home Team', 'Away Team', 'home_team', 'away_team')
+
+
+def read_s21(path):
+    """Read a season21 CSV and apply known team name corrections."""
+    raw = pd.read_csv(path)
+    for col in _TEAM_COLS:
+        if col in raw.columns:
+            raw[col] = raw[col].replace(TEAM_NAME_CORRECTIONS)
+    return raw
 
 BATTERS_CSV          = "sheets/MGL's BFBL with WAR - [Batters] by Season.csv"
 PITCHERS_CSV         = "sheets/MGL's BFBL with WAR - [Pitchers] by Season.csv"

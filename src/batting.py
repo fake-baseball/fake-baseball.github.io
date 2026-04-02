@@ -63,7 +63,7 @@ def compute():
     compute_pb_per_gf(d)
 
     # Park factor
-    pf = (1 + d['team'].map(park_factors)) / 2
+    pf = (1 + d['team'].map(park_factors).fillna(0)) / 2
 
     # Batting value (r_bat must come before wrc_plus)
     lg_woba = d['season'].map(lg.season_batting['woba'])

@@ -62,13 +62,14 @@ def compute():
     # Defense-adjusted RA9
     bip        = d['p_bf'] - d['p_bb'] - d['p_hbp'] - d['p_k'] - d['p_hr']
     babip_diff = d.apply(
-        lambda row: lg.team_defense.loc[(row['season'], row['team']), 'p_babip_diff'], axis=1)
+        lambda row: lg.team_defense.loc[(row['season'], row['team']), 'p_babip_diff']
+        if pd.notna(row['team']) else 0.0, axis=1)
     rh         = d['season'].map(lg.season_pitching['r_per_h'])
     d['p_r_def']  = -bip * babip_diff * rh * DEF_IMPACT
     compute_p_ra9_def(d)
 
     # WAR
-    pf       = (1 + d['team'].map(park_factors)) / 2
+    pf       = (1 + d['team'].map(park_factors).fillna(0)) / 2
     ra9_comp = d.apply(
         lambda row: lg.role_pitching.loc[(row['season'], row['role'] == 'SP'), 'p_ra9'], axis=1)
 

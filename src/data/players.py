@@ -1,7 +1,7 @@
 import pandas as pd
 
 from data.sources import PLAYERS_CSV, RETIRED_BATTERS_CSV, RETIRED_PITCHERS_CSV
-from data.sources import season21_latest, season21_earliest
+from data.sources import season21_latest, season21_earliest, read_s21
 from data.stats import _ROLE_MAP
 
 
@@ -19,7 +19,7 @@ def load_player_info():
 
 def _load_players21(path):
     """Load a season21 players CSV into the player_info format."""
-    raw = pd.read_csv(path)
+    raw = read_s21(path)
 
     df = pd.DataFrame()
     df['id']         = raw['id']

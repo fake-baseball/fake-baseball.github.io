@@ -133,7 +133,7 @@ def _bat_proj_row(first, last, cols):
 
 _BAT_STREAM_COLS = [
     'stream', 'gb', 'pa', 'ab', 'r', 'h', 'b_2b', 'b_3b', 'hr', 'rbi',
-    'sb', 'cs', 'bb', 'k', 'avg', 'obp', 'slg', 'ops', 
+    'sb', 'cs', 'bb', 'k', 'avg', 'obp', 'slg', 'ops', 'woba', 'babip',
     'tb', 'hbp', 'sh', 'sf', 'stat_type',
 ]
 
@@ -150,7 +150,7 @@ def _bat_streams_section(first, last):
         d['stat_type'] = 'season'
         for key in ('gb', 'pa', 'ab', 'r', 'h', 'b_2b', 'b_3b', 'hr', 'rbi',
                     'sb', 'cs', 'bb', 'k', 'hbp', 'sh', 'sf', 'tb',
-                    'avg', 'obp', 'slg', 'ops'):
+                    'avg', 'obp', 'slg', 'ops', 'woba', 'babip'):
             if key in row:
                 d[key] = row[key]
         frames.append(d)
