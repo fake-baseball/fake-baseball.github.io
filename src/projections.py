@@ -24,13 +24,6 @@ from formulas import compute_tb, compute_avg, compute_obp, compute_slg, compute_
 COMPONENTS   = ['bb', 'hbp', 'b_1b', 'b_2b', 'b_3b', 'hr', 'k', 'sb', 'cs']
 SKILLS       = ['power', 'contact', 'speed', 'fielding', 'arm']
 
-# FOR CLAUDE: in this file, we use `x` as a prefix on a stat to indicate the predicted number.
-# That will change. Instead, we must use the regular INTERNAL name of the stat (e.g. hr instead of xHR).
-# That also removes the need for custom formatting afterwards since it is now known by the
-# regular stat name. Make sure ALL columns are updated to remove the `x` prefix on predictions.
-# In the future, we can disambiguate real from projected stats based on what df or row we're looking at
-# (think: a stat_type which is 'projected' means the stats there are projections of the regular stats)
-
 # FOR CLAUDE: to disambiguate this from pit_projections.py, rename this file to bat_projections.py
 
 def compute():
@@ -134,7 +127,7 @@ def compute():
             'team':      str(pi['team_name']) if 'team_name' in pi.index else '',
             **{f'pa_{s}': season_pa[s] for s in PROJ_SEASONS},
             **{f'x{comp}': model_rates[comp] for comp in COMPONENTS},
-            **proj,
+            **{f'{comp}_rate': v for comp, v in proj.items()},
         })
 
     rows.sort(key=lambda r: (r['last'], r['first']))
@@ -188,25 +181,25 @@ def compute_all():
 
         # Use final batting column names in temp dict for formula functions
         d = {
-            'bb': row['bb'], 'hbp': row['hbp'],
-            'b_1b': row['b_1b'], 'b_2b': row['b_2b'], 'b_3b': row['b_3b'], 'hr': row['hr'],
-            'h':  row['b_1b'] + row['b_2b'] + row['b_3b'] + row['hr'],
-            'ab': max(0.0, 1.0 - row['bb'] - row['hbp']),
+            'bb': row['bb_rate'], 'hbp': row['hbp_rate'],
+            'b_1b': row['b_1b_rate'], 'b_2b': row['b_2b_rate'], 'b_3b': row['b_3b_rate'], 'hr': row['hr_rate'],
+            'h':  row['b_1b_rate'] + row['b_2b_rate'] + row['b_3b_rate'] + row['hr_rate'],
+            'ab': max(0.0, 1.0 - row['bb_rate'] - row['hbp_rate']),
             'sf': 0.0,
         }
         compute_tb(d); compute_avg(d); compute_obp(d); compute_slg(d)
         compute_ops(d); compute_woba(d)
-        row['xAVG']  = d['avg']
-        row['xOBP']  = d['obp']
-        row['xSLG']  = d['slg']
-        row['xOPS']  = d['ops']
-        row['xwOBA'] = d['woba']
-        row['xHR']   = int(round(row['proj_pa'] * row['hr']))
-        row['xK']    = int(round(row['proj_pa'] * row['k']))
-        row['xSB']   = int(round(row['proj_pa'] * row['sb']))
-        row['xCS']   = int(round(row['proj_pa'] * row['cs']))
-        bip_rate     = 1.0 - row['bb'] - row['hbp'] - row['k'] - row['hr']
-        row['xBABIP'] = (row['b_1b'] + row['b_2b'] + row['b_3b']) / bip_rate if bip_rate > 0 else 0.0
+        row['avg']  = d['avg']
+        row['obp']  = d['obp']
+        row['slg']  = d['slg']
+        row['ops']  = d['ops']
+        row['woba'] = d['woba']
+        row['hr']   = int(round(row['proj_pa'] * row['hr_rate']))
+        row['k']    = int(round(row['proj_pa'] * row['k_rate']))
+        row['sb']   = int(round(row['proj_pa'] * row['sb_rate']))
+        row['cs']   = int(round(row['proj_pa'] * row['cs_rate']))
+        bip_rate    = 1.0 - row['bb_rate'] - row['hbp_rate'] - row['k_rate'] - row['hr_rate']
+        row['babip'] = (row['b_1b_rate'] + row['b_2b_rate'] + row['b_3b_rate']) / bip_rate if bip_rate > 0 else 0.0
 
     # League context: 5/4/3 weighted average across seasons 18-20
     def _lg_avg(col):
@@ -238,47 +231,47 @@ def compute_all():
         pp = pi['ppos']
         sp = pi['spos']
         team_abbr = abbr_map.get(row['team'], '')
-        pf    = (1 + park_factors.get(team_abbr, 1.0)) / 2
-        xRbat = ((row['xwOBA'] - lg_wOBA_20 * pf) / scale_wOBA) * row['proj_pa']
-        xGB   = row['proj_pa'] / pa_per_gb if pa_per_gb > 0 else 0.0
-        row['xGB'] = max(0, min(num_games, int(round(xGB))))
-        row['xOPS+'] = 100 * ((row['xOBP'] / lg_obp_20) + (row['xSLG'] / lg_slg_20) - 1) / pf if lg_obp_20 > 0 and lg_slg_20 > 0 else 100.0
+        pf     = (1 + park_factors.get(team_abbr, 1.0)) / 2
+        r_bat  = ((row['woba'] - lg_wOBA_20 * pf) / scale_wOBA) * row['proj_pa']
+        xGB    = row['proj_pa'] / pa_per_gb if pa_per_gb > 0 else 0.0
+        row['gb'] = max(0, min(num_games, int(round(xGB))))
+        row['ops_plus'] = 100 * ((row['obp'] / lg_obp_20) + (row['slg'] / lg_slg_20) - 1) / pf if lg_obp_20 > 0 and lg_slg_20 > 0 else 100.0
         try:
             rpos_per_g = lg.pos_adjustment.loc[(pp, sp), 'r_pos']
         except KeyError:
             rpos_per_g = 0.0
-        xRpos = rpos_per_g * xGB / num_games
-        xRbr  = (row['sb'] * runs_SB + row['cs'] * runs_CS
-                 - lg_wSB * (row['b_1b'] + row['bb'] + row['hbp'])) * row['proj_pa']
-        row['xRbat']  = xRbat
-        row['xRpos']  = xRpos
-        row['xRbr']   = xRbr
-        row['_xRAA']  = xRbat + xRbr + xRpos
-        row['_xRrep'] = row['proj_pa'] * lg_rrpa_20
+        r_pos = rpos_per_g * row['gb'] / num_games
+        r_br  = (row['sb_rate'] * runs_SB + row['cs_rate'] * runs_CS
+                 - lg_wSB * (row['b_1b_rate'] + row['bb_rate'] + row['hbp_rate'])) * row['proj_pa']
+        row['r_bat']  = r_bat
+        row['r_pos']  = r_pos
+        row['r_br']   = r_br
+        row['_raa']   = r_bat + r_br + r_pos
+        row['_rrep']  = row['proj_pa'] * lg_rrpa_20
         if row['proj_pa'] > 0 and lg_wrcpa > 0:
-            row['xwRC+'] = 100 * (xRbat / row['proj_pa'] + lg_rPA_20) / lg_wrcpa
-            row['xwRC']  = (xRbat + lg_rPA_20 * row['proj_pa'])
+            row['wrc_plus'] = 100 * (r_bat / row['proj_pa'] + lg_rPA_20) / lg_wrcpa
+            row['wrc']      = r_bat + lg_rPA_20 * row['proj_pa']
         else:
-            row['xwRC+'] = 0.0
-            row['xwRC']  = 0.0
+            row['wrc_plus'] = 0.0
+            row['wrc']      = 0.0
 
     # Rcorr: target correct total WAR using only rostered players to set the rate
-    rostered       = [r for r in rows if r['team'] != 'FREE AGENT']
-    total_xRAA     = sum(r['_xRAA'] for r in rostered)
-    total_xRrep    = sum(r['_xRrep'] for r in rostered)
-    total_xPA      = sum(r['proj_pa'] for r in rostered)
-    target_xRAA    = total_WAR * batter_share * rpw_20 - total_xRrep
-    corr_rate      = (target_xRAA - total_xRAA) / total_xPA if total_xPA > 0 else 0.0
+    rostered    = [r for r in rows if r['team'] != 'FREE AGENT']
+    total_raa   = sum(r['_raa']  for r in rostered)
+    total_rrep  = sum(r['_rrep'] for r in rostered)
+    total_pa    = sum(r['proj_pa'] for r in rostered)
+    target_raa  = total_WAR * batter_share * rpw_20 - total_rrep
+    corr_rate   = (target_raa - total_raa) / total_pa if total_pa > 0 else 0.0
     for row in rows:
-        xRcorr        = corr_rate * row['proj_pa']
-        xRAA          = row['_xRAA'] + xRcorr
-        xRAR          = xRAA + row['_xRrep']
-        row['xRcorr'] = xRcorr
-        row['xRrep']  = row['_xRrep']
-        row['xRAA']   = xRAA
-        row['xRAR']   = xRAR
-        row['xWAA']   = xRAA / rpw_20 if rpw_20 > 0 else 0.0
-        row['xWAR']   = xRAR / rpw_20 if rpw_20 > 0 else 0.0
+        r_corr      = corr_rate * row['proj_pa']
+        raa         = row['_raa'] + r_corr
+        rar         = raa + row['_rrep']
+        row['r_corr'] = r_corr
+        row['r_rep']  = row['_rrep']
+        row['raa']    = raa
+        row['rar']    = rar
+        row['waa']    = raa / rpw_20 if rpw_20 > 0 else 0.0
+        row['war']    = rar / rpw_20 if rpw_20 > 0 else 0.0
 
     # ── Fit OLS: RBI/PA ~ 1B_rate + 2B_rate + 3B_rate + HR_rate + (BB+HBP)_rate
     # BB and HBP are combined: both put the batter on base with no contact and
@@ -312,14 +305,14 @@ def compute_all():
 
     for row in rows:
         proj_non_hr_ob = row['proj_pa'] * (
-            row['b_1b'] + row['b_2b'] + row['b_3b'] + row['bb'] + row['hbp']
+            row['b_1b_rate'] + row['b_2b_rate'] + row['b_3b_rate'] + row['bb_rate'] + row['hbp_rate']
         )
-        row['xR'] = int(round(row['xHR'] + proj_non_hr_ob * lg_rc_pct))
+        row['r'] = int(round(row['hr'] + proj_non_hr_ob * lg_rc_pct))
 
-        # xRBI: OLS on blended per-PA component rates (BB+HBP combined)
-        X_pred        = [[row['b_1b'], row['b_2b'], row['b_3b'], row['hr'], row['bb'] + row['hbp']]]
+        # rbi: OLS on blended per-PA component rates (BB+HBP combined)
+        X_pred        = [[row['b_1b_rate'], row['b_2b_rate'], row['b_3b_rate'], row['hr_rate'], row['bb_rate'] + row['hbp_rate']]]
         rbi_rate_pred = max(0.0, rbi_model.predict(X_pred)[0])
-        row['xRBI']   = int(round(row['proj_pa'] * rbi_rate_pred))
+        row['rbi']    = int(round(row['proj_pa'] * rbi_rate_pred))
 
     _cache = rows
     return _cache

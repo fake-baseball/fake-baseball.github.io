@@ -5,12 +5,14 @@ from dominate.tags import *
 
 import pandas as pd
 
+import pandas as pd
 import league as lg
 from constants import CURRENT_SEASON, num_games, SEASON_RANGE
 from data import teams as teams_data
 from util import make_doc, render_table, fmt_round, fmt_rdiff
 from registry import REGISTRY
 import leaders as ld
+from seasons import split_records, h2h_records
 
 _BAT_LEADER_STATS = ['war', 'hr', 'rbi', 'avg', 'ops', 'sb']
 _PIT_LEADER_STATS = ['p_war', 'p_w', 'p_sv', 'p_era', 'p_k', 'p_whip']
@@ -23,57 +25,6 @@ def _fmt_gb(v):
 def _fmt_rec(w, l):
     return f"{w}-{l}"
 
-# FOR CLAUDE: move the calculation logic to a new file `src/seasons.py` and
-# ensure that logic in this file is only related to displaying it
-def _split_records(sched, div_map, conf_map, winning_teams):
-    """Return dict: team -> split W-L records, each a [w, l] list.
-
-    winning_teams: set of team names that finished with a winning record.
-    Shutout W = games where team held opponent to 0; L = games where team was held to 0.
-    """
-    keys = ['div', 'conf', 'inter', 'one_run', 'blowout', 'home', 'away', 'vs500',
-            'first_half', 'second_half', 'last10', 'shutout']
-    records = {t: {k: [0, 0] for k in keys} for t in div_map}
-
-    HALF = num_games // 2  # first half = games 1-40, second half = games 41-80
-    total_games = {t: 0 for t in div_map}
-    for _, g in sched.iterrows():
-        total_games[g['Home Team']] += 1
-        total_games[g['Away Team']] += 1
-    game_count = {t: 0 for t in div_map}
-
-    for _, g in sched.sort_values('Game #').iterrows():
-        ht, at = g['Home Team'], g['Away Team']
-        hs, as_ = int(g['Home Score']), int(g['Away Score'])
-        margin = abs(hs - as_)
-        game_count[ht] += 1
-        game_count[at] += 1
-        for team, opp, ts, os, is_home in ((ht, at, hs, as_, True), (at, ht, as_, hs, False)):
-            win = ts > os
-            idx = 0 if win else 1
-            if div_map[team] == div_map[opp]:
-                cat = 'div'
-            elif conf_map[team] == conf_map[opp]:
-                cat = 'conf'
-            else:
-                cat = 'inter'
-            records[team][cat][idx] += 1
-            if margin == 1:
-                records[team]['one_run'][idx] += 1
-            if margin >= 5:
-                records[team]['blowout'][idx] += 1
-            records[team]['home' if is_home else 'away'][idx] += 1
-            if opp in winning_teams:
-                records[team]['vs500'][idx] += 1
-            half = 'first_half' if game_count[team] <= HALF else 'second_half'
-            records[team][half][idx] += 1
-            if game_count[team] > total_games[team] - 10:
-                records[team]['last10'][idx] += 1
-            if os == 0:
-                records[team]['shutout'][0] += 1  # team shut out opponent (always a win)
-            if ts == 0:
-                records[team]['shutout'][1] += 1  # team was shut out (always a loss)
-    return records
 
 
 def _standings_section(season_num):
@@ -94,7 +45,7 @@ def _standings_section(season_num):
         winning_teams = set(
             season_rows[season_rows['gamesWon'] > season_rows['gamesLost']]['teamName']
         )
-        split = _split_records(sched, div_map, conf_map, winning_teams)
+        split = split_records(sched, div_map, conf_map, winning_teams)
 
     extra_cols = ['L10', 'Div', 'Conf', 'Inter', '1-Run', 'Blowout', 'Home', 'Away', 'vs. >.500',
                   '1st Half', '2nd Half', 'SHO'] if split else []
@@ -104,7 +55,7 @@ def _standings_section(season_num):
         h3(conf_name)
         for div_name, div_group in conf_group.groupby('division_name', sort=False):
             h4(div_name)
-            # FOR CLAUDE: use render_table here too. You may want to add to 
+            # FOR CLAUDE: use render_table here too. You may want to add to
             # src/registry.py team-based stats (i.e. all the records) and use the
             # utility there (perhaps update to render_table required) to make sure
             # that the records are formatted as records properly
@@ -189,44 +140,21 @@ def _league_stats_section(season_num):
     h2("League Stats")
 
     h3("Batting")
-    bat_cols = ['AVG', 'OBP', 'SLG', 'OPS', 'wOBA', 'R/G', 'HR', 'BB', 'K']
-    # FOR CLAUDE: use render_table PLEASE
-    with table(border=0):
-        with thead():
-            with tr():
-                for col in bat_cols:
-                    th(col)
-        with tbody():
-            with tr():
-                for stat in ['avg', 'obp', 'slg', 'ops', 'woba']:
-                    m = REGISTRY[stat]
-                    td(fmt_round(sb[stat], m['decimal_places'], m['leading_zero'], m['percentage']))
-                td(f"{sb['R/G']:.2f}")
-                td(int(sb['hr']))
-                td(int(sb['bb']))
-                td(int(sb['k']))
+    bat_row = pd.DataFrame([{
+        'avg': sb['avg'], 'obp': sb['obp'], 'slg': sb['slg'], 'ops': sb['ops'],
+        'woba': sb['woba'], 'r_per_g': sb['r_per_g'],
+        'hr': sb['hr'], 'bb': sb['bb'], 'k': sb['k'],
+        'stat_type': 'season',
+    }])
+    render_table(bat_row, depth=1)
 
     h3("Pitching")
-    # (stat key in REGISTRY, column name in season_pitching, display header)
-    pit_cols = [
-        ('p_era',    'ERA',   'ERA'),
-        ('p_ra9',    'RA9',   'RA9'),
-        ('p_whip',   'WHIP',  'WHIP'),
-        ('p_k_per_9', 'p_k_per_9',  'K/9'),
-        ('p_bb_per_9','p_bb_per_9', 'BB/9'),
-        ('p_babip',  'BABIP', 'BABIP'),
-    ]
-    # FOR CLAUDE: use render_table PLEASE
-    with table(border=0):
-        with thead():
-            with tr():
-                for _, _, disp in pit_cols:
-                    th(disp)
-        with tbody():
-            with tr():
-                for stat_key, sp_col, _ in pit_cols:
-                    m = REGISTRY[stat_key]
-                    td(fmt_round(sp[sp_col], m['decimal_places'], m['leading_zero'], m['percentage']))
+    pit_row = pd.DataFrame([{
+        'p_era': sp['p_era'], 'p_ra9': sp['p_ra9'], 'p_whip': sp['p_whip'],
+        'p_k_per_9': sp['p_k_per_9'], 'p_bb_per_9': sp['p_bb_per_9'], 'p_babip': sp['p_babip'],
+        'stat_type': 'season',
+    }])
+    render_table(pit_row, depth=1)
 
 
 def _leader_table(stat, rows):
@@ -248,33 +176,11 @@ def _leaders_section(season_num):
         rows = ld.get_pitching_leaders(stat, season=season_num, num=5)
         _leader_table(stat, rows)
 
-# FOR CLAUDE: move head-to-head table builder to src/seasons.py, only keep display logic here
 def _h2h_matrix(season_num):
-    sched = teams_data.schedules.get(season_num)
-    if sched is None:
+    team_order, abbr_map, records = h2h_records(season_num)
+    if team_order is None:
         return
     h2("Head-to-Head")
-    team_order = list(dict.fromkeys(
-        teams_data.standings[teams_data.standings['Season'] == season_num]
-        .sort_values(['conference_name', 'division_name', 'gamesWon'], ascending=[True, True, False])
-        ['teamName']
-    ))
-    abbr_map = teams_data.teams.set_index('team_name')['abbr'].to_dict()
-
-    # Build W-L lookup: (home_team, away_team) -> (wins, losses) from home_team's perspective
-    records = {}
-    for _, g in sched.iterrows():
-        ht, at = g['Home Team'], g['Away Team']
-        hs, as_ = int(g['Home Score']), int(g['Away Score'])
-        records.setdefault((ht, at), [0, 0])
-        records.setdefault((at, ht), [0, 0])
-        if hs > as_:
-            records[(ht, at)][0] += 1
-            records[(at, ht)][1] += 1
-        else:
-            records[(ht, at)][1] += 1
-            records[(at, ht)][0] += 1
-
     with table(border=1):
         with thead():
             with tr():
@@ -287,7 +193,7 @@ def _h2h_matrix(season_num):
                     td(b(abbr_map[row_team]))
                     for col_team in team_order:
                         if row_team == col_team:
-                            td('—')
+                            td('\u2014')
                         else:
                             rec = records.get((row_team, col_team), [0, 0])
                             td(f"{rec[0]}-{rec[1]}" if rec[0] or rec[1] else '')

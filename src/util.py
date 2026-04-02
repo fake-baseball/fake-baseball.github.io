@@ -2,6 +2,10 @@
 import numpy as np
 import dominate
 from dominate.tags import link
+from dominate.tags import table, thead, tbody, tr, th, td, abbr as abbr_tag
+from dominate.tags import b as bold_tag, i as italic_tag, a as anchor_tag
+from registry import REGISTRY
+from pages.slug import convert_name
 
 # FOR CLAUDE: move utils used by src/pages/*.py to a separate new src/pages/page_utils.py
 
@@ -16,15 +20,14 @@ def fit_metrics(y, preds):
         'rmse': rmse,
     }
 
-# FOR CLAUDE: you should not have `css` but instead the depth of the created
-# page in the file system as an int param (i.e. specify 2 to mean `../../style.css)
-def make_doc(title, css='../style.css'):
+def make_doc(title, depth=1):
     """Create a dominate document pre-linked to the global stylesheet.
 
-    css - relative path from the page's location to docs/style.css.
-          Use '../style.css' for pages in subdirectories (default).
-          Use 'style.css' for pages at the docs/ root.
+    depth - number of directory levels below docs/ root for the calling page.
+            0 = docs/ (e.g. index.html), 1 = docs/leaders/, 2 = docs/teams/Team/.
+            The href is built as '../' * depth + 'style.css'.
     """
+    css = '../' * depth + 'style.css'
     doc = dominate.document(title=title)
     with doc.head:
         link(rel='stylesheet', href=css)
@@ -79,7 +82,6 @@ def per_game_df(df):
     """Return a copy of df with counting stats divided by G (games).
     Rate stats (decimal_places > 0) are left unchanged. Counting stats
     (decimal_places == 0, plus IP_true) are divided by G and shown to 2 dp."""
-    from registry import REGISTRY
     all_stats = REGISTRY
 
     g = df['g']
@@ -98,8 +100,6 @@ def per_game_df(df):
 def fmt_df(df):
     """Return a display copy of df with registry-registered columns formatted as strings
     and column names replaced by their REGISTRY display name."""
-    # FOR CLAUDE: import in function to top-level
-    from registry import REGISTRY
     all_stats = REGISTRY
 
     out = df.copy()
@@ -128,7 +128,7 @@ def fmt_df(df):
 # for team and season columns. If team (either as full name OR abbreviation) is provided without
 # season, go to the general team page. If team and season are provided, link to the specific
 # team-season page
-def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, border=0):
+def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, border=0, pitching=None):
     """Render a DataFrame as a dominate table with formatting, bolding, and player links.
 
     df         - DataFrame; may contain 'First Name'/'Last Name' for Player links,
@@ -142,12 +142,7 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
     cell_style - callable (col, raw_val, row) -> str or None for inline style= on cells.
     border     - HTML border attribute on <table>.
     """
-    # FOR CLAUDE: don't be afraid to move these imports out to the top-level to
-    # leave the function less cluttered
     import numpy as np
-    from dominate.tags import table, thead, tbody, tr, th, td, abbr as abbr_tag
-    from dominate.tags import b as bold_tag, i as italic_tag, a as anchor_tag
-    from registry import REGISTRY
     import leaders as leaders_mod
     from data import teams as teams_data
     from leaders import SEASON_THRESHOLDS
@@ -194,10 +189,11 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
     if teams_data.teams is not None:
         abbr_to_conf = teams_data.teams.set_index('abbr')['conference_name'].to_dict()
 
-    # Detect batting vs pitching table: pitcher tables always include p_ip.
-    # FOR CLAUDE: move this into a parameter of the function instead. The caller
-    # is responsible for providing the value accordingly
-    _is_pitching_table = 'p_ip' in df.columns
+    # Detect batting vs pitching table for leader bolding disambiguation.
+    # Callers may pass pitching=True/False explicitly; fall back to column detection.
+    # FOR CLAUDE: remove this stupid variable, just force the user to pass in True/False. 
+    # Stop trying to "assume" from the data. It's pointless. Just use the parameter .
+    _is_pitching_table = pitching if pitching is not None else 'p_ip' in df.columns
 
     def _leaders_for_col(col):
         """Return (overall_ldr, conf_ldr_dict) for a stat column, or (None, None).
@@ -297,12 +293,6 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
     return t
 
 
-
-# FOR CLAUDE: move this into src/pages/slug.py, which will become a future utility
-# of how we determine slugs for teams, players, seasons, etc.
-def convert_name(first, last):
-    """Turn a player name into a filename-safe string."""
-    return f"{first.replace(' ', '')}{last.replace(' ', '')}"
 
 
 def player_link(first, last, depth=1, label=None):

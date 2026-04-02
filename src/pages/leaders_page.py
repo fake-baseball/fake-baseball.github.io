@@ -144,16 +144,15 @@ def generate_leaders():
 
     # ── Leaders index page ────────────────────────────────────────────────────
 
-    # FOR CLAUDE: round numbers down to the nearest integer before displaying
     qual_notes = {
-        'batting':     (f"For rate statistics, single-season records require {BAT_SEASON_MIN_PA:,} PA "
-                        f"and career/active leaders require {BAT_CAREER_MIN_PA:,} PA."),
-        'baserunning': (f"For rate statistics, single-season records require {BR_SEASON_MIN_SBATT:g} SB attempts "
-                        f"and career/active leaders require {BR_CAREER_MIN_SBATT} SB attempts."),
-        'fielding':    (f"For rate statistics, single-season records require {FLD_SEASON_MIN_GF:g} fielding games "
-                        f"and career/active leaders require {FLD_CAREER_MIN_GF} fielding games."),
-        'pitching':    (f"For rate statistics, single-season records require {PIT_SEASON_MIN_IP:g} IP "
-                        f"and career/active leaders require {PIT_CAREER_MIN_IP:,.0f} IP."),
+        'batting':     (f"For rate statistics, single-season records require {int(BAT_SEASON_MIN_PA):,} PA "
+                        f"and career/active leaders require {int(BAT_CAREER_MIN_PA):,} PA."),
+        'baserunning': (f"For rate statistics, single-season records require {int(BR_SEASON_MIN_SBATT):,} SB attempts "
+                        f"and career/active leaders require {int(BR_CAREER_MIN_SBATT):,} SB attempts."),
+        'fielding':    (f"For rate statistics, single-season records require {int(FLD_SEASON_MIN_GF):,} fielding games "
+                        f"and career/active leaders require {int(FLD_CAREER_MIN_GF):,} fielding games."),
+        'pitching':    (f"For rate statistics, single-season records require {int(PIT_SEASON_MIN_IP):,} IP "
+                        f"and career/active leaders require {int(PIT_CAREER_MIN_IP):,} IP."),
     }
 
     def _section(title, stat_dict, qual_note, render_fn):

@@ -13,60 +13,30 @@ from data import players
 from data import teams as teams_data
 from constants import CURRENT_SEASON, LAST_COMPLETED_SEASON
 from registry import REGISTRY
+from util import fmt_round, fmt_ip, render_table, convert_name, make_doc
+from data.stats import pitching_stream_rows
 
-# FOR CLAUDE: the summary table can be identified from the internal column names only, then
-# render_table can take care of displaying that for you
-_PIT_SUMMARY_COLS = [
-    ('WAR',   'p_war'),  ('W',    'p_w'),   ('L',  'p_l'),   ('ERA', 'p_era'),
-    ('ERA-',  'p_era_minus'), ('G',    'p_gp'),  ('GS', 'p_gs'),  ('SV',  'p_sv'),
-    ('IP',    'p_ip'), ('BB', 'p_bb'), ('SO', 'p_k'),   ('WHIP', 'p_whip'),
-]
+_PIT_SUMMARY_COLS = ['season', 'p_war', 'p_w', 'p_l', 'p_era', 'p_era_minus', 'p_gp', 'p_gs', 'p_sv', 'p_ip', 'p_bb', 'p_k', 'p_whip']
 
-# FOR CLAUDE: use render_table here PLEASE
+
 def _pit_summary_table(stats, proj_row):
     """Render BB-ref style summary strip: current season, Projected, Career."""
-    def _fmt(col, val):
-        meta = REGISTRY.get(col)
-        if meta is None or (isinstance(val, float) and np.isnan(val)):
-            return '-'
-        if meta.get('type') == 'ip':
-            from util import fmt_ip
-            return fmt_ip(val)
-        return fmt_round(val, meta['decimal_places'], meta['leading_zero'], meta['percentage'])
-
     s_cur  = stats[(stats['season'] == CURRENT_SEASON)        & (stats['stat_type'] == 'season')]
     s_last = stats[(stats['season'] == LAST_COMPLETED_SEASON) & (stats['stat_type'] == 'season')]
     s_row  = s_cur if not s_cur.empty else s_last
     career = stats[stats['stat_type'] == 'career']
 
-    rows_data = []
+    frames = []
     if not s_row.empty:
-        label = CURRENT_SEASON if not s_cur.empty else LAST_COMPLETED_SEASON
-        rows_data.append((f'Season {label}', s_row.iloc[0]))
-    if proj_row is not None:
-        # rows_data.append(('Projected', proj_row.iloc[0]))
-        pass
+        frames.append(s_row)
     if not career.empty:
-        rows_data.append(('Career', career.iloc[0]))
+        frames.append(career)
+    if not frames:
+        return
 
-    with table(cls='summary'):
-        with thead():
-            with tr():
-                th('')
-                for disp, _ in _PIT_SUMMARY_COLS:
-                    th(disp)
-        with tbody():
-            for label, row in rows_data:
-                with tr():
-                    td(label)
-                    for _, col in _PIT_SUMMARY_COLS:
-                        td(_fmt(col, row[col]))
-from util import fmt_round, fmt_ip, render_table, convert_name, make_doc
-from data.stats import pitching_stream_rows
+    summary_df = pd.concat(frames)[_PIT_SUMMARY_COLS + ['stat_type']]
+    render_table(summary_df)
 
-
-# FOR CLAUDE: as stated before, refactoring pit_projections.py there will obviate the
-# need to convert column names here
 def _pit_proj_row(first, last, cols):
     """Return a single-row DataFrame for the projected season, or None."""
     rows = pit_proj_module.compute_all()
@@ -75,16 +45,16 @@ def _pit_proj_row(first, last, cols):
         return None
 
     ip   = proj['proj_ip']
-    xk   = proj['xK']
-    xbb  = proj['xBB']
-    xhbp = proj['xHBP']
-    xhr  = proj['xHR']
-    xh   = proj['xH']
+    xk   = proj['p_k']
+    xbb  = proj['p_bb']
+    xhbp = proj['p_hbp']
+    xhr  = proj['p_hr']
+    xh   = proj['p_h']
 
-    out_rate = 1.0 - proj['p_h'] - proj['p_bb'] - proj['p_hbp']
+    out_rate = 1.0 - proj['p_h_rate'] - proj['p_bb_rate'] - proj['p_hbp_rate']
     xbf  = int(round(ip * 3.0 / out_rate)) if out_rate > 0 else np.nan
     xbip = (xbf - xk - xbb - xhbp - xhr) if not np.isnan(float(xbf)) else np.nan
-    xra  = proj['xRA9'] * ip / 9.0 if ip > 0 else 0.0
+    xra  = proj['p_ra9'] * ip / 9.0 if ip > 0 else 0.0
 
     pi_row = players.player_info.loc[(first, last)] if (first, last) in players.player_info.index else None
     if pi_row is not None and teams_data.teams is not None:
@@ -97,21 +67,21 @@ def _pit_proj_row(first, last, cols):
         'season': 'Proj', 'stat_type': 'projected',
         'age':  pi_row['age'] if pi_row is not None else np.nan,
         'team': team_abbr,
-        'p_w': proj['xW'], 'p_l': proj['xL'],
-        'p_win_pct': proj['xW'] / (proj['xW'] + proj['xL']) if (proj['xW'] + proj['xL']) > 0 else np.nan,
-        'p_gp': proj['xGP'], 'p_gs': proj['xGS'], 'p_sv': proj['xSV'],
+        'p_w': proj['p_w'], 'p_l': proj['p_l'],
+        'p_win_pct': proj['p_w'] / (proj['p_w'] + proj['p_l']) if (proj['p_w'] + proj['p_l']) > 0 else np.nan,
+        'p_gp': proj['p_gp'], 'p_gs': proj['p_gs'], 'p_sv': proj['p_sv'],
         'p_ip': ip,
         'p_h': xh, 'p_hr': xhr, 'p_bb': xbb, 'p_k': xk, 'p_hbp': xhbp,
         'p_bf': xbf, 'p_bip': xbip, 'p_ra': xra,
-        'p_er': proj['xER'], 'p_era': proj['xERA'], 'p_era_minus': proj['xERA-'],
-        'p_fip': proj['xFIP'], 'p_whip': proj['xWHIP'],
-        'p_ra9': proj['xRA9'], 'p_babip': proj['xBABIP'],
-        'p_k_pct': proj['xK%'], 'p_bb_pct': proj['xBB%'],
-        'p_war': proj['xWAR'],
-        'p_baa': proj['xBAA'], 'p_obpa': proj['xOBPA'],
-        'p_r_def': proj['xRdef'], 'p_r_lev': proj['xRlev'], 'p_r_corr': proj['xRcorr'],
-        'p_raa': proj['xRAA'], 'p_raa_lev': proj['xRAAlev'], 'p_waa': proj['xWAA'],
-        'p_r_rep': proj['xRrep'], 'p_rar': proj['xRAR'],
+        'p_er': proj['p_er'], 'p_era': proj['p_era'], 'p_era_minus': proj['p_era_minus'],
+        'p_fip': proj['p_fip'], 'p_whip': proj['p_whip'],
+        'p_ra9': proj['p_ra9'], 'p_babip': proj['p_babip'],
+        'p_k_pct': proj['p_k_pct'], 'p_bb_pct': proj['p_bb_pct'],
+        'p_war': proj['p_war'],
+        'p_baa': proj['p_baa'], 'p_obpa': proj['p_obpa'],
+        'p_r_def': proj['p_r_def'], 'p_r_lev': proj['p_r_lev'], 'p_r_corr': proj['p_r_corr'],
+        'p_raa': proj['p_raa'], 'p_raa_lev': proj['p_raa_lev'], 'p_waa': proj['p_waa'],
+        'p_r_rep': proj['p_r_rep'], 'p_rar': proj['p_rar'],
     })
     if ip > 0:
         d['p_h_per_9']  = xh  / ip * 9

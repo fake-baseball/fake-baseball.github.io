@@ -14,6 +14,8 @@ from data import players
 from data import teams as teams_data
 import batting as bat_module
 import pitching as pit_module
+import projections as proj_module
+import pit_projections as pit_proj_module
 
 BAT_SKILLS  = ['power', 'contact', 'speed', 'fielding', 'arm']
 PIT_SKILLS  = ['velocity', 'junk', 'accuracy']
@@ -23,8 +25,8 @@ PIT_LABELS  = {'velocity': 'VEL', 'junk': 'JNK', 'accuracy': 'ACC'}
 # FOR CLAUDE: move core calculation logic to a new file `src/salaries.py`
 # and leave this page as only the table creating part
 
-# FOR CLAUDE: salary should probably be parsed as part of the data loading section in 
-# src/data/*.py so that internally, we have the real number. Then, add salary as 
+# FOR CLAUDE: salary should probably be parsed as part of the data loading section in
+# src/data/*.py so that internally, we have the real number. Then, add salary as
 # a new stat in src/registry.py and ensure that when displayed in a table, it reproduces this format.
 def _parse_salary(val):
     """Parse '$1.3m' -> 1.3 (millions)."""
@@ -518,10 +520,6 @@ def _methodology_section():
 
 
 def generate_salaries():
-    # FOR CLAUDE: move import to top of level
-    import projections as proj_module
-    import pit_projections as pit_proj_module
-
     pi       = players.player_info
     bat_pi   = pi[pi['ppos'] != 'P']
     pit_pi   = pi[pi['ppos'] == 'P']
@@ -534,8 +532,8 @@ def generate_salaries():
     pit_model_info, pit_rows = _fit_skills(pit_pi, PIT_SKILLS, pit_war_map, cat_cols=['role'])
 
     # Attach projected WAR to each row
-    bat_proj_war = {r['first'] + '\x00' + r['last']: r['xWAR'] for r in proj_module.compute_all()}
-    pit_proj_war = {r['first'] + '\x00' + r['last']: r['xWAR'] for r in pit_proj_module.compute_all()}
+    bat_proj_war = {r['first'] + '\x00' + r['last']: r['war']   for r in proj_module.compute_all()}
+    pit_proj_war = {r['first'] + '\x00' + r['last']: r['p_war'] for r in pit_proj_module.compute_all()}
     for d in bat_rows:
         d['proj_war'] = bat_proj_war.get(d['first'] + '\x00' + d['last'])
     for d in pit_rows:
@@ -551,7 +549,7 @@ def generate_salaries():
     bat_rows.sort(key=lambda d: -d['sal'])
     pit_rows.sort(key=lambda d: -d['sal'])
 
-    doc = make_doc("Salaries", css='style.css')
+    doc = make_doc("Salaries", depth=0)
     with doc:
         h1("Salaries")
 

@@ -61,7 +61,7 @@ def generate_team_season_page(team_name, season_num, abbr):
     prev_season = team_seasons[idx - 1] if idx > 0 else None
     next_season = team_seasons[idx + 1] if idx >= 0 and idx < len(team_seasons) - 1 else None
 
-    doc = make_doc(f"{team_name} Season {season_num}", css='../../style.css')
+    doc = make_doc(f"{team_name} Season {season_num}", depth=2)
     with doc:
         h1(f"{team_name} Season {season_num}")
         with p():

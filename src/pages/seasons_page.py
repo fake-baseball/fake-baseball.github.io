@@ -6,7 +6,8 @@ from dominate.tags import *
 from dominate.util import raw
 
 import league as lg
-from util import fmt_df, per_game_df, make_doc
+from util import fmt_df, per_game_df, make_doc, render_table
+
 
 
 def generate_seasons():
@@ -45,26 +46,11 @@ def generate_seasons():
 
     # ── Rates ─────────────────────────────────────────────────────────────────
 
-    # FOR CLAUDE: wouldn't it be easier to just use indexing here instead of building new df?
-    rates = pd.DataFrame({
-        'r_per_g':    sb['r_per_g'],
-        'avg':        sb['avg'],
-        'obp':        sb['obp'],
-        'slg':        sb['slg'],
-        'ops':        sb['ops'],
-        'woba':       sb['woba'],
-        'sb_pct':     sb['sb_pct'],
-        'p_ra9':      sp['p_ra9'],
-        'p_era':      sp['p_era'],
-        'p_whip':     sp['p_whip'],
-        'p_babip':    sp['p_babip'],
-        'p_k_pct':    sp['p_k_pct'],
-        'p_bb_pct':   sp['p_bb_pct'],
-        'p_hr_pct':   sp['p_hr_pct'],
-        'p_p_per_ip': sp['p_p_per_ip'],
-        'p_p_per_pa': sp['p_p_per_pa'],
-    }, index=sb.index)
-    rates = fmt_df(rates)
+    rates_raw = sb[['r_per_g', 'avg', 'obp', 'slg', 'ops', 'woba', 'sb_pct']].copy()
+    rates_raw = rates_raw.join(sp[['p_ra9', 'p_era', 'p_whip', 'p_babip',
+                                   'p_k_pct', 'p_bb_pct', 'p_hr_pct',
+                                   'p_p_per_ip', 'p_p_per_pa']])
+    rates = fmt_df(rates_raw)
 
     def _link_index(df):
         df = df.copy()
@@ -79,7 +65,6 @@ def generate_seasons():
 
         h2("Counting Stats")
         h3("Offense")
-        # FOR CLAUDE: use render_table instead of raw().to_html
         raw(_link_index(off_count).to_html(border=0, index=True, escape=False))
         h3("Defense")
         raw(_link_index(def_count).to_html(border=0, index=True, escape=False))

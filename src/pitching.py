@@ -8,21 +8,8 @@ import pandas as pd
 from data import stats as raw
 from util import fmt_ip, weighted_avg
 
-# FOR CLAUDE: change to `import formulas as f` and update uses accordingly
-from formulas import (
-    _div,
-    compute_p_era, compute_p_era_minus, compute_p_ra9, compute_p_whip,
-    compute_p_baa, compute_p_obpa, compute_p_babip,
-    compute_p_win_pct,
-    compute_p_k_per_9, compute_p_h_per_9, compute_p_hr_per_9, compute_p_bb_per_9,
-    compute_p_k_per_bb,
-    compute_p_hr_pct, compute_p_k_pct, compute_p_bb_pct,
-    compute_p_p_per_gp, compute_p_p_per_ip, compute_p_p_per_pa, compute_p_ip_per_gp,
-    compute_p_sv_pct, compute_p_cyp, compute_p_fip,
-    compute_p_r_def, compute_p_ra9_def,
-    compute_p_raa, compute_p_r_lev, compute_p_raa_lev,
-    compute_p_waa, compute_p_r_rep, compute_p_rar, compute_p_war,
-)
+import formulas as f
+from formulas import _div
 
 stats = None
 
@@ -30,41 +17,41 @@ def compute():
     global stats
     d = raw.pitching_stats.copy()
 
-    compute_p_era(d)
-    compute_p_era_minus(d)
-    compute_p_ra9(d)
-    compute_p_whip(d)
-    compute_p_fip(d)
-    compute_p_baa(d)
-    compute_p_obpa(d)
-    compute_p_babip(d)
-    compute_p_win_pct(d)
-    compute_p_k_per_9(d)
-    compute_p_h_per_9(d)
-    compute_p_hr_per_9(d)
-    compute_p_bb_per_9(d)
-    compute_p_k_per_bb(d)
-    compute_p_hr_pct(d)
-    compute_p_k_pct(d)
-    compute_p_bb_pct(d)
-    compute_p_p_per_gp(d)
-    compute_p_p_per_ip(d)
-    compute_p_p_per_pa(d)
-    compute_p_ip_per_gp(d)
-    compute_p_sv_pct(d)
+    f.compute_p_era(d)
+    f.compute_p_era_minus(d)
+    f.compute_p_ra9(d)
+    f.compute_p_whip(d)
+    f.compute_p_fip(d)
+    f.compute_p_baa(d)
+    f.compute_p_obpa(d)
+    f.compute_p_babip(d)
+    f.compute_p_win_pct(d)
+    f.compute_p_k_per_9(d)
+    f.compute_p_h_per_9(d)
+    f.compute_p_hr_per_9(d)
+    f.compute_p_bb_per_9(d)
+    f.compute_p_k_per_bb(d)
+    f.compute_p_hr_pct(d)
+    f.compute_p_k_pct(d)
+    f.compute_p_bb_pct(d)
+    f.compute_p_p_per_gp(d)
+    f.compute_p_p_per_ip(d)
+    f.compute_p_p_per_pa(d)
+    f.compute_p_ip_per_gp(d)
+    f.compute_p_sv_pct(d)
 
     # Defense-adjusted RA9
-    compute_p_r_def(d)
-    compute_p_ra9_def(d)
+    f.compute_p_r_def(d)
+    f.compute_p_ra9_def(d)
 
     # WAR
-    compute_p_raa(d)
-    compute_p_r_lev(d)
-    compute_p_raa_lev(d)
-    compute_p_waa(d)
-    compute_p_r_rep(d)
-    compute_p_rar(d)
-    compute_p_war(d)
+    f.compute_p_raa(d)
+    f.compute_p_r_lev(d)
+    f.compute_p_raa_lev(d)
+    f.compute_p_waa(d)
+    f.compute_p_r_rep(d)
+    f.compute_p_rar(d)
+    f.compute_p_war(d)
 
     # Cy Young Predictor
     from data import teams as teams_data
@@ -76,7 +63,7 @@ def compute():
             if abbr:
                 div_winners.add((row['Season'], abbr))
     d['p_vb'] = d.apply(lambda row: 1 if (row['season'], row['team']) in div_winners else 0, axis=1)
-    compute_p_cyp(d)
+    f.compute_p_cyp(d)
 
     d['stat_type'] = 'season'
     stats = _append_summary_rows(d)
@@ -86,8 +73,7 @@ def compute():
 # same thing. The only thing that's really different is how role is handeled, and how the different
 # stats are aggregated together. We can be smarter about this: counting stats are added, rate stats
 # which can be easily computed from summed counting stats (e.g. AVG, ERA) can be recomputed, and the
-# remaining more complicated rate stats (e.g. FIP, OPS+) use this weighted_avg helper from util.py.
-
+# remaining m
 def _append_summary_rows(d):
     gp = ['First Name', 'Last Name']
     gt = ['First Name', 'Last Name', 'team']
@@ -123,23 +109,23 @@ def _append_summary_rows(d):
 
 def _recompute_rates(df):
     # DataFrame already has final column names - just call formula functions directly
-    compute_p_era(df)
-    compute_p_ra9(df)
-    compute_p_whip(df)
-    compute_p_baa(df)
-    compute_p_obpa(df)
-    compute_p_babip(df)
-    compute_p_win_pct(df)
-    compute_p_k_per_9(df)
-    compute_p_h_per_9(df)
-    compute_p_hr_per_9(df)
-    compute_p_bb_per_9(df)
-    compute_p_k_per_bb(df)
-    compute_p_k_pct(df)
-    compute_p_bb_pct(df)
-    compute_p_p_per_gp(df)
-    compute_p_p_per_ip(df)
-    compute_p_p_per_pa(df)
-    compute_p_ip_per_gp(df)
-    compute_p_sv_pct(df)
+    f.compute_p_era(df)
+    f.compute_p_ra9(df)
+    f.compute_p_whip(df)
+    f.compute_p_baa(df)
+    f.compute_p_obpa(df)
+    f.compute_p_babip(df)
+    f.compute_p_win_pct(df)
+    f.compute_p_k_per_9(df)
+    f.compute_p_h_per_9(df)
+    f.compute_p_hr_per_9(df)
+    f.compute_p_bb_per_9(df)
+    f.compute_p_k_per_bb(df)
+    f.compute_p_k_pct(df)
+    f.compute_p_bb_pct(df)
+    f.compute_p_p_per_gp(df)
+    f.compute_p_p_per_ip(df)
+    f.compute_p_p_per_pa(df)
+    f.compute_p_ip_per_gp(df)
+    f.compute_p_sv_pct(df)
     return df

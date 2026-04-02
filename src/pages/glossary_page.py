@@ -25,7 +25,7 @@ def _stat_list(context):
 
 
 def generate_glossary():
-    doc = make_doc("Glossary", css='style.css')
+    doc = make_doc("Glossary", depth=0)
     with doc:
         h1("Glossary")
 

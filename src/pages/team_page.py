@@ -26,11 +26,10 @@ def _batter_stats(first, last):
     def _fmt(stat, val):
         m = REGISTRY[stat]
         return fmt_round(val, m['decimal_places'], m['leading_zero'])
-    # FOR CLAUDE: use registry formatting everywhere, don't just blindly assume int
     return {
         'AVG': _fmt('avg', row['avg']),
-        'HR':  int(row['hr']),
-        'RBI': int(row['rbi']),
+        'HR':  _fmt('hr', row['hr']),
+        'RBI': _fmt('rbi', row['rbi']),
         'OPS': _fmt('ops', row['ops']),
         'WAR': _fmt('war', row['war']),
     }
@@ -48,15 +47,34 @@ def _pitcher_stats(first, last):
     def _fmt(stat, val):
         m = REGISTRY[stat]
         return fmt_round(val, m['decimal_places'], m['leading_zero'])
-    # FOR CLAUDE: use registry formatting everywhere, don't just blindly assume int
     return {
-        'W-L': f"{int(row['p_w'])}-{int(row['p_l'])}",
-        'SV':  int(row['p_sv']),
+        'W-L': f"{_fmt('p_w', row['p_w'])}-{_fmt('p_l', row['p_l'])}",
+        'SV':  _fmt('p_sv', row['p_sv']),
         'ERA': _fmt('p_era', row['p_era']),
         'IP':  fmt_ip(row['p_ip']),
-        'K':   int(row['p_k']),
+        'K':   _fmt('p_k', row['p_k']),
         'WAR': _fmt('p_war', row['p_war']),
     }
+
+
+def _lineup_table(players_data, stat_rows):
+    """Transposed lineup stat table. players_data: list of (first, last, pos, stats_dict)."""
+    with table(border=0):
+        with thead():
+            with tr():
+                th()
+                for first, last, pos, _ in players_data:
+                    th(f"{first} {last}")
+            with tr():
+                th()
+                for _, _, pos, _ in players_data:
+                    th(pos)
+        with tbody():
+            for stat in stat_rows:
+                with tr():
+                    th(stat)
+                    for _, _, _, stats in players_data:
+                        td(stats[stat] if stats is not None else '-')
 
 
 def _pitcher_table(players_list, stat_rows):
@@ -83,25 +101,7 @@ def _pitcher_table(players_list, stat_rows):
                         td(s21[stat] if s21 is not None else '-')
 
 
-# FOR CLAUDE: this function is unused, remove it.
-def _pitcher_statline(first, last):
-    df = pit_module.stats
-    mask = (df['First Name'] == first) & (df['Last Name'] == last) & (df['stat_type'] == 'season')
-    rows = df[mask]
-    if rows.empty:
-        return None
-    row = rows.loc[rows['season'].idxmax()]
-    def _fmt(stat, val):
-        m = REGISTRY[stat]
-        return fmt_round(val, m['decimal_places'], m['leading_zero'])
-    era = _fmt('p_era', row['p_era'])
-    war = _fmt('p_war', row['p_war'])
-    ip  = fmt_ip(row['p_ip'])
-    return f"{int(row['p_w'])}-{int(row['p_l'])}, {era} ERA, {ip} IP, {int(row['p_k'])} K, {war} WAR"
-
-
-
-# FOR CLAUDE: (kinda a big overarching thing I just realized) investigate any discrepancy 
+# FOR CLAUDE: (kinda a big overarching thing I just realized) investigate any discrepancy
 # between the column names for "First Name" and "Last Name". From loading, we should fix it
 # to ALWAYS be first_name and last_name so we NEVER have to do any renaming ANYWHERE within
 # the core or display logic. You can add them as stats to src/registry.py if it's not there
@@ -121,7 +121,6 @@ def generate_team_page(team_name, roster, team_info):
     pitchers = roster[roster['ppos'] == 'P'].sort_values(['last_name', 'first_name']).copy()
     position = roster[roster['ppos'] != 'P'].sort_values(['last_name', 'first_name']).copy()
 
-    # Rename columns to REGISTRY keys (or display labels for non-REGISTRY columns)
     # FOR CLAUDE: ensure that BEFORE we get to this point (i.e. in src/data/*.py), the
     # columns have already been renamed appropriately. Then, src/registry.py can contain
     # the display column name which is handled by render_table
@@ -151,7 +150,7 @@ def generate_team_page(team_name, roster, team_info):
         ~roster.apply(lambda r: (r['first_name'], r['last_name']) in rotation_names, axis=1)
     ]
 
-    doc = make_doc(team_name, css='../../style.css')
+    doc = make_doc(team_name, depth=2)
     with doc:
         h1(team_name)
         p(f"{team_info['conference_name']} - {team_info['division_name']}")
@@ -162,24 +161,7 @@ def generate_team_page(team_name, roster, team_info):
              _batter_stats(row['firstName'], row['lastName']))
             for _, row in lineup.iterrows()
         ]
-        # FOR CLAUDE: abstract this into a _lineup_table function like you did _pitcher_table
-        stat_rows = ['AVG', 'HR', 'RBI', 'OPS', 'WAR']
-        with table(border=0):
-            with thead():
-                with tr():
-                    th()
-                    for first, last, pos, _ in players_data:
-                        th(f"{first} {last}")
-                with tr():
-                    th()
-                    for _, _, pos, _ in players_data:
-                        th(pos)
-            with tbody():
-                for stat in stat_rows:
-                    with tr():
-                        th(stat)
-                        for _, _, _, stats in players_data:
-                            td(stats[stat] if stats is not None else '-')
+        _lineup_table(players_data, ['AVG', 'HR', 'RBI', 'OPS', 'WAR'])
         h3("Rotation")
         rotation_list = [
             (f"SP{int(row['rotation'])}", row['firstName'], row['lastName'])

@@ -19,10 +19,7 @@ from constants import (PIT_SEASON_MIN_IP,
                        PROJ_SEASONS, PROJ_WEIGHTS as WEIGHTS, PROJ_WEIGHT_TOTAL as WEIGHT_TOTAL,
                        total_WAR, batter_share, CURRENT_SEASON, LAST_COMPLETED_SEASON)
 
-# FOR CLAUDE: in this file, we use `x` as a prefix on a stat to indicate the predicted number.
-# That will change. Instead, we must use the regular INTERNAL name of the stat (e.g. hr instead of xHR).
-# That also removes the need for custom formatting afterwards since it is now known by the
-# regular stat name. Make sure ALL columns are updated to remove the `x` prefix on predictions.
+
 # In the future, we can disambiguate real from projected stats based on what df or row we're looking at
 # (think: a stat_type which is 'projected' means the stats there are projections of the regular stats)
 
@@ -180,7 +177,7 @@ def compute():
             **{f'ip_{s}':  season_ip[s]  for s in PROJ_SEASONS},
             **{f'app_{s}': season_app[s] for s in PROJ_SEASONS},
             **{f'x{comp}': model_rates[comp] for comp in COMPONENTS},
-            **proj,
+            **{f'{comp}_rate': v for comp, v in proj.items()},
         })
 
     rows.sort(key=lambda r: (r['last'], r['first']))
@@ -296,7 +293,7 @@ def compute_all():
             continue
         abbr = name_to_abbr.get(br['team'], '')
         if abbr:
-            proj_r_by_team[abbr] = proj_r_by_team.get(abbr, 0.0) + br.get('xR', 0.0)
+            proj_r_by_team[abbr] = proj_r_by_team.get(abbr, 0.0) + br.get('r', 0.0)
     proj_rs_per_g = {abbr: total / 80.0 for abbr, total in proj_r_by_team.items()}
 
     # SP W/GS ~ xRA9 + IP/GS + team_rs_per_g:
@@ -358,27 +355,27 @@ def compute_all():
         role = row['role']
 
         # Component rates
-        K_rate   = row['p_k']
-        BB_rate  = row['p_bb']
-        HBP_rate = row['p_hbp']
-        HR_rate  = row['p_hr']
-        H_rate   = row['p_h']
+        K_rate   = row['p_k_rate']
+        BB_rate  = row['p_bb_rate']
+        HBP_rate = row['p_hbp_rate']
+        HR_rate  = row['p_hr_rate']
+        H_rate   = row['p_h_rate']
 
-        # xRA9 computed first: needed to determine RP/CL appearance count.
-        # Use role-specific model so xRA9 is calibrated to each role's baseline.
-        ra9_mdl      = ra9_mdl_sp if role == 'SP' else ra9_mdl_rp
-        row['xRA9']  = max(0.0, ra9_mdl.predict([[K_rate, BB_rate, HBP_rate, HR_rate, H_rate]])[0])
+        # p_ra9 computed first: needed to determine RP/CL appearance count.
+        # Use role-specific model so p_ra9 is calibrated to each role's baseline.
+        ra9_mdl       = ra9_mdl_sp if role == 'SP' else ra9_mdl_rp
+        row['p_ra9']  = max(0.0, ra9_mdl.predict([[K_rate, BB_rate, HBP_rate, HR_rate, H_rate]])[0])
 
         # Projected appearances and IP
         if role == 'SP/RP':
             row['proj_ip'] = SPRP_FIXED_IP
-            row['xGS'] = 0
-            row['xGP'] = 40
+            row['p_gs'] = 0
+            row['p_gp'] = 40
         else:
             if role == 'SP':
                 apps = FULL_SEASON_APP['SP']
             else:  # RP, CL
-                pred_apps = rp_app_model.predict([[row['xRA9']]])[0]
+                pred_apps = rp_app_model.predict([[row['p_ra9']]])[0]
                 apps = int(round(min(_RP_APP_MAX, max(_RP_APP_MIN, pred_apps))))
             rg               = _role_group(role)
             X_ip             = [[row['velocity'], row['junk'], row['accuracy']]]
@@ -392,64 +389,64 @@ def compute_all():
                 weighted_sum += ip_per_app_s * WEIGHTS[s]
             blended_ip_per_app = weighted_sum / WEIGHT_TOTAL
             row['proj_ip'] = min(ip_cap, max(0.0, blended_ip_per_app * apps))
-            row['xGS'] = apps if role == 'SP' else 0
-            row['xGP'] = apps
+            row['p_gs'] = apps if role == 'SP' else 0
+            row['p_gp'] = apps
 
         out_rate       = 1.0 - H_rate - BB_rate - HBP_rate
         proj_bf_per_ip = 3.0 / out_rate if out_rate > 0 else lg_bf_per_ip
         xBF            = row['proj_ip'] * proj_bf_per_ip
 
-        row['xK']   = int(round(xBF * K_rate))
-        row['xBB']  = int(round(xBF * BB_rate))
-        row['xHBP'] = int(round(xBF * HBP_rate))
-        row['xHR']  = int(round(xBF * HR_rate))
-        row['xH']   = int(round(xBF * H_rate))
-        row['xERA']  = row['xRA9'] * lg_er_ra
-        row['xER']   = int(round(row['xERA'] * row['proj_ip'] / 9.0)) if row['proj_ip'] > 0 else 0
-        row['xERA-'] = 100 * row['xERA'] / lg_era if lg_era > 0 else 100.0
+        row['p_k']   = int(round(xBF * K_rate))
+        row['p_bb']  = int(round(xBF * BB_rate))
+        row['p_hbp'] = int(round(xBF * HBP_rate))
+        row['p_hr']  = int(round(xBF * HR_rate))
+        row['p_h']   = int(round(xBF * H_rate))
+        row['p_era']       = row['p_ra9'] * lg_er_ra
+        row['p_er']        = int(round(row['p_era'] * row['proj_ip'] / 9.0)) if row['proj_ip'] > 0 else 0
+        row['p_era_minus'] = 100 * row['p_era'] / lg_era if lg_era > 0 else 100.0
 
-        # xFIP using exact float counts (not rounded)
+        # p_fip using exact float counts (not rounded)
         if row['proj_ip'] > 0:
             xK_f   = xBF * K_rate
             xBB_f  = xBF * BB_rate
             xHBP_f = xBF * HBP_rate
             xHR_f  = xBF * HR_rate
-            row['xFIP'] = (13 * xHR_f + 3 * (xBB_f + xHBP_f) - 2 * xK_f) / row['proj_ip'] + cFIP
+            row['p_fip'] = (13 * xHR_f + 3 * (xBB_f + xHBP_f) - 2 * xK_f) / row['proj_ip'] + cFIP
         else:
-            row['xFIP'] = 0.0
+            row['p_fip'] = 0.0
 
-        row['xWHIP'] = (BB_rate + H_rate) * proj_bf_per_ip
-        row['xK%']   = K_rate
-        row['xBB%']  = BB_rate
-        bip_rate     = 1.0 - K_rate - BB_rate - HBP_rate - HR_rate
-        row['xBABIP'] = (H_rate - HR_rate) / bip_rate if bip_rate > 0 else 0.0
+        row['p_whip']  = (BB_rate + H_rate) * proj_bf_per_ip
+        row['p_k_pct'] = K_rate
+        row['p_bb_pct'] = BB_rate
+        bip_rate       = 1.0 - K_rate - BB_rate - HBP_rate - HR_rate
+        row['p_babip'] = (H_rate - HR_rate) / bip_rate if bip_rate > 0 else 0.0
 
-        # xRAA (pre-correction) and xRlev
-        is_starter    = (role == 'SP')
-        lg_ra9_role   = lg_ra9_sp if is_starter else lg_ra9_rp
-        rw_ip_role    = lg_rw_ip.get(role, lg_rw_ip['RP'])
-        row['_xRAA']  = (lg_ra9_role - row['xRA9']) / 9 * row['proj_ip']
-        row['_xRrep'] = row['proj_ip'] * rw_ip_role * rpw
+        # raa (pre-correction)
+        is_starter   = (role == 'SP')
+        lg_ra9_role  = lg_ra9_sp if is_starter else lg_ra9_rp
+        rw_ip_role   = lg_rw_ip.get(role, lg_rw_ip['RP'])
+        row['_raa']  = (lg_ra9_role - row['p_ra9']) / 9 * row['proj_ip']
+        row['_rrep'] = row['proj_ip'] * rw_ip_role * rpw
 
         row['_rw_ip_role'] = rw_ip_role
 
     # Rcorr: target correct total WAR using only rostered players to set the rate
-    rostered       = [r for r in rows if r['team'] != 'FREE AGENT']
-    total_xRAA     = sum(r['_xRAA'] for r in rostered)
-    total_xRrep    = sum(r['_xRrep'] for r in rostered)
-    total_xIP      = sum(r['proj_ip'] for r in rostered)
-    target_xRAA    = total_WAR * (1 - batter_share) * rpw - total_xRrep
-    corr_rate      = (target_xRAA - total_xRAA) / total_xIP if total_xIP > 0 else 0.0
+    rostered    = [r for r in rows if r['team'] != 'FREE AGENT']
+    total_raa   = sum(r['_raa']  for r in rostered)
+    total_rrep  = sum(r['_rrep'] for r in rostered)
+    total_ip    = sum(r['proj_ip'] for r in rostered)
+    target_raa  = total_WAR * (1 - batter_share) * rpw - total_rrep
+    corr_rate   = (target_raa - total_raa) / total_ip if total_ip > 0 else 0.0
     for row in rows:
-        xRcorr        = corr_rate * row['proj_ip']
-        row['_xRcorr'] = xRcorr
-        row['_xRAA_corr'] = row['_xRAA'] + xRcorr   # RAA before Rlev
+        rcorr             = corr_rate * row['proj_ip']
+        row['_rcorr']     = rcorr
+        row['_raa_corr']  = row['_raa'] + rcorr   # RAA before Rlev
 
     # ── W, L, SV ──────────────────────────────────────────────────────────────
     for row in rows:
         role = row['role']
-        apps = row['xGP']
-        xra9 = row['xRA9']
+        apps = row['p_gp']
+        xra9 = row['p_ra9']
 
         if role == 'SP':
             team_abbr = name_to_abbr.get(row['team'], '')
@@ -470,9 +467,9 @@ def compute_all():
             else:
                 xSV = lg_rp_sv_rate * apps
 
-        row['xW']  = int(round(xW))
-        row['xL']  = int(round(xL))
-        row['xSV'] = int(round(xSV))
+        row['p_w']  = int(round(xW))
+        row['p_l']  = int(round(xL))
+        row['p_sv'] = int(round(xSV))
 
     # ── Final pass: Rlev and all exposed WAR components ───────────────────────
     # Precompute blended R_sv / R_no_SV by role group
@@ -493,36 +490,36 @@ def compute_all():
         role       = row['role']
         is_starter = (role == 'SP')
         r_sv, r_no_sv = lev_rates.get(role, lev_rates['RP'])
-        xSV_f = row['xSV']
-        xGR_f = row['xGP'] if not is_starter else 0
-        xRlev    = xSV_f * r_sv + (xGR_f - xSV_f) * r_no_sv
-        xRAA     = row['_xRAA_corr']
-        xRAAlev  = xRAA + xRlev
-        xRrep    = row['_xRrep']
-        xRAR     = xRAAlev + xRrep
+        sv_f  = row['p_sv']
+        gr_f  = row['p_gp'] if not is_starter else 0
+        p_r_lev  = sv_f * r_sv + (gr_f - sv_f) * r_no_sv
+        p_raa    = row['_raa_corr']
+        p_raa_lev = p_raa + p_r_lev
+        p_r_rep  = row['_rrep']
+        p_rar    = p_raa_lev + p_r_rep
 
-        # BAA and OBPA from projected rates
-        H_rate   = row['p_h']
-        BB_rate  = row['p_bb']
-        HBP_rate = row['p_hbp']
-        HR_rate  = row['p_hr']
+        # p_baa and p_obpa from projected rates
+        H_rate   = row['p_h_rate']
+        BB_rate  = row['p_bb_rate']
+        HBP_rate = row['p_hbp_rate']
+        HR_rate  = row['p_hr_rate']
         out_rate = 1.0 - H_rate - BB_rate - HBP_rate
         bf_per_ip = 3.0 / out_rate if out_rate > 0 else 4.0
         xBF      = row['proj_ip'] * bf_per_ip
-        xBAA     = (H_rate * xBF) / (xBF - BB_rate * xBF - HBP_rate * xBF) if (xBF * (1 - BB_rate - HBP_rate)) > 0 else 0.0
-        xOBPA    = H_rate + BB_rate + HBP_rate
+        p_baa    = (H_rate * xBF) / (xBF - BB_rate * xBF - HBP_rate * xBF) if (xBF * (1 - BB_rate - HBP_rate)) > 0 else 0.0
+        p_obpa   = H_rate + BB_rate + HBP_rate
 
-        row['xRlev']   = xRlev
-        row['xRcorr']  = row['_xRcorr']
-        row['xRdef']   = 0.0
-        row['xRrep']   = xRrep
-        row['xRAA']    = xRAA
-        row['xRAAlev'] = xRAAlev
-        row['xWAA']    = xRAAlev / rpw if rpw > 0 else 0.0
-        row['xRAR']    = xRAR
-        row['xWAR']    = xRAR / rpw if rpw > 0 else 0.0
-        row['xBAA']    = xBAA
-        row['xOBPA']   = xOBPA
+        row['p_r_lev']   = p_r_lev
+        row['p_r_corr']  = row['_rcorr']
+        row['p_r_def']   = 0.0
+        row['p_r_rep']   = p_r_rep
+        row['p_raa']     = p_raa
+        row['p_raa_lev'] = p_raa_lev
+        row['p_waa']     = p_raa_lev / rpw if rpw > 0 else 0.0
+        row['p_rar']     = p_rar
+        row['p_war']     = p_rar / rpw if rpw > 0 else 0.0
+        row['p_baa']     = p_baa
+        row['p_obpa']    = p_obpa
 
     _cache = rows
     return _cache

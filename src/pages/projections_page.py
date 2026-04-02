@@ -33,8 +33,6 @@ def _team_td(abbr):
 
 
 
-# FOR CLAUDE: use render_table (you'll probably not need this helper when projections 
-# is refactored to use the correct column names)
 def _proj_table(rows):
     records = []
     for row in rows:
@@ -43,42 +41,34 @@ def _proj_table(rows):
             'team':    row['_team_abbr'] or 'FA',
             'power':   row['power'],   'contact': row['contact'],
             'speed':   row['speed'],   'fielding': row['fielding'], 'arm': row['arm'],
-            'gb':  row['xGB'],  'pa':  row['proj_pa'],
-            'hr':  row['xHR'], 'r':   row['xR'], 'rbi': row['xRBI'], 'sb': row['xSB'],
-            'avg': row['xAVG'], 'obp': row['xOBP'], 'slg': row['xSLG'],
-            'ops': row['xOPS'], 'wrc_plus': row['xwRC+'], 'war': row['xWAR'],
+            'gb':  row['gb'],  'pa':  row['proj_pa'],
+            'hr':  row['hr'], 'r':   row['r'], 'rbi': row['rbi'], 'sb': row['sb'],
+            'avg': row['avg'], 'obp': row['obp'], 'slg': row['slg'],
+            'ops': row['ops'], 'wrc_plus': row['wrc_plus'], 'war': row['war'],
         }
         records.append(rec)
     render_table(pd.DataFrame(records), depth=0)
 
 
-# FOR CLAUDE: use render_table
 def _team_summary_table(team_rows):
     """Render one row per team: summed xPA/xHR/xWAR, PA-weighted xAVG/xOPS/xwRC+."""
-    with table(border=0):
-        with thead():
-            with tr():
-                for col in ['Team', 'PA', 'AVG', 'HR', 'OPS', 'wRC+', 'WAR']:  # display headers only
-                    th(col)
-        with tbody():
-            for tname, trows in team_rows:
-                total_pa  = sum(r['proj_pa'] for r in trows)
-                total_hr  = sum(r['xHR']     for r in trows)
-                total_war = sum(r['xWAR']    for r in trows)
-                if total_pa > 0:
-                    w_avg  = sum(r['xAVG']  * r['proj_pa'] for r in trows) / total_pa
-                    w_ops  = sum(r['xOPS']  * r['proj_pa'] for r in trows) / total_pa
-                    w_wrc  = sum(r['xwRC+']  * r['proj_pa'] for r in trows) / total_pa
-                else:
-                    w_avg = w_ops = w_wrc = 0.0
-                with tr():
-                    td(tname)
-                    td(total_pa)
-                    td(_f('avg',  w_avg))
-                    td(total_hr)
-                    td(_f('ops',  w_ops))
-                    td(_f('wrc_plus', w_wrc))
-                    td(_f('war',  total_war))
+    records = []
+    for tname, trows in team_rows:
+        total_pa  = sum(r['proj_pa'] for r in trows)
+        total_hr  = sum(r['hr']  for r in trows)
+        total_war = sum(r['war'] for r in trows)
+        if total_pa > 0:
+            w_avg = sum(r['avg']      * r['proj_pa'] for r in trows) / total_pa
+            w_ops = sum(r['ops']      * r['proj_pa'] for r in trows) / total_pa
+            w_wrc = sum(r['wrc_plus'] * r['proj_pa'] for r in trows) / total_pa
+        else:
+            w_avg = w_ops = w_wrc = 0.0
+        records.append({
+            'team': tname, 'pa': total_pa, 'avg': w_avg,
+            'hr': total_hr, 'ops': w_ops, 'wrc_plus': w_wrc, 'war': total_war,
+            'stat_type': 'season',
+        })
+    render_table(pd.DataFrame(records), depth=0)
 
 
 
@@ -92,49 +82,37 @@ def _pit_all_table(pit_rows):
             'velocity': row['velocity'], 'junk': row['junk'], 'accuracy': row['accuracy'],
             'role':     row['role'],
             'p_ip':  row['proj_ip'],
-            'p_gp': row['xGP'], 'p_w': row['xW'], 'p_l': row['xL'], 'p_sv': row['xSV'],
-            'p_k': row['xK'], 'p_bb': row['xBB'], 'p_hr': row['xHR'],
-            'p_era': row['xERA'], 'p_era_minus': row['xERA-'], 'p_fip': row['xFIP'],
-            'p_whip': row['xWHIP'], 'p_k_pct': row['xK%'], 'p_bb_pct': row['xBB%'],
-            'p_war': row['xWAR'],
+            'p_gp': row['p_gp'], 'p_w': row['p_w'], 'p_l': row['p_l'], 'p_sv': row['p_sv'],
+            'p_k': row['p_k'], 'p_bb': row['p_bb'], 'p_hr': row['p_hr'],
+            'p_era': row['p_era'], 'p_era_minus': row['p_era_minus'], 'p_fip': row['p_fip'],
+            'p_whip': row['p_whip'], 'p_k_pct': row['p_k_pct'], 'p_bb_pct': row['p_bb_pct'],
+            'p_war': row['p_war'],
         })
     render_table(pd.DataFrame(records), depth=0)
 
-# FOR CLAUDE: use render_table
 def _pit_team_summary_table(team_rows):
     """Render one row per team: summed xIP/xWAR, IP-weighted rate stats."""
-    def _f(stat, val):
-        m = REGISTRY[stat]
-        return fmt_round(val, m['decimal_places'], m['leading_zero'], False)
-    with table(border=0):
-        with thead():
-            with tr():
-                for col in ['Team', 'xIP', 'xRA9', 'xERA', 'xFIP', 'xK%', 'xBB%', 'xWAR']:
-                    th(col)
-        with tbody():
-            for tname, trows in team_rows:
-                total_ip  = sum(r['proj_ip'] for r in trows)
-                total_war = sum(r['xWAR']    for r in trows)
-                if total_ip > 0:
-                    w_ra9   = sum(r['xRA9']  * r['proj_ip'] for r in trows) / total_ip
-                    w_era   = sum(r['xERA']  * r['proj_ip'] for r in trows) / total_ip
-                    w_fip   = sum(r['xFIP']  * r['proj_ip'] for r in trows) / total_ip
-                    w_kpct  = sum(r['xK%']   * r['proj_ip'] for r in trows) / total_ip
-                    w_bbpct = sum(r['xBB%']  * r['proj_ip'] for r in trows) / total_ip
-                else:
-                    w_ra9 = w_era = w_fip = w_kpct = w_bbpct = 0.0
-                with tr():
-                    td(tname)
-                    td(f"{total_ip:.1f}")
-                    td(_f('p_ra9',  w_ra9))
-                    td(_f('p_era',  w_era))
-                    td(_f('p_fip',  w_fip))
-                    td(_f('p_k_pct',  w_kpct))
-                    td(_f('p_bb_pct', w_bbpct))
-                    td(_f('p_war',    total_war))
+    records = []
+    for tname, trows in team_rows:
+        total_ip  = sum(r['proj_ip'] for r in trows)
+        total_war = sum(r['p_war'] for r in trows)
+        if total_ip > 0:
+            w_ra9   = sum(r['p_ra9']   * r['proj_ip'] for r in trows) / total_ip
+            w_era   = sum(r['p_era']   * r['proj_ip'] for r in trows) / total_ip
+            w_fip   = sum(r['p_fip']   * r['proj_ip'] for r in trows) / total_ip
+            w_kpct  = sum(r['p_k_pct'] * r['proj_ip'] for r in trows) / total_ip
+            w_bbpct = sum(r['p_bb_pct']* r['proj_ip'] for r in trows) / total_ip
+        else:
+            w_ra9 = w_era = w_fip = w_kpct = w_bbpct = 0.0
+        records.append({
+            'team': tname, 'p_ip': total_ip,
+            'p_ra9': w_ra9, 'p_era': w_era, 'p_fip': w_fip,
+            'p_k_pct': w_kpct, 'p_bb_pct': w_bbpct, 'p_war': total_war,
+            'stat_type': 'season',
+        })
+    render_table(pd.DataFrame(records), depth=0)
 
 
-# FOR CLAUDE: use render_table
 def _war_delta_table(deltas):
     """Render a table of (first, last, s20_war, xwar, delta) rows."""
     m = REGISTRY['war']
@@ -157,57 +135,57 @@ def _war_delta_table(deltas):
 
 def _top50_section(rows, pit_rows, ppos_map):
     combined = [('bat', r) for r in rows if r['_team_abbr']] + [('pit', r) for r in pit_rows if r['_team_abbr']]
-    combined.sort(key=lambda x: x[1]['xWAR'], reverse=True)
+    combined.sort(key=lambda x: x[1]['war'] if 'war' in x[1] else x[1]['p_war'], reverse=True)
     h2("Top 50")
     with ol():
         for kind, r in combined[:50]:
             abbr = r['_team_abbr'] or 'FA'
-            war  = _f('war', r['xWAR'])
             if kind == 'bat':
+                war  = _f('war', r['war'])
                 pos  = ppos_map.get((r['first'], r['last']), '')
-                line = (f"{_f('avg', r['xAVG'])} AVG, {r['xHR']} HR, "
-                        f"{r['xRBI']} RBI, {_f('ops', r['xOPS'])} OPS ({war} WAR)")
+                line = (f"{_f('avg', r['avg'])} AVG, {r['hr']} HR, "
+                        f"{r['rbi']} RBI, {_f('ops', r['ops'])} OPS ({war} WAR)")
             else:
+                war  = _f('war', r['p_war'])
                 pos  = r['role']
                 ip   = f"{r['proj_ip']:.1f}"
                 if r['role'] == 'SP':
-                    line = (f"{r['xW']}-{r['xL']}, {_f('p_era', r['xERA'])} ERA, "
-                            f"{ip} IP, {r['xK']} K ({war} WAR)")
+                    line = (f"{r['p_w']}-{r['p_l']}, {_f('p_era', r['p_era'])} ERA, "
+                            f"{ip} IP, {r['p_k']} K ({war} WAR)")
                 else:
-                    line = (f"{_f('p_era', r['xERA'])} ERA, {ip} IP, "
-                            f"{r['xK']} K, {r['xSV']} SV, {war} WAR")
+                    line = (f"{_f('p_era', r['p_era'])} ERA, {ip} IP, "
+                            f"{r['p_k']} K, {r['p_sv']} SV, {war} WAR")
             li(f"{r['first']} {r['last']} ({pos}, {abbr}): {line}")
 
-from constants import replacement_level, CURRENT_SEASON, LAST_COMPLETED_SEASON
+from constants import replacement_level, CURRENT_SEASON, LAST_COMPLETED_SEASON, num_games
 
 
 def _rookie_war_list(bat_rookies, pit_rookies, ppos_map, n=10):
-    """Render a combined numbered list of top n rookies (batters + pitchers) by xWAR."""
+    """Render a combined numbered list of top n rookies (batters + pitchers) by WAR."""
     combined = [('bat', r) for r in bat_rookies] + [('pit', r) for r in pit_rookies]
-    combined.sort(key=lambda x: x[1]['xWAR'], reverse=True)
+    combined.sort(key=lambda x: x[1]['war'] if 'war' in x[1] else x[1]['p_war'], reverse=True)
     p(f"Stat of the day: my projected top {n} rookie position players and pitchers by WAR:")
     with ol():
         for kind, r in combined[:n]:
             abbr = r['_team_abbr'] or 'FA'
-            war  = _f('war', r['xWAR'])
             if kind == 'bat':
+                war  = _f('war', r['war'])
                 pos  = ppos_map.get((r['first'], r['last']), '')
-                line = (f"{_f('avg', r['xAVG'])} AVG, {r['xHR']} HR, "
-                        f"{r['xRBI']} RBI, {_f('ops', r['xOPS'])} OPS ({war} WAR)")
+                line = (f"{_f('avg', r['avg'])} AVG, {r['hr']} HR, "
+                        f"{r['rbi']} RBI, {_f('ops', r['ops'])} OPS ({war} WAR)")
             else:
+                war  = _f('war', r['p_war'])
                 pos  = r['role']
                 ip   = f"{r['proj_ip']:.1f}"
                 if r['role'] == 'SP':
-                    line = (f"{r['xW']}-{r['xL']}, {_f('p_era', r['xERA'])} ERA, "
-                            f"{ip} IP, {r['xK']} K ({war} WAR)")
+                    line = (f"{r['p_w']}-{r['p_l']}, {_f('p_era', r['p_era'])} ERA, "
+                            f"{ip} IP, {r['p_k']} K ({war} WAR)")
                 else:
-                    line = (f"{_f('p_era', r['xERA'])} ERA, {ip} IP, "
-                            f"{r['xK']} K, {r['xSV']} SV, {war} WAR")
+                    line = (f"{_f('p_era', r['p_era'])} ERA, {ip} IP, "
+                            f"{r['p_k']} K, {r['p_sv']} SV, {war} WAR")
             li(f"{r['first']} {r['last']} ({pos}, {abbr}): {line}")
 
-# FOR CLAUDE: use the constants defined in constants.py instead
-_GAMES       = 80
-_REPL_WINS   = replacement_level * _GAMES
+_REPL_WINS = replacement_level * num_games
 
 
 def generate_projections():
@@ -240,15 +218,15 @@ def generate_projections():
     all_teams = sorted(set(list(team_proj.keys()) + list(pit_team_proj.keys())))
     team_summary = []
     for tname in all_teams:
-        bat_war = sum(r['xWAR'] for r in team_proj.get(tname, []))
-        pit_war = sum(r['xWAR'] for r in pit_team_proj.get(tname, []))
+        bat_war = sum(r['war']   for r in team_proj.get(tname, []))
+        pit_war = sum(r['p_war'] for r in pit_team_proj.get(tname, []))
         tot_war = bat_war + pit_war
-        wins    = min(_GAMES, max(0, round(_REPL_WINS + tot_war)))
+        wins    = min(num_games, max(0, round(_REPL_WINS + tot_war)))
         div     = team_info.loc[tname, 'division_name'] if tname in team_info.index else ''
         team_summary.append({
             'team': tname, 'division': div,
             'bat_war': bat_war, 'pit_war': pit_war, 'tot_war': tot_war,
-            'wins': wins, 'losses': _GAMES - wins,
+            'wins': wins, 'losses': num_games - wins,
         })
 
     # Sort by division name, then total WAR descending
@@ -256,13 +234,13 @@ def generate_projections():
 
     # Also sort the per-section tables by xWAR for their own sections
     team_rows_sorted     = sorted(team_proj.items(),
-                                  key=lambda kv: sum(r['xWAR'] for r in kv[1]),
+                                  key=lambda kv: sum(r['war']   for r in kv[1]),
                                   reverse=True)
     pit_team_rows_sorted = sorted(pit_team_proj.items(),
-                                  key=lambda kv: sum(r['xWAR'] for r in kv[1]),
+                                  key=lambda kv: sum(r['p_war'] for r in kv[1]),
                                   reverse=True)
 
-    doc = make_doc("Projections", css='style.css')
+    doc = make_doc("Projections", depth=0)
     with doc:
         h1("Projections")
         p(f"Rates weighted {proj_module.WEIGHTS[20]}/{proj_module.WEIGHTS[19]}/{proj_module.WEIGHTS[18]} "
@@ -297,10 +275,10 @@ def generate_projections():
         h2("Batting")
 
         h3(f"All Players ({len(rows)})")
-        _proj_table(sorted(rows, key=lambda r: r['xWAR'], reverse=True))
+        _proj_table(sorted(rows, key=lambda r: r['war'], reverse=True))
 
         h3(f"Rookies ({len(rookies)})")
-        _proj_table(sorted(rookies, key=lambda r: r['xWAR'], reverse=True))
+        _proj_table(sorted(rookies, key=lambda r: r['war'], reverse=True))
 
         h3("Team Projections")
         _team_summary_table(team_rows_sorted)
@@ -314,7 +292,7 @@ def generate_projections():
             key = (r['first'], r['last'])
             if key in bat_s20.index:
                 s20_war = float(bat_s20.loc[key, 'war'])
-                bat_deltas.append((r['first'], r['last'], s20_war, r['xWAR'], r['xWAR'] - s20_war))
+                bat_deltas.append((r['first'], r['last'], s20_war, r['war'], r['war'] - s20_war))
         bat_deltas.sort(key=lambda x: x[4], reverse=True)
 
         h3(f"WAR Delta (xWAR - S{LAST_COMPLETED_SEASON} WAR)")
@@ -327,10 +305,10 @@ def generate_projections():
         h2("Pitching")
 
         h3(f"All Pitchers ({len(pit_rows)})")
-        _pit_all_table(sorted(pit_rows, key=lambda r: r['xWAR'], reverse=True))
+        _pit_all_table(sorted(pit_rows, key=lambda r: r['p_war'], reverse=True))
 
         h3(f"Rookies ({len(pit_rookies)})")
-        _pit_all_table(sorted(pit_rookies, key=lambda r: r['xWAR'], reverse=True))
+        _pit_all_table(sorted(pit_rookies, key=lambda r: r['p_war'], reverse=True))
 
         h3("Team Projections")
         _pit_team_summary_table(pit_team_rows_sorted)
@@ -344,7 +322,7 @@ def generate_projections():
             key = (r['first'], r['last'])
             if key in pit_s20.index:
                 s20_war = float(pit_s20.loc[key, 'p_war'])
-                pit_deltas.append((r['first'], r['last'], s20_war, r['xWAR'], r['xWAR'] - s20_war))
+                pit_deltas.append((r['first'], r['last'], s20_war, r['p_war'], r['p_war'] - s20_war))
         pit_deltas.sort(key=lambda x: x[4], reverse=True)
 
         h3(f"WAR Delta (xWAR - S{LAST_COMPLETED_SEASON} WAR)")

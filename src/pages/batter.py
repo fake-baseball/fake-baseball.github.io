@@ -19,50 +19,26 @@ from data.stats import batting_stream_rows
 _BAT_CONTEXTS = {'batting', 'baserunning', 'fielding'}
 _ALL_BAT = {k: v for k, v in REGISTRY.items() if v.get('context') in _BAT_CONTEXTS}
 
-# FOR CLAUDE: the summary table can be identified from the internal column names only, then
-# render_table can take care of displaying that for you
-_SUMMARY_COLS = [
-    ('WAR', 'war'), ('AB', 'ab'), ('H', 'h'), ('HR', 'hr'),
-    ('BA',  'avg'), ('R',  'r'),  ('RBI', 'rbi'), ('SB', 'sb'),
-    ('OBP', 'obp'), ('SLG', 'slg'), ('OPS', 'ops'), ('OPS+', 'ops_plus'),
-]
+_SUMMARY_COLS = ['season', 'war', 'ab', 'h', 'hr', 'avg', 'r', 'rbi', 'sb', 'obp', 'slg', 'ops', 'ops_plus']
 
-# FOR CLAUDE: use render_table here PLEASE
+
 def _summary_table(stats, proj_row):
     """Render BB-ref style summary strip: current season, Projected, Career."""
-    def _fmt(col, val):
-        meta = _ALL_BAT.get(col)
-        if meta is None or (isinstance(val, float) and np.isnan(val)):
-            return '-'
-        return fmt_round(val, meta['decimal_places'], meta['leading_zero'], meta['percentage'])
-
-    s_cur  = stats[(stats['season'] == CURRENT_SEASON)       & (stats['stat_type'] == 'season')]
+    s_cur  = stats[(stats['season'] == CURRENT_SEASON)        & (stats['stat_type'] == 'season')]
     s_last = stats[(stats['season'] == LAST_COMPLETED_SEASON) & (stats['stat_type'] == 'season')]
     s_row  = s_cur if not s_cur.empty else s_last
     career = stats[stats['stat_type'] == 'career']
 
-    rows_data = []
+    frames = []
     if not s_row.empty:
-        label = CURRENT_SEASON if not s_cur.empty else LAST_COMPLETED_SEASON
-        rows_data.append((f'Season {label}', s_row.iloc[0]))
-    if proj_row is not None:
-        # rows_data.append(('Projected', proj_row.iloc[0]))
-        pass
+        frames.append(s_row)
     if not career.empty:
-        rows_data.append(('Career', career.iloc[0]))
+        frames.append(career)
+    if not frames:
+        return
 
-    with table(cls='summary'):
-        with thead():
-            with tr():
-                th('')
-                for disp, _ in _SUMMARY_COLS:
-                    th(disp)
-        with tbody():
-            for label, row in rows_data:
-                with tr():
-                    td(label)
-                    for _, col in _SUMMARY_COLS:
-                        td(_fmt(col, row[col]))
+    summary_df = pd.concat(frames)[_SUMMARY_COLS + ['stat_type']]
+    render_table(summary_df)
 
 
 def _bat_proj_row(first, last, cols):
@@ -72,24 +48,22 @@ def _bat_proj_row(first, last, cols):
     if proj is None:
         return None
 
-    # FOR CLAUDE: once you refactor projections to use internal column names, this
-    # is mostly basically not going to be needed (for the renaming stuff)
-    pa    = proj['proj_pa']
-    bb    = int(round(pa * proj['bb']))
-    hbp   = int(round(pa * proj['hbp']))
-    oneb  = int(round(pa * proj['b_1b']))
-    twob  = int(round(pa * proj['b_2b']))
-    threeb = int(round(pa * proj['b_3b']))
-    hr    = proj['xHR']
-    k     = proj['xK']
-    sb    = proj['xSB']
-    cs    = proj['xCS']
-    h     = oneb + twob + threeb + hr
-    ab    = pa - bb - hbp
-    tb    = oneb + 2*twob + 3*threeb + 4*hr
-    bip   = ab - k
-    xbh   = twob + threeb + hr
-    sbatt = sb + cs
+    pa     = proj['proj_pa']
+    bb     = int(round(pa * proj['bb_rate']))
+    hbp    = int(round(pa * proj['hbp_rate']))
+    oneb   = int(round(pa * proj['b_1b_rate']))
+    twob   = int(round(pa * proj['b_2b_rate']))
+    threeb = int(round(pa * proj['b_3b_rate']))
+    hr     = proj['hr']
+    k      = proj['k']
+    sb     = proj['sb']
+    cs     = proj['cs']
+    h      = oneb + twob + threeb + hr
+    ab     = pa - bb - hbp
+    tb     = oneb + 2*twob + 3*threeb + 4*hr
+    bip    = ab - k
+    xbh    = twob + threeb + hr
+    sbatt  = sb + cs
 
     pi_row = players.player_info.loc[(first, last)] if (first, last) in players.player_info.index else None
     if pi_row is not None and teams_data.teams is not None:
@@ -105,25 +79,23 @@ def _bat_proj_row(first, last, cols):
         'pa': pa, 'ab': ab, 'bb': bb, 'hbp': hbp,
         'b_2b': twob, 'b_3b': threeb, 'hr': hr, 'h': h, 'tb': tb,
         'k': k, 'sb': sb, 'cs': cs, 'bip': bip, 'xbh': xbh,
-        'gb': proj['xGB'], 'r': proj['xR'], 'rbi': proj['xRBI'],
-        'avg': proj['xAVG'], 'obp': proj['xOBP'], 'slg': proj['xSLG'],
-        'ops': proj['xOPS'], 'ops_plus': proj['xOPS+'], 'woba': proj['xwOBA'], 'wrc_plus': proj['xwRC+'],
-        'babip': proj['xBABIP'], 'war': proj['xWAR'],
-        'iso': proj['xSLG'] - proj['xAVG'],
-        'hr_pct': proj['hr'], 'k_pct': proj['k'], 'bb_pct': proj['bb'],
-        'r_br': proj['xRbr'],
-        'wrc': proj['xwRC'],
-        'r_bat': proj['xRbat'], 'r_pos': proj['xRpos'],
-        'r_corr': proj['xRcorr'], 'r_rep': proj['xRrep'],
-        'raa': proj['xRAA'], 'rar': proj['xRAR'],
-        'waa': proj['xWAA'],
+        'gb': proj['gb'], 'r': proj['r'], 'rbi': proj['rbi'],
+        'avg': proj['avg'], 'obp': proj['obp'], 'slg': proj['slg'],
+        'ops': proj['ops'], 'ops_plus': proj['ops_plus'], 'woba': proj['woba'],
+        'wrc_plus': proj['wrc_plus'], 'babip': proj['babip'], 'war': proj['war'],
+        'iso': proj['slg'] - proj['avg'],
+        'hr_pct': proj['hr_rate'], 'k_pct': proj['k_rate'], 'bb_pct': proj['bb_rate'],
+        'r_br': proj['r_br'], 'wrc': proj['wrc'],
+        'r_bat': proj['r_bat'], 'r_pos': proj['r_pos'],
+        'r_corr': proj['r_corr'], 'r_rep': proj['r_rep'],
+        'raa': proj['raa'], 'rar': proj['rar'], 'waa': proj['waa'],
     })
     ob = h + bb + hbp
     if ob > 0:
-        d['rs_pct'] = proj['xR'] / ob
+        d['rs_pct'] = proj['r'] / ob
     non_hr_ob = h - hr + bb + hbp
     if non_hr_ob > 0:
-        d['rc_pct'] = (proj['xR'] - hr) / non_hr_ob
+        d['rc_pct'] = (proj['r'] - hr) / non_hr_ob
     if sbatt > 0:
         d['sb_pct']     = sb / sbatt
         d['sb_att_pct'] = sbatt / oneb if oneb > 0 else np.nan

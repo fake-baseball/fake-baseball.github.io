@@ -70,7 +70,7 @@ def generate_awards():
     conf_batting_title = {c: batting_title(c) for c in conferences}
     conf_era_title     = {c: era_title(c)     for c in conferences}
 
-    doc = make_doc("Awards", css='style.css')
+    doc = make_doc("Awards", depth=0)
     with doc:
         h1("Awards")
 

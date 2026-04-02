@@ -35,7 +35,7 @@ mlb_E_rate = {
 
 # Pitching
 runs_SV           = 0.5
-SPRP_INNING_SHAR E= 0.5
+SPRP_INNING_SHARE = 0.5
 
 # WAR framework
 # TODO: RUNS_PER_WIN should be calculated from league run data rather than hardcoded

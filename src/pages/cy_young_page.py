@@ -18,7 +18,7 @@ def generate_cy_young():
     conferences = list(dict.fromkeys(teams['conference_name']))
     abbr_by_conf = teams.groupby('conference_name')['abbr'].apply(list).to_dict()
 
-    doc = make_doc("Cy Young Predictor", css='style.css')
+    doc = make_doc("Cy Young Predictor", depth=0)
     with doc:
         h1("Cy Young Predictor")
         p("Formula: CYP = ((5 x IP / 9) - ER) + (K / 12) + (SV x 2.5) + SHO + ((W x 6) - (L x 2)) + (VB x 12)")
