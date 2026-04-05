@@ -38,7 +38,7 @@ def _summary_table(stats, proj_row):
         return
 
     summary_df = pd.concat(frames)[_SUMMARY_COLS + ['stat_type']]
-    render_table(summary_df, pitching=False)
+    render_table(summary_df, depth=1, pitching=False)
 
 
 def _bat_proj_row(first, last, cols):
@@ -149,7 +149,7 @@ def _bat_streams_section(first, last):
 
     stream_df = pd.DataFrame(frames, columns=_BAT_STREAM_COLS)
     h2("Stream Log")
-    render_table(stream_df, pitching=False)
+    render_table(stream_df, depth=1, pitching=False)
 
 
 def generate_batter_page(first_name, last_name):
@@ -228,26 +228,26 @@ def generate_batter_page(first_name, last_name):
             'sb', 'cs', 'bb', 'k', 'avg', 'obp', 'slg', 'ops', 'ops_plus',
             'tb', 'hbp', 'sh', 'sf', 'stat_type',
         ]]
-        render_table(standard_batting, pitching=False)
+        render_table(standard_batting, depth=1, pitching=False)
 
         h3("Advanced Batting")
         render_table(stats[['season', 'age', 'team', 'pa',
                     'woba', 'wrc', 'wrc_plus', 'bip', 'babip',
-                    'iso', 'xbh', 'xbh_pct', 'hr_pct', 'k_pct', 'bb_pct', 'stat_type']], pitching=False)
+                    'iso', 'xbh', 'xbh_pct', 'hr_pct', 'k_pct', 'bb_pct', 'stat_type']], depth=1, pitching=False)
 
         h3("Baserunning")
         render_table(stats[['season', 'age', 'team', 'pa',
-                    'sb', 'cs', 'sb_pct', 'sb_att_pct', 'rs_pct', 'rc_pct', 'stat_type']], pitching=False)
+                    'sb', 'cs', 'sb_pct', 'sb_att_pct', 'rs_pct', 'rc_pct', 'stat_type']], depth=1, pitching=False)
 
         h3("Fielding")
         render_table(stats[['season', 'age', 'team', 'pos1', 'pos2',
-                    'gb', 'gf', 'e', 'e_per_gf', 'pb', 'pb_per_gf', 'stat_type']], pitching=False)
+                    'gb', 'gf', 'e', 'e_per_gf', 'pb', 'pb_per_gf', 'stat_type']], depth=1, pitching=False)
 
         h3("Value")
         render_table(stats[[
             'season', 'age', 'team', 'gb', 'pa',
             'r_bat', 'r_br', 'r_def', 'r_pos', 'r_corr', 'r_rep', 'raa', 'rar', 'waa', 'war', 'stat_type',
-        ]], pitching=False)
+        ]], depth=1, pitching=False)
 
         if active:
             _bat_streams_section(first_name, last_name)

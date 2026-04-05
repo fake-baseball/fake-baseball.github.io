@@ -5,7 +5,7 @@ from dominate.tags import *
 
 from constants import SEASON_RANGE
 from data import teams as teams_data
-from leaders import get_pitching_leaders, get_pitching_leaders_by_season
+from leaders import get_leaders, get_leaders_by_season
 from pages.page_utils import make_doc, render_table
 
 
@@ -30,7 +30,7 @@ def generate_cy_young():
         h2("Cy Young Points leaders by season")
         for conf in conferences:
             h3(conf)
-            df = get_pitching_leaders_by_season('p_cyp', teams=abbr_by_conf[conf])
+            df = get_leaders_by_season('p_cyp', teams=abbr_by_conf[conf])
             df['player'] = ''
             df['stat_type'] = 'season'
             render_table(df[['season', 'first_name', 'last_name', 'player', 'team', 'stat_type'] + _STAT_COLS], depth=0, pitching=True)
@@ -38,7 +38,7 @@ def generate_cy_young():
         for season_num in reversed(SEASON_RANGE):
             h2(f"Season {season_num}")
             for conf in conferences:
-                df = get_pitching_leaders('p_cyp', season=season_num, num=10,
+                df = get_leaders('p_cyp', season=season_num, num=10,
                                           teams=abbr_by_conf[conf])
                 if df.empty:
                     continue

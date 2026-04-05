@@ -12,8 +12,8 @@ from registry import REGISTRY
 from pages.page_utils import make_doc, fmt_round, fmt_rdiff, render_table
 from util import fmt_ip
 
-_PITCHER_COLS  = ['Name', '#', 'role', 'throws', 'velocity', 'junk', 'accuracy', 'fielding', 'Arsenal', 'age', 'Salary']
-_POSITION_COLS = ['Name', '#', 'pos1', 'pos2', 'bats', 'power', 'contact', 'speed', 'fielding', 'arm', 'age', 'Salary']
+_PITCHER_COLS  = ['Name', '#', 'role', 'throws', 'velocity', 'junk', 'accuracy', 'fielding', 'arsenal', 'age', 'salary']
+_POSITION_COLS = ['Name', '#', 'pos1', 'pos2', 'bats', 'power', 'contact', 'speed', 'fielding', 'arm', 'age', 'salary']
 
 
 def _batter_stats(first, last):
@@ -120,13 +120,6 @@ def generate_team_page(team_name, roster, team_info):
     position = roster[roster['ppos'] != 'P'].sort_values(['last_name', 'first_name']).copy()
 
     for df in (pitchers, position):
-        df.rename(columns={
-            'jersey':     '#',
-            'ppos':       'pos1',
-            'spos':       'pos2',
-            'salary':     'Salary',
-            'pitchTypes': 'Arsenal',
-        }, inplace=True)
         df['Name'] = None  # placeholder; _roster_table uses first_name/last_name directly
 
     rotation = teams_data.rotations[teams_data.rotations['teamName'] == team_name].sort_values('rotation')

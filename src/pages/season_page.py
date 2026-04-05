@@ -159,11 +159,11 @@ def _leaders_section(season_num):
     h2("Leaders")
     h3("Batting")
     for stat in _BAT_LEADER_STATS:
-        rows = ld.get_batting_leaders(stat, season=season_num, num=5)
+        rows = ld.get_leaders(stat, season=season_num, num=5)
         _leader_table(stat, rows, pitching=False)
     h3("Pitching")
     for stat in _PIT_LEADER_STATS:
-        rows = ld.get_pitching_leaders(stat, season=season_num, num=5)
+        rows = ld.get_leaders(stat, season=season_num, num=5)
         _leader_table(stat, rows, pitching=True)
 
 def _h2h_matrix(season_num):

@@ -15,9 +15,9 @@ def batting_triple_crown():
     """
     winners = []
     for season in SEASON_RANGE:
-        avg_rows = ld.get_batting_leaders('avg', season=season, num=1)
-        hr_rows  = ld.get_batting_leaders('hr',  season=season, num=1)
-        rbi_rows = ld.get_batting_leaders('rbi', season=season, num=1)
+        avg_rows = ld.get_leaders('avg', season=season, num=1)
+        hr_rows  = ld.get_leaders('hr',  season=season, num=1)
+        rbi_rows = ld.get_leaders('rbi', season=season, num=1)
         crown = _names(avg_rows) & _names(hr_rows) & _names(rbi_rows)
         for first, last in crown:
             mask = (avg_rows['first_name'] == first) & (avg_rows['last_name'] == last)
@@ -41,9 +41,9 @@ def batting_triple_crown_conf(conference):
     abbrs = _conf_abbrs(conference)
     winners = []
     for season in SEASON_RANGE:
-        avg_rows = ld.get_batting_leaders('avg', season=season, num=1, teams=abbrs)
-        hr_rows  = ld.get_batting_leaders('hr',  season=season, num=1, teams=abbrs)
-        rbi_rows = ld.get_batting_leaders('rbi', season=season, num=1, teams=abbrs)
+        avg_rows = ld.get_leaders('avg', season=season, num=1, teams=abbrs)
+        hr_rows  = ld.get_leaders('hr',  season=season, num=1, teams=abbrs)
+        rbi_rows = ld.get_leaders('rbi', season=season, num=1, teams=abbrs)
         crown = _names(avg_rows) & _names(hr_rows) & _names(rbi_rows)
         for first, last in crown:
             mask = (avg_rows['first_name'] == first) & (avg_rows['last_name'] == last)
@@ -63,9 +63,9 @@ def pitching_triple_crown_conf(conference):
     abbrs = _conf_abbrs(conference)
     winners = []
     for season in SEASON_RANGE:
-        w_rows   = ld.get_pitching_leaders('p_w',   season=season, num=1, teams=abbrs)
-        era_rows = ld.get_pitching_leaders('p_era', season=season, num=1, teams=abbrs)
-        k_rows   = ld.get_pitching_leaders('p_k',   season=season, num=1, teams=abbrs)
+        w_rows   = ld.get_leaders('p_w',   season=season, num=1, teams=abbrs)
+        era_rows = ld.get_leaders('p_era', season=season, num=1, teams=abbrs)
+        k_rows   = ld.get_leaders('p_k',   season=season, num=1, teams=abbrs)
         crown = _names(w_rows) & _names(era_rows) & _names(k_rows)
         for first, last in crown:
             winners.append({
@@ -196,9 +196,9 @@ def pitching_triple_crown():
     """
     winners = []
     for season in SEASON_RANGE:
-        w_rows   = ld.get_pitching_leaders('p_w',   season=season, num=1)
-        era_rows = ld.get_pitching_leaders('p_era', season=season, num=1)
-        k_rows   = ld.get_pitching_leaders('p_k',   season=season, num=1)
+        w_rows   = ld.get_leaders('p_w',   season=season, num=1)
+        era_rows = ld.get_leaders('p_era', season=season, num=1)
+        k_rows   = ld.get_leaders('p_k',   season=season, num=1)
         crown = _names(w_rows) & _names(era_rows) & _names(k_rows)
         for first, last in crown:
             winners.append({
