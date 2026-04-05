@@ -51,6 +51,22 @@ tbody tr:hover {
     background: #e8f0fb;
 }
 
+tbody tr.career td, tbody tr.career th {
+    border-top: 2px solid #aaa;
+    border-bottom: 2px solid #aaa;
+    background: #f5f5f5;
+}
+
+tbody tr.team td, tbody tr.team th {
+    background: #fff;
+    border-bottom: 1px solid #ddd;
+}
+
+tbody tr.projected td, tbody tr.projected th {
+    background: #dbeeff;
+    font-style: italic;
+}
+
 ul {
     padding-left: 1.5rem;
 }
