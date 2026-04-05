@@ -1,7 +1,7 @@
 /* BFBL global stylesheet */
 
 body {
-    font-family: sans-serif;
+    font-family: "PT Sans", sans-serif;
     max-width: 1200px;
     margin: 0 auto;
     padding: 1rem 2rem;
@@ -10,6 +10,7 @@ body {
 }
 
 h1, h2, h3 {
+    font-family: "PT Sans Caption";
     margin-top: 1.5rem;
     margin-bottom: 0.5rem;
 }
@@ -34,13 +35,17 @@ th, td {
     text-align: right;
 }
 
-th:first-child, td:first-child {
-    text-align: left;
-}
-
 thead th {
     border-bottom: 2px solid #aaa;
     font-weight: bold;
+}
+
+tbody td {
+    font-family: "PT Sans Caption";
+}
+
+tbody td.name-col {
+    font-family: "PT Sans", sans-serif;
 }
 
 tbody tr:nth-child(even) {
@@ -69,4 +74,12 @@ tbody tr.projected td, tbody tr.projected th {
 
 ul {
     padding-left: 1.5rem;
+}
+
+table.compact th, table.compact td {
+    padding: 0.1rem 0.3rem;
+}
+
+td.mono-col {
+    font-family: "PT Mono", monospace;
 }
