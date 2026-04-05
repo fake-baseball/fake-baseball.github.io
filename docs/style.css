@@ -84,3 +84,10 @@ table.compact th, table.compact td {
 td.mono-col {
     font-family: "PT Mono", monospace;
 }
+
+table.leaders-index th,
+table.leaders-index td,
+table.leaders-index tbody td {
+    font-family: "PT Sans", sans-serif;
+    text-align: left;
+}
