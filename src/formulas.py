@@ -221,6 +221,8 @@ def compute_p_p_per_pa(d):   d['p_p_per_pa']  = _div(d['p_tp'], d['p_bf'])
 def compute_p_ip_per_gp(d):  d['p_ip_per_gp'] = _div(d['p_ip'], d['p_gp'])
 def compute_p_sv_pct(d):     d['p_sv_pct']    = _div(d['p_sv'], d['p_gr'])
 def compute_p_cyp(d):        d['p_cyp']       = ((5 * d['p_ip'] / 9) - d['p_er']) + (d['p_k'] / 12) + (d['p_sv'] * 2.5) + d['p_sho'] + ((d['p_w'] * 6) - (d['p_l'] * 2)) + (d['p_vb'] * 12)
+def compute_p_cyp2(d):       d['p_cyp2']      = (d['p_ip'] / 2) - d['p_er'] + (d['p_k'] / 10) + d['p_w']
+def compute_p_cyp3(d):       d['p_cyp3']      = (d['p_ip'] / 2) - (d['p_fip'] / 9 * d['p_ip']) + (d['p_k'] / 10) + d['p_w']
 
 # FIP without the cFIP constant - add league cFIP to get final FIP
 def compute_fip_raw(d): d['p_fip'] = _div(13*d['p_hr'] + 3*(d['p_bb'] + d['p_hbp']) - 2*d['p_k'], d['p_ip'])

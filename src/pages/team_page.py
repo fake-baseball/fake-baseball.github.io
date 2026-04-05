@@ -1,6 +1,7 @@
 """Generate an individual team page (docs/teams/{TeamName}.html)."""
 from pathlib import Path
 
+import pandas as pd
 from dominate.tags import *
 import batting as bat_module
 import pitching as pit_module
@@ -8,7 +9,8 @@ from constants import CURRENT_SEASON
 from data import teams as teams_data
 from data import players
 from registry import REGISTRY
-from util import make_doc, fmt_ip, fmt_round, fmt_rdiff, render_table
+from pages.page_utils import make_doc, fmt_round, fmt_rdiff, render_table
+from util import fmt_ip
 
 _PITCHER_COLS  = ['Name', '#', 'role', 'throws', 'velocity', 'junk', 'accuracy', 'fielding', 'Arsenal', 'age', 'Salary']
 _POSITION_COLS = ['Name', '#', 'pos1', 'pos2', 'bats', 'power', 'contact', 'speed', 'fielding', 'arm', 'age', 'Salary']
@@ -17,7 +19,7 @@ _POSITION_COLS = ['Name', '#', 'pos1', 'pos2', 'bats', 'power', 'contact', 'spee
 def _batter_stats(first, last):
     """Returns dict of season 21 stats, or None if no games played."""
     df = bat_module.stats
-    mask = ((df['First Name'] == first) & (df['Last Name'] == last) &
+    mask = ((df['first_name'] == first) & (df['last_name'] == last) &
             (df['stat_type'] == 'season') & (df['season'] == CURRENT_SEASON))
     rows = df[mask]
     if rows.empty:
@@ -38,7 +40,7 @@ def _batter_stats(first, last):
 def _pitcher_stats(first, last):
     """Returns dict of season 21 pitcher stats, or None if no games played."""
     df = pit_module.stats
-    mask = ((df['First Name'] == first) & (df['Last Name'] == last) &
+    mask = ((df['first_name'] == first) & (df['last_name'] == last) &
             (df['stat_type'] == 'season') & (df['season'] == CURRENT_SEASON))
     rows = df[mask]
     if rows.empty:
@@ -101,15 +103,11 @@ def _pitcher_table(players_list, stat_rows):
                         td(s21[stat] if s21 is not None else '-')
 
 
-# FOR CLAUDE: (kinda a big overarching thing I just realized) investigate any discrepancy
-# between the column names for "First Name" and "Last Name". From loading, we should fix it
-# to ALWAYS be first_name and last_name so we NEVER have to do any renaming ANYWHERE within
-# the core or display logic. You can add them as stats to src/registry.py if it's not there
 def _roster_table(group, cols, link_col='Name'):
-    df = group.rename(columns={'first_name': 'First Name', 'last_name': 'Last Name'}).copy()
+    df = group.copy()
     df['player'] = ''
     display_cols = ['player' if c == link_col else c for c in cols]
-    render_table(df[display_cols + ['First Name', 'Last Name']], depth=2)
+    render_table(df[display_cols + ['first_name', 'last_name']], depth=2, pitching=False)
 
 
 def generate_team_page(team_name, roster, team_info):
@@ -121,9 +119,6 @@ def generate_team_page(team_name, roster, team_info):
     pitchers = roster[roster['ppos'] == 'P'].sort_values(['last_name', 'first_name']).copy()
     position = roster[roster['ppos'] != 'P'].sort_values(['last_name', 'first_name']).copy()
 
-    # FOR CLAUDE: ensure that BEFORE we get to this point (i.e. in src/data/*.py), the
-    # columns have already been renamed appropriately. Then, src/registry.py can contain
-    # the display column name which is handled by render_table
     for df in (pitchers, position):
         df.rename(columns={
             'jersey':     '#',
@@ -184,7 +179,6 @@ def generate_team_page(team_name, roster, team_info):
 
         h2("History")
         team_standings = teams_data.standings[teams_data.standings['teamName'] == team_name].sort_values('Season').copy()
-        team_standings['Pct'] = (team_standings['gamesWon'] / (team_standings['gamesWon'] + team_standings['gamesLost'])).map(lambda v: f"{v:.3f}".lstrip('0'))
         team_standings['Diff'] = team_standings['runsFor'] - team_standings['runsAgainst']
         total_w  = team_standings['gamesWon'].sum()
         total_l  = team_standings['gamesLost'].sum()
@@ -193,21 +187,19 @@ def generate_team_page(team_name, roster, team_info):
         total_pct  = f"{total_w / (total_w + total_l):.3f}".lstrip('0')
         total_diff = fmt_rdiff(total_rs - total_ra)
         p(f"Lifetime: {total_w}-{total_l} ({total_pct}), {total_rs} RS, {total_ra} RA, {total_diff} Diff")
-        # FOR CLAUDE: use render_table (after column name adjustments and registry refactors are done)
-        with table(border=0):
-            with thead():
-                with tr():
-                    for col in ['Season', 'W', 'L', 'Pct', 'RS', 'RA', 'Diff']:
-                        th(col)
-            with tbody():
-                for _, row in team_standings.iterrows():
-                    with tr():
-                        td(a(row['Season'], href=f"{int(row['Season'])}.html"))
-                        td(row['gamesWon'])
-                        td(row['gamesLost'])
-                        td(row['Pct'])
-                        td(row['runsFor'])
-                        td(row['runsAgainst'])
-                        td(fmt_rdiff(row['Diff']))
+        hist_rows = [
+            {
+                'season': int(row['Season']),
+                't_w':    row['gamesWon'],
+                't_l':    row['gamesLost'],
+                't_pct':  row['gamesWon'] / (row['gamesWon'] + row['gamesLost']),
+                't_rs':   row['runsFor'],
+                't_ra':   row['runsAgainst'],
+                't_diff': row['Diff'],
+                'stat_type': 'season',
+            }
+            for _, row in team_standings.iterrows()
+        ]
+        render_table(pd.DataFrame(hist_rows), depth=2, pitching=False)
 
     Path(f"docs/teams/{slug}/index.html").write_text(str(doc))

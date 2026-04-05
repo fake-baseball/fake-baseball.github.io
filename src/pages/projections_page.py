@@ -4,7 +4,7 @@ from pathlib import Path
 from dominate.tags import *
 from dominate.util import raw
 
-import projections as proj_module
+import bat_projections as proj_module
 import pit_projections as pit_proj_module
 import batting as bat_module
 import pitching as pit_module
@@ -12,7 +12,7 @@ from data import players
 from data import teams as teams_data
 import pandas as pd
 
-from util import make_doc, player_link, fmt_round, render_table
+from pages.page_utils import make_doc, player_link, fmt_round, render_table
 from registry import REGISTRY
 
 _SKILL_LABELS     = {'power': 'POW', 'contact': 'CON', 'speed': 'SPD', 'fielding': 'FLD', 'arm': 'ARM'}
@@ -37,7 +37,7 @@ def _proj_table(rows):
     records = []
     for row in rows:
         rec = {
-            'First Name': row['first'], 'Last Name': row['last'], 'player': '',
+            'first_name': row['first'], 'last_name': row['last'], 'player': '',
             'team':    row['_team_abbr'] or 'FA',
             'power':   row['power'],   'contact': row['contact'],
             'speed':   row['speed'],   'fielding': row['fielding'], 'arm': row['arm'],
@@ -47,7 +47,7 @@ def _proj_table(rows):
             'ops': row['ops'], 'wrc_plus': row['wrc_plus'], 'war': row['war'],
         }
         records.append(rec)
-    render_table(pd.DataFrame(records), depth=0)
+    render_table(pd.DataFrame(records), depth=0, pitching=False)
 
 
 def _team_summary_table(team_rows):
@@ -68,7 +68,7 @@ def _team_summary_table(team_rows):
             'hr': total_hr, 'ops': w_ops, 'wrc_plus': w_wrc, 'war': total_war,
             'stat_type': 'season',
         })
-    render_table(pd.DataFrame(records), depth=0)
+    render_table(pd.DataFrame(records), depth=0, pitching=False)
 
 
 
@@ -77,7 +77,7 @@ def _pit_all_table(pit_rows):
     records = []
     for row in pit_rows:
         records.append({
-            'First Name': row['first'], 'Last Name': row['last'], 'player': '',
+            'first_name': row['first'], 'last_name': row['last'], 'player': '',
             'team':     row['_team_abbr'] or 'FA',
             'velocity': row['velocity'], 'junk': row['junk'], 'accuracy': row['accuracy'],
             'role':     row['role'],
@@ -88,7 +88,7 @@ def _pit_all_table(pit_rows):
             'p_whip': row['p_whip'], 'p_k_pct': row['p_k_pct'], 'p_bb_pct': row['p_bb_pct'],
             'p_war': row['p_war'],
         })
-    render_table(pd.DataFrame(records), depth=0)
+    render_table(pd.DataFrame(records), depth=0, pitching=True)
 
 def _pit_team_summary_table(team_rows):
     """Render one row per team: summed xIP/xWAR, IP-weighted rate stats."""
@@ -110,7 +110,7 @@ def _pit_team_summary_table(team_rows):
             'p_k_pct': w_kpct, 'p_bb_pct': w_bbpct, 'p_war': total_war,
             'stat_type': 'season',
         })
-    render_table(pd.DataFrame(records), depth=0)
+    render_table(pd.DataFrame(records), depth=0, pitching=True)
 
 
 def _war_delta_table(deltas):
@@ -286,7 +286,7 @@ def generate_projections():
         # WAR delta: xWAR vs last season WAR
         bat_s20 = bat_module.stats[
             (bat_module.stats['season'] == LAST_COMPLETED_SEASON) & (bat_module.stats['stat_type'] == 'season')
-        ].set_index(['First Name', 'Last Name'])
+        ].set_index(['first_name', 'last_name'])
         bat_deltas = []
         for r in rows:
             key = (r['first'], r['last'])
@@ -316,7 +316,7 @@ def generate_projections():
         # WAR delta: xWAR vs last season WAR
         pit_s20 = pit_module.stats[
             (pit_module.stats['season'] == LAST_COMPLETED_SEASON) & (pit_module.stats['stat_type'] == 'season')
-        ].set_index(['First Name', 'Last Name'])
+        ].set_index(['first_name', 'last_name'])
         pit_deltas = []
         for r in pit_rows:
             key = (r['first'], r['last'])

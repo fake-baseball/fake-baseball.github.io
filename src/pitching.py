@@ -6,7 +6,7 @@ Results are stored in pitching.stats.
 import pandas as pd
 
 from data import stats as raw
-from util import fmt_ip, weighted_avg
+from util import fmt_ip, weighted_avg, append_summary_rows
 
 import formulas as f
 from formulas import _div
@@ -64,47 +64,24 @@ def compute():
                 div_winners.add((row['Season'], abbr))
     d['p_vb'] = d.apply(lambda row: 1 if (row['season'], row['team']) in div_winners else 0, axis=1)
     f.compute_p_cyp(d)
+    f.compute_p_cyp2(d)
+    f.compute_p_cyp3(d)
 
     d['stat_type'] = 'season'
     stats = _append_summary_rows(d)
 
-# FOR CLAUDE: I'm thinking that we can do some work here to abstract the behavior here, and
-# the behavior of _append_summary_rows in batting.py. For example, team-based aggregates do the
-# same thing. The only thing that's really different is how role is handeled, and how the different
-# stats are aggregated together. We can be smarter about this: counting stats are added, rate stats
-# which can be easily computed from summed counting stats (e.g. AVG, ERA) can be recomputed, and the
-# remaining m
 def _append_summary_rows(d):
-    gp = ['First Name', 'Last Name']
-    gt = ['First Name', 'Last Name', 'team']
-
-    career = d.groupby(gp).sum(numeric_only=True).reset_index()
-    career['season']    = 'Career'
-    career['age']       = ''
-    career['role']      = ''
-    career['stat_type'] = 'career'
-    team_counts = d.groupby(gp)['team'].nunique().reset_index(name='team')
-    career = career.merge(team_counts, on=gp)
-    career['team'] = career['team'].astype(str) + 'TM'
-    career = _recompute_rates(career)
-    career['p_era_minus'] = d.groupby(gp).apply(lambda g: weighted_avg(g, 'p_era_minus', 'p_ip'), include_groups=False).values
-    career['p_fip']       = d.groupby(gp).apply(lambda g: weighted_avg(g, 'p_fip',       'p_ip'), include_groups=False).values
-    career['p_ra9_def']   = d.groupby(gp).apply(lambda g: weighted_avg(g, 'p_ra9_def',   'p_ip'), include_groups=False).values
-
-    team_totals = d.groupby(gt).sum(numeric_only=True).reset_index()
-    season_counts = d.groupby(gt)['season'].nunique().reset_index(name='season')
-    team_totals = team_totals.drop(columns=['season']).merge(season_counts, on=gt)
-    team_totals['season'] = team_totals['season'].apply(
-        lambda n: f"{n} Szn" if n == 1 else f"{n} Szns")
-    team_totals['age']       = ''
-    team_totals['role']      = ''
-    team_totals['stat_type'] = 'team'
-    team_totals = _recompute_rates(team_totals)
-    team_totals['p_era_minus'] = d.groupby(gt).apply(lambda g: weighted_avg(g, 'p_era_minus', 'p_ip'), include_groups=False).values
-    team_totals['p_fip']       = d.groupby(gt).apply(lambda g: weighted_avg(g, 'p_fip',       'p_ip'), include_groups=False).values
-    team_totals['p_ra9_def']   = d.groupby(gt).apply(lambda g: weighted_avg(g, 'p_ra9_def',   'p_ip'), include_groups=False).values
-
-    return pd.concat([d, career, team_totals], ignore_index=True)
+    return append_summary_rows(
+        d,
+        player_keys=['first_name', 'last_name'],
+        recompute_fn=_recompute_rates,
+        weighted_avg_specs=[
+            ('p_era_minus', 'p_ip'),
+            ('p_fip',       'p_ip'),
+            ('p_ra9_def',   'p_ip'),
+        ],
+        extra_meta={'role': ''},
+    )
 
 
 def _recompute_rates(df):

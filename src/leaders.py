@@ -64,7 +64,7 @@ def get_career_batting_leaders(stat, active=False, worst=False, num=10, team=Non
     df = batting.stats[batting.stats[meta['qual_col']] >= CAREER_THRESHOLDS[meta['qual_col']]] if meta['qualified'] else batting.stats
     df = df[df['season'] == 'Career']
     if active:
-        df = df[df.set_index(['First Name', 'Last Name']).index.isin(players.player_info.index)]
+        df = df[df.set_index(['first_name', 'last_name']).index.isin(players.player_info.index)]
     if team is not None:
         df = df[df['team'] == team]
     if ascending:
@@ -77,10 +77,10 @@ def get_career_batting_leaders(stat, active=False, worst=False, num=10, team=Non
     return df
 
 
-def get_leaders_by_season(stat, worst=False):
+def get_leaders_by_season(stat, worst=False, team=None, teams=None):
     dfs = []
     for season in SEASON_RANGE:
-        df = get_batting_leaders(stat, season, worst=worst, num=1)
+        df = get_batting_leaders(stat, season, worst=worst, num=1, team=team, teams=teams)
         dfs.append(df)
     return pd.concat(dfs, ignore_index=True)
 
@@ -119,7 +119,7 @@ def get_career_pitching_leaders(stat, active=False, worst=False, num=10, team=No
     df = pitching.stats[pitching.stats['p_ip'] >= PIT_CAREER_MIN_IP] if meta['qualified'] else pitching.stats
     df = df[df['season'] == 'Career']
     if active:
-        df = df[df.set_index(['First Name', 'Last Name']).index.isin(players.player_info.index)]
+        df = df[df.set_index(['first_name', 'last_name']).index.isin(players.player_info.index)]
     if team is not None:
         df = df[df['team'] == team]
     if ascending:
@@ -132,10 +132,10 @@ def get_career_pitching_leaders(stat, active=False, worst=False, num=10, team=No
     return df
 
 
-def get_pitching_leaders_by_season(stat, worst=False):
+def get_pitching_leaders_by_season(stat, worst=False, team=None, teams=None):
     dfs = []
     for season in SEASON_RANGE:
-        df = get_pitching_leaders(stat, season, worst=worst, num=1)
+        df = get_pitching_leaders(stat, season, worst=worst, num=1, team=team, teams=teams)
         dfs.append(df)
     return pd.concat(dfs, ignore_index=True)
 

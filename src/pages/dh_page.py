@@ -4,13 +4,13 @@ from pathlib import Path
 import pandas as pd
 from dominate.tags import *
 
-import projections as proj_module
+import bat_projections as proj_module
 import batting as bat_module
 from data import players
 from data import teams as teams_data
 from constants import num_games, runs_E_new, runs_PB, mlb_E_rate, CURRENT_SEASON, LAST_COMPLETED_SEASON
 
-from util import make_doc, render_table, fmt_round
+from pages.page_utils import make_doc, render_table, fmt_round
 from registry import REGISTRY
 from dh import (
     attach_dh_model,
@@ -25,7 +25,7 @@ def _dh_table(rows):
             continue
         abbr = row.get('_team_abbr') or 'FA'
         records.append({
-            'First Name': row['first'], 'Last Name': row['last'], 'player': '',
+            'first_name': row['first'], 'last_name': row['last'], 'player': '',
             'team':     abbr,
             'pos':      row['_dh_pos'],
             'pos2':     row.get('_dh_spos', ''),
@@ -44,7 +44,7 @@ def _dh_table(rows):
             'rdef_old':    row.get('_dh_rdef_old'),
             'rdef':        row['_dh_rdef'],
         })
-    render_table(pd.DataFrame(records), depth=0)
+    render_table(pd.DataFrame(records), depth=0, pitching=False)
 
 
 def generate_dh():
@@ -63,7 +63,7 @@ def generate_dh():
     edf['pb_rate'] = edf['pb'] / edf['gb']
     e_rate_map = {}
     for _, row in edf.iterrows():
-        e_rate_map[(row['First Name'], row['Last Name'])] = {
+        e_rate_map[(row['first_name'], row['last_name'])] = {
             'e_rate':  row['e_rate'],
             'pb_rate': row['pb_rate'],
         }
@@ -72,8 +72,8 @@ def generate_dh():
     lg_pb_rate = cat_df['pb_rate'].mean() if len(cat_df) > 0 else 0.0
 
     # Old model Rdef from current season
-    s20 = bat_module.stats[(bat_module.stats['season'] == LAST_COMPLETED_SEASON)][['First Name', 'Last Name', 'r_def']]
-    old_rdef_map = {(row['First Name'], row['Last Name']): row['r_def'] for _, row in s20.iterrows()}
+    s20 = bat_module.stats[(bat_module.stats['season'] == LAST_COMPLETED_SEASON)][['first_name', 'last_name', 'r_def']]
+    old_rdef_map = {(row['first_name'], row['last_name']): row['r_def'] for _, row in s20.iterrows()}
     for r in rows:
         r['_dh_rdef_old'] = old_rdef_map.get((r['first'], r['last']))
 

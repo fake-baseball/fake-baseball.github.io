@@ -2,108 +2,24 @@
 from pathlib import Path
 
 import numpy as np
-from sklearn.linear_model import RidgeCV
-from sklearn.preprocessing import PolynomialFeatures
 from dominate.tags import *
 
-RIDGE_ALPHAS = [0.01, 0.1, 1, 10, 100, 1000, 10000]
-
 from constants import CURRENT_SEASON, LAST_COMPLETED_SEASON
-from util import make_doc, convert_name
+from pages.page_utils import make_doc, convert_name
 from data import players
 from data import teams as teams_data
 import batting as bat_module
 import pitching as pit_module
-import projections as proj_module
+import bat_projections as proj_module
 import pit_projections as pit_proj_module
+from salaries import compute_salary_models, BAT_SKILLS, PIT_SKILLS
 
-BAT_SKILLS  = ['power', 'contact', 'speed', 'fielding', 'arm']
-PIT_SKILLS  = ['velocity', 'junk', 'accuracy']
 BAT_LABELS  = {'power': 'POW', 'contact': 'CON', 'speed': 'SPD', 'fielding': 'FLD', 'arm': 'ARM'}
 PIT_LABELS  = {'velocity': 'VEL', 'junk': 'JNK', 'accuracy': 'ACC'}
-
-# FOR CLAUDE: move core calculation logic to a new file `src/salaries.py`
-# and leave this page as only the table creating part
-
-# FOR CLAUDE: salary should probably be parsed as part of the data loading section in
-# src/data/*.py so that internally, we have the real number. Then, add salary as
-# a new stat in src/registry.py and ensure that when displayed in a table, it reproduces this format.
-def _parse_salary(val):
-    """Parse '$1.3m' -> 1.3 (millions)."""
-    s = str(val).strip().lower().lstrip('$').rstrip('m')
-    return float(s)
 
 
 def _fmt_sal(millions):
     return f"${millions:.1f}m"
-
-
-def _r2(y, preds):
-    ss_res = np.sum((y - preds) ** 2)
-    ss_tot = np.sum((y - y.mean()) ** 2)
-    return 1.0 - ss_res / ss_tot if ss_tot > 0 else 0.0
-
-
-def _fit_skills(pi_group, skills, war_map, cat_cols=None):
-    """Fit Ridge salary ~ degree-2 interaction polynomial of skills + optional one-hot categoricals."""
-    data = []
-    for (first, last), row in pi_group.iterrows():
-        try:
-            sal = _parse_salary(row['salary'])
-        except (ValueError, TypeError):
-            continue
-        war = war_map.get((first, last))
-        entry = {
-            'first': first, 'last': last,
-            'sal':   sal,
-            'X':     [int(row[s]) for s in skills],
-            'war':   war,
-            'dol_per_war': sal / war if war and war > 0 else None,
-        }
-        if cat_cols:
-            entry['cats'] = {col: row[col] for col in cat_cols}
-        data.append(entry)
-    if not data:
-        return None, []
-    X_raw = np.array([d['X'] for d in data], dtype=float)
-    y = np.array([d['sal'] for d in data], dtype=float)
-    poly = PolynomialFeatures(degree=2, interaction_only=True, include_bias=False)
-    X_poly = poly.fit_transform(X_raw)
-    feat_names = list(poly.get_feature_names_out(skills))
-    if cat_cols:
-        for col in cat_cols:
-            values = [d['cats'][col] for d in data]
-            categories = sorted(set(values))
-            for cat in categories:
-                dummies = np.array([1.0 if v == cat else 0.0 for v in values])
-                X_poly = np.column_stack([X_poly, dummies])
-                feat_names.append(f"{col}={cat}")
-    model = RidgeCV(alphas=RIDGE_ALPHAS, cv=5).fit(X_poly, np.log(y))
-    log_resid = np.log(y) - model.predict(X_poly)
-    smearing = np.mean(np.exp(log_resid))
-    preds = smearing * np.exp(model.predict(X_poly))
-    r2 = _r2(y, preds)
-    for d, pred in zip(data, preds):
-        d['pred_skills'] = pred
-        d['diff_skills'] = d['sal'] - pred
-    return (model, r2, len(data), feat_names, smearing), data
-
-
-def _fit_war(data, war_key='proj_war'):
-    """Fit log-linear Ridge: log(salary) ~ WAR. Predictions back-transformed with exp()."""
-    valid = [d for d in data if d.get(war_key) is not None]
-    if len(valid) < 2:
-        return None
-    X = np.array([[d[war_key]] for d in valid], dtype=float)
-    y = np.array([d['sal'] for d in valid], dtype=float)
-    model = RidgeCV(alphas=RIDGE_ALPHAS, cv=5).fit(X, np.log(y))
-    log_resid = np.log(y) - model.predict(X)
-    smearing = np.mean(np.exp(log_resid))
-    preds = smearing * np.exp(model.predict(X))
-    r2 = _r2(y, preds)
-    for d, pred in zip(valid, preds):
-        d['pred_war'] = pred
-    return model, r2, len(valid), smearing
 
 
 def _coef_table(model_info, skills, labels):
@@ -145,26 +61,6 @@ def _war_coef_table(war_model_info):
                 td(f"{model.coef_[0]:+.3f}")
 
 
-def _fit_war_combined(bat_rows, pit_rows):
-    """Fit log-linear Ridge: log(salary) ~ proj_WAR + is_pitcher on all players combined."""
-    valid = []
-    for d in bat_rows:
-        if d.get('proj_war') is not None:
-            valid.append({'war': d['proj_war'], 'is_pit': 0.0, 'sal': d['sal']})
-    for d in pit_rows:
-        if d.get('proj_war') is not None:
-            valid.append({'war': d['proj_war'], 'is_pit': 1.0, 'sal': d['sal']})
-    if len(valid) < 3:
-        return None
-    X = np.array([[d['war'], d['is_pit']] for d in valid], dtype=float)
-    y = np.array([d['sal'] for d in valid], dtype=float)
-    model = RidgeCV(alphas=RIDGE_ALPHAS, cv=5).fit(X, np.log(y))
-    log_resid = np.log(y) - model.predict(X)
-    smearing = np.mean(np.exp(log_resid))
-    preds = smearing * np.exp(model.predict(X))
-    r2 = _r2(y, preds)
-    return model, r2, len(valid), smearing
-
 
 def _combined_war_coef_table(model_info):
     model, r2, n, smearing = model_info
@@ -187,18 +83,6 @@ def _combined_war_coef_table(model_info):
                 td('is_pitcher')
                 td(f"{model.coef_[1]:+.4f}")
 
-
-def _fit_war_linear(data, war_key='proj_war'):
-    """Fit linear Ridge: salary ~ WAR (no log transform)."""
-    valid = [d for d in data if d.get(war_key) is not None]
-    if len(valid) < 2:
-        return None
-    X = np.array([[d[war_key]] for d in valid], dtype=float)
-    y = np.array([d['sal'] for d in valid], dtype=float)
-    model = RidgeCV(alphas=RIDGE_ALPHAS, cv=5).fit(X, y)
-    preds = model.predict(X)
-    r2 = _r2(y, preds)
-    return model, r2, len(valid)
 
 
 def _combined_war_conversion_table(model_info, bat_linear_info, pit_linear_info):
@@ -238,7 +122,7 @@ def _team_salary_table(abbr_map, bat_rows, pit_rows, bat_war_model_info, pit_war
     totals = {}  # team_name -> {'bat': float, 'pit': float}
     for (first, last), row in pi.iterrows():
         try:
-            sal = _parse_salary(row['salary'])
+            sal = float(row['salary'])
         except (ValueError, TypeError):
             continue
         team = row['team_name']
@@ -416,16 +300,6 @@ def _player_table(rows, skills, labels, abbr_map, war_model_info, war_linear_inf
                     td(diff_proj_lin)
 
 
-def _build_war_map(stats_df, war_col='WAR'):
-    """Return {(first, last): WAR} from current season rows."""
-    s20 = stats_df[
-        (stats_df['season'] == LAST_COMPLETED_SEASON) & (stats_df['stat_type'] == 'season')
-    ]
-    return {
-        (row['First Name'], row['Last Name']): float(row[war_col])
-        for _, row in s20.iterrows()
-    }
-
 
 def _methodology_section():
     h2("Methodology")
@@ -521,30 +395,14 @@ def _methodology_section():
 
 def generate_salaries():
     pi       = players.player_info
-    bat_pi   = pi[pi['ppos'] != 'P']
-    pit_pi   = pi[pi['ppos'] == 'P']
     abbr_map = teams_data.teams.set_index('team_name')['abbr'].to_dict() if teams_data.teams is not None else {}
 
-    bat_war_map = _build_war_map(bat_module.stats, war_col='war')
-    pit_war_map = _build_war_map(pit_module.stats, war_col='p_war')
-
-    bat_model_info, bat_rows = _fit_skills(bat_pi, BAT_SKILLS, bat_war_map)
-    pit_model_info, pit_rows = _fit_skills(pit_pi, PIT_SKILLS, pit_war_map, cat_cols=['role'])
-
-    # Attach projected WAR to each row
-    bat_proj_war = {r['first'] + '\x00' + r['last']: r['war']   for r in proj_module.compute_all()}
-    pit_proj_war = {r['first'] + '\x00' + r['last']: r['p_war'] for r in pit_proj_module.compute_all()}
-    for d in bat_rows:
-        d['proj_war'] = bat_proj_war.get(d['first'] + '\x00' + d['last'])
-    for d in pit_rows:
-        d['proj_war'] = pit_proj_war.get(d['first'] + '\x00' + d['last'])
-
-    # Fit WAR model on projected WAR -> salary (forward-looking, matches how contracts are set)
-    bat_war_model_info = _fit_war(bat_rows, war_key='proj_war')
-    pit_war_model_info = _fit_war(pit_rows, war_key='proj_war')
-    combined_war_model_info = _fit_war_combined(bat_rows, pit_rows)
-    bat_war_linear_info = _fit_war_linear(bat_rows, war_key='proj_war')
-    pit_war_linear_info = _fit_war_linear(pit_rows, war_key='proj_war')
+    (bat_model_info, bat_rows, pit_model_info, pit_rows,
+     bat_war_model_info, pit_war_model_info,
+     combined_war_model_info, bat_war_linear_info, pit_war_linear_info) = compute_salary_models(
+        pi, bat_module.stats, pit_module.stats,
+        proj_module.compute_all(), pit_proj_module.compute_all(),
+    )
 
     bat_rows.sort(key=lambda d: -d['sal'])
     pit_rows.sort(key=lambda d: -d['sal'])

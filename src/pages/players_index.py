@@ -5,13 +5,13 @@ from dominate.tags import *
 
 import batting
 import pitching
-from util import convert_name, make_doc
+from pages.page_utils import convert_name, make_doc
 
 
 def generate_players_index():
     names = set()
-    names.update(batting.stats[['First Name', 'Last Name']].drop_duplicates().itertuples(index=False))
-    names.update(pitching.stats[['First Name', 'Last Name']].drop_duplicates().itertuples(index=False))
+    names.update(batting.stats[['first_name', 'last_name']].drop_duplicates().itertuples(index=False))
+    names.update(pitching.stats[['first_name', 'last_name']].drop_duplicates().itertuples(index=False))
     players_list = sorted(names, key=lambda x: x[1].lower())
 
     doc = make_doc("All Players")

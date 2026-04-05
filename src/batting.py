@@ -6,7 +6,7 @@ Results are stored in batting.stats.
 import pandas as pd
 
 from data import stats as raw
-from util import weighted_avg
+from util import weighted_avg, append_summary_rows
 
 import formulas as f
 
@@ -69,38 +69,17 @@ def compute():
 
 
 def _append_summary_rows(d):
-    gp = ['First Name', 'Last Name']
-    gt = ['First Name', 'Last Name', 'team']
-
-    career = d.groupby(gp).sum(numeric_only=True).reset_index()
-    career['season']    = 'Career'
-    career['age']       = ''
-    career['pos1']      = ''
-    career['pos2']      = ''
-    career['stat_type'] = 'career'
-    team_counts = d.groupby(gp)['team'].nunique().reset_index(name='team')
-    career = career.merge(team_counts, on=gp)
-    career['team'] = career['team'].astype(str) + 'TM'
-    career = _recompute_rates(career)
-    career['woba']     = d.groupby(gp).apply(lambda g: weighted_avg(g, 'woba',     'pa'), include_groups=False).values
-    career['ops_plus'] = d.groupby(gp).apply(lambda g: weighted_avg(g, 'ops_plus', 'pa'), include_groups=False).values
-    career['wrc_plus'] = d.groupby(gp).apply(lambda g: weighted_avg(g, 'wrc_plus', 'pa'), include_groups=False).values
-
-    team_totals = d.groupby(gt).sum(numeric_only=True).reset_index()
-    season_counts = d.groupby(gt)['season'].nunique().reset_index(name='season')
-    team_totals = team_totals.drop(columns=['season']).merge(season_counts, on=gt)
-    team_totals['season'] = team_totals['season'].apply(
-        lambda n: f"{n} Szn" if n == 1 else f"{n} Szns")
-    team_totals['age']       = ''
-    team_totals['pos1']      = ''
-    team_totals['pos2']      = ''
-    team_totals['stat_type'] = 'team'
-    team_totals = _recompute_rates(team_totals)
-    team_totals['woba']     = d.groupby(gt).apply(lambda g: weighted_avg(g, 'woba',     'pa'), include_groups=False).values
-    team_totals['ops_plus'] = d.groupby(gt).apply(lambda g: weighted_avg(g, 'ops_plus', 'pa'), include_groups=False).values
-    team_totals['wrc_plus'] = d.groupby(gt).apply(lambda g: weighted_avg(g, 'wrc_plus', 'pa'), include_groups=False).values
-
-    return pd.concat([d, career, team_totals], ignore_index=True)
+    return append_summary_rows(
+        d,
+        player_keys=['first_name', 'last_name'],
+        recompute_fn=_recompute_rates,
+        weighted_avg_specs=[
+            ('woba',     'pa'),
+            ('ops_plus', 'pa'),
+            ('wrc_plus', 'pa'),
+        ],
+        extra_meta={'pos1': '', 'pos2': ''},
+    )
 
 
 def _recompute_rates(df):

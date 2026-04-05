@@ -3,7 +3,7 @@ from pathlib import Path
 
 from dominate.tags import *
 
-from util import make_doc
+from pages.page_utils import make_doc
 
 
 _LINKS = [

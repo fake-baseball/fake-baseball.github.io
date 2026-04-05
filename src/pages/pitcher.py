@@ -13,10 +13,11 @@ from data import players
 from data import teams as teams_data
 from constants import CURRENT_SEASON, LAST_COMPLETED_SEASON
 from registry import REGISTRY
-from util import fmt_round, fmt_ip, render_table, convert_name, make_doc
+from pages.page_utils import fmt_round, render_table, convert_name, make_doc
+from util import fmt_ip
 from data.stats import pitching_stream_rows
 
-_PIT_SUMMARY_COLS = ['season', 'p_war', 'p_w', 'p_l', 'p_era', 'p_era_minus', 'p_gp', 'p_gs', 'p_sv', 'p_ip', 'p_bb', 'p_k', 'p_whip']
+_PIT_SUMMARY_COLS = ['season', 'p_war', 'p_w', 'p_l', 'p_era', 'p_gp', 'p_gs', 'p_sv', 'p_ip', 'p_k', 'p_whip']
 
 
 def _pit_summary_table(stats, proj_row):
@@ -35,7 +36,7 @@ def _pit_summary_table(stats, proj_row):
         return
 
     summary_df = pd.concat(frames)[_PIT_SUMMARY_COLS + ['stat_type']]
-    render_table(summary_df)
+    render_table(summary_df, pitching=True)
 
 def _pit_proj_row(first, last, cols):
     """Return a single-row DataFrame for the projected season, or None."""
@@ -119,8 +120,8 @@ def _pit_streams_section(first, last):
 
     # Season total row from the already-computed stats (includes WAR, ERA-, FIP, etc.)
     s21 = pitching.stats[
-        (pitching.stats['First Name'] == first) &
-        (pitching.stats['Last Name']  == last)  &
+        (pitching.stats['first_name'] == first) &
+        (pitching.stats['last_name']  == last)  &
         (pitching.stats['season'] == CURRENT_SEASON) &
         (pitching.stats['stat_type'] == 'season')
     ]
@@ -135,7 +136,7 @@ def _pit_streams_section(first, last):
 
     stream_df = pd.DataFrame(frames, columns=_PIT_STREAM_COLS)
     h2("Stream Log")
-    render_table(stream_df)
+    render_table(stream_df, pitching=True)
 
 
 def generate_pitcher_page(first_name, last_name):
@@ -151,10 +152,10 @@ def generate_pitcher_page(first_name, last_name):
         salary          = pi['salary']
     else:
         active = False
-        mask   = (pitching.stats['Last Name'] == last_name) & (pitching.stats['First Name'] == first_name)
+        mask   = (pitching.stats['last_name'] == last_name) & (pitching.stats['first_name'] == first_name)
         pitcher_role = pitching.stats.loc[mask, 'role'].iloc[0]
         try:
-            ret_mask          = (players.retired_pitchers['Last Name'] == last_name) & (players.retired_pitchers['First Name'] == first_name)
+            ret_mask          = (players.retired_pitchers['last_name'] == last_name) & (players.retired_pitchers['first_name'] == first_name)
             retirement_season = players.retired_pitchers.loc[ret_mask, 'Retirement Season'].iloc[0]
             retirement_age    = players.retired_pitchers.loc[ret_mask, 'age'].iloc[0]
         except (IndexError, KeyError):
@@ -175,7 +176,7 @@ def generate_pitcher_page(first_name, last_name):
             p(f"Role: {pitcher_role}")
             p(f"Arsenal: {pitcher_arsenal}")
             p(f"Skills: VEL {pi['velocity']} / JNK {pi['junk']} / ACC {pi['accuracy']}")
-            p(f"Salary: {salary}")
+            p(f"Salary: ${salary:.1f}m")
         else:
             strong("Retired")
             p(f"Role: {pitcher_role}")
@@ -185,8 +186,8 @@ def generate_pitcher_page(first_name, last_name):
         hr()
 
         stats = pitching.stats[
-            (pitching.stats['Last Name']  == last_name) &
-            (pitching.stats['First Name'] == first_name)
+            (pitching.stats['last_name']  == last_name) &
+            (pitching.stats['first_name'] == first_name)
         ].copy()
 
         proj_row = _pit_proj_row(first_name, last_name, stats.columns) if active else None
@@ -207,7 +208,7 @@ def generate_pitcher_page(first_name, last_name):
             'p_h', 'p_ra', 'p_er', 'p_hr', 'p_bb', 'p_k', 'p_hbp', 'p_wp', 'p_bf', 'p_era_minus', 'p_fip', 'p_whip',
             'stat_type',
         ]]
-        render_table(standard_pitching)
+        render_table(standard_pitching, pitching=True)
 
         h3("Advanced Pitching")
         render_table(stats[[
@@ -215,14 +216,14 @@ def generate_pitcher_page(first_name, last_name):
             'p_era', 'p_fip', 'p_ra9', 'p_baa', 'p_obpa', 'p_bip', 'p_babip',
             'p_h_per_9', 'p_hr_per_9', 'p_k_per_9', 'p_bb_per_9', 'p_k_per_bb', 'p_k_pct', 'p_bb_pct',
             'p_tp', 'p_p_per_gp', 'p_ip_per_gp', 'p_p_per_ip', 'p_p_per_pa', 'stat_type',
-        ]])
+        ]], pitching=True)
 
         h3("Value Pitching")
         render_table(stats[[
             'season', 'age', 'team', 'p_ip', 'p_gp', 'p_gs',
             'p_ra', 'p_r_def', 'p_ra9', 'p_ra9_def', 'p_r_lev', 'p_r_corr',
             'p_raa', 'p_raa_lev', 'p_waa', 'p_r_rep', 'p_rar', 'p_war', 'stat_type',
-        ]])
+        ]], pitching=True)
 
         if active:
             _pit_streams_section(first_name, last_name)

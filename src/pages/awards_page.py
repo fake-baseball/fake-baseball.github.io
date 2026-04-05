@@ -4,23 +4,19 @@ from pathlib import Path
 import pandas as pd
 from dominate.tags import *
 
-from util import make_doc, render_table
+from pages.page_utils import make_doc, render_table
 from triple_crown import (batting_triple_crown, pitching_triple_crown,
                           batting_triple_crown_conf, pitching_triple_crown_conf,
                           batting_title, era_title, hr_sb_club)
 from data import teams as teams_data
 
 
-def _triple_crown_table(winners, stat_cols):
+def _triple_crown_table(winners, pitching):
     if not winners:
         p("No triple crown winners.")
         return
-    rows = [
-        {'First Name': w['first'], 'Last Name': w['last'], 'player': '',
-         'season': w['season'], **{col: w[col] for col in stat_cols}}
-        for w in winners
-    ]
-    render_table(pd.DataFrame(rows), depth=0)
+    rows = [{**w, 'player': '', 'stat_type': 'season'} for w in winners]
+    render_table(pd.DataFrame(rows), depth=0, pitching=pitching)
 
 
 def _batting_title_table(winners):
@@ -28,37 +24,28 @@ def _batting_title_table(winners):
         p("No batting title winners.")
         return
     rows = [
-        {'First Name': w['first'], 'Last Name': w['last'], 'player': '',
-         'season': w['season'], 'avg': w['AVG'], 'pa': w['PA'],
+        {**{k: v for k, v in w.items() if k != 'unqualified'},
+         'player': '', 'stat_type': 'season',
          'Note': '* hitless AB rule' if w['unqualified'] else ''}
         for w in winners
     ]
-    render_table(pd.DataFrame(rows), depth=0)
+    render_table(pd.DataFrame(rows), depth=0, pitching=False)
 
 
 def _era_title_table(winners):
     if not winners:
         p("No ERA title winners.")
         return
-    rows = [
-        {'First Name': w['first'], 'Last Name': w['last'], 'player': '',
-         'season': w['season'], 'p_era': w['ERA'], 'p_ip': w['IP_true']}
-        for w in winners
-    ]
-    render_table(pd.DataFrame(rows), depth=0)
+    rows = [{**w, 'player': '', 'stat_type': 'season'} for w in winners]
+    render_table(pd.DataFrame(rows), depth=0, pitching=True)
 
 
 def _hr_sb_table(members):
     if not members:
         p("No members.")
         return
-    rows = [
-        {'First Name': w['first'], 'Last Name': w['last'], 'player': '',
-         'season': w['season'], 'team': w['team'],
-         'hr': w['HR'], 'sb': w['SB'], 'avg': w['AVG']}
-        for w in members
-    ]
-    render_table(pd.DataFrame(rows), depth=0)
+    rows = [{**w, 'player': '', 'stat_type': 'season'} for w in members]
+    render_table(pd.DataFrame(rows), depth=0, pitching=False)
 
 
 def generate_awards():
@@ -76,16 +63,16 @@ def generate_awards():
 
         h2("Triple Crown")
         h3("Batting")
-        _triple_crown_table(bat_winners, ['avg', 'hr', 'rbi'])
+        _triple_crown_table(bat_winners, pitching=False)
         h3("Pitching")
-        _triple_crown_table(pit_winners, ['p_w', 'p_era', 'p_k'])
+        _triple_crown_table(pit_winners, pitching=True)
 
         for conf in conferences:
             h2(f"{conf} Triple Crown")
             h3("Batting")
-            _triple_crown_table(conf_bat[conf], ['avg', 'hr', 'rbi'])
+            _triple_crown_table(conf_bat[conf], pitching=False)
             h3("Pitching")
-            _triple_crown_table(conf_pit[conf], ['p_w', 'p_era', 'p_k'])
+            _triple_crown_table(conf_pit[conf], pitching=True)
 
         h2("Batting Title")
         for conf in conferences:

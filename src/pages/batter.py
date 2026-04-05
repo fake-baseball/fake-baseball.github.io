@@ -8,18 +8,18 @@ from dominate.util import raw
 
 import batting
 import leaders
-import projections as proj_module
+import bat_projections as proj_module
 from constants import CURRENT_SEASON, LAST_COMPLETED_SEASON
 from data import players
 from data import teams as teams_data
 from registry import REGISTRY
-from util import fmt_round, render_table, convert_name, make_doc
+from pages.page_utils import fmt_round, render_table, convert_name, make_doc
 from data.stats import batting_stream_rows
 
 _BAT_CONTEXTS = {'batting', 'baserunning', 'fielding'}
 _ALL_BAT = {k: v for k, v in REGISTRY.items() if v.get('context') in _BAT_CONTEXTS}
 
-_SUMMARY_COLS = ['season', 'war', 'ab', 'h', 'hr', 'avg', 'r', 'rbi', 'sb', 'obp', 'slg', 'ops', 'ops_plus']
+_SUMMARY_COLS = ['season', 'war', 'ab', 'h', 'hr', 'avg', 'r', 'rbi', 'sb', 'ops']
 
 
 def _summary_table(stats, proj_row):
@@ -38,7 +38,7 @@ def _summary_table(stats, proj_row):
         return
 
     summary_df = pd.concat(frames)[_SUMMARY_COLS + ['stat_type']]
-    render_table(summary_df)
+    render_table(summary_df, pitching=False)
 
 
 def _bat_proj_row(first, last, cols):
@@ -133,8 +133,8 @@ def _bat_streams_section(first, last):
 
     # Season total row from the already-computed stats (includes OPS+, etc.)
     s21 = batting.stats[
-        (batting.stats['First Name'] == first) &
-        (batting.stats['Last Name']  == last)  &
+        (batting.stats['first_name'] == first) &
+        (batting.stats['last_name']  == last)  &
         (batting.stats['season'] == CURRENT_SEASON) &
         (batting.stats['stat_type'] == 'season')
     ]
@@ -149,7 +149,7 @@ def _bat_streams_section(first, last):
 
     stream_df = pd.DataFrame(frames, columns=_BAT_STREAM_COLS)
     h2("Stream Log")
-    render_table(stream_df)
+    render_table(stream_df, pitching=False)
 
 
 def generate_batter_page(first_name, last_name):
@@ -166,11 +166,11 @@ def generate_batter_page(first_name, last_name):
         salary        = pi['salary']
     else:
         active      = False
-        mask        = (batting.stats['Last Name'] == last_name) & (batting.stats['First Name'] == first_name)
+        mask        = (batting.stats['last_name'] == last_name) & (batting.stats['first_name'] == first_name)
         primary_pos   = batting.stats.loc[mask, 'pos1'].iloc[0]
         secondary_pos = batting.stats.loc[mask, 'pos2'].iloc[0]
         try:
-            ret_mask          = (players.retired_batters['Last Name'] == last_name) & (players.retired_batters['First Name'] == first_name)
+            ret_mask          = (players.retired_batters['last_name'] == last_name) & (players.retired_batters['first_name'] == first_name)
             retirement_season = players.retired_batters.loc[ret_mask, 'Retirement Season'].iloc[0]
             retirement_age    = players.retired_batters.loc[ret_mask, 'age'].iloc[0]
         except (IndexError, KeyError):
@@ -193,7 +193,7 @@ def generate_batter_page(first_name, last_name):
                 pos += f" (Secondary: {secondary_pos})"
             p(pos)
             p(f"Skills: POW {pi['power']} / CON {pi['contact']} / SPD {pi['speed']} / FLD {pi['fielding']} / ARM {pi['arm']}")
-            p(f"Salary: {salary}")
+            p(f"Salary: ${salary:.1f}m")
         else:
             strong("Retired")
             pos = f"Position: {primary_pos}"
@@ -206,8 +206,8 @@ def generate_batter_page(first_name, last_name):
         hr()
 
         stats = batting.stats[
-            (batting.stats['First Name'] == first_name) &
-            (batting.stats['Last Name']  == last_name)
+            (batting.stats['first_name'] == first_name) &
+            (batting.stats['last_name']  == last_name)
         ].copy()
 
         proj_row = _bat_proj_row(first_name, last_name, stats.columns) if active else None
@@ -228,26 +228,26 @@ def generate_batter_page(first_name, last_name):
             'sb', 'cs', 'bb', 'k', 'avg', 'obp', 'slg', 'ops', 'ops_plus',
             'tb', 'hbp', 'sh', 'sf', 'stat_type',
         ]]
-        render_table(standard_batting)
+        render_table(standard_batting, pitching=False)
 
         h3("Advanced Batting")
         render_table(stats[['season', 'age', 'team', 'pa',
                     'woba', 'wrc', 'wrc_plus', 'bip', 'babip',
-                    'iso', 'xbh', 'xbh_pct', 'hr_pct', 'k_pct', 'bb_pct', 'stat_type']])
+                    'iso', 'xbh', 'xbh_pct', 'hr_pct', 'k_pct', 'bb_pct', 'stat_type']], pitching=False)
 
         h3("Baserunning")
         render_table(stats[['season', 'age', 'team', 'pa',
-                    'sb', 'cs', 'sb_pct', 'sb_att_pct', 'rs_pct', 'rc_pct', 'stat_type']])
+                    'sb', 'cs', 'sb_pct', 'sb_att_pct', 'rs_pct', 'rc_pct', 'stat_type']], pitching=False)
 
         h3("Fielding")
         render_table(stats[['season', 'age', 'team', 'pos1', 'pos2',
-                    'gb', 'gf', 'e', 'e_per_gf', 'pb', 'pb_per_gf', 'stat_type']])
+                    'gb', 'gf', 'e', 'e_per_gf', 'pb', 'pb_per_gf', 'stat_type']], pitching=False)
 
         h3("Value")
         render_table(stats[[
             'season', 'age', 'team', 'gb', 'pa',
             'r_bat', 'r_br', 'r_def', 'r_pos', 'r_corr', 'r_rep', 'raa', 'rar', 'waa', 'war', 'stat_type',
-        ]])
+        ]], pitching=False)
 
         if active:
             _bat_streams_section(first_name, last_name)

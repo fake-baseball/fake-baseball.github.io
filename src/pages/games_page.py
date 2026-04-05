@@ -3,7 +3,7 @@ from dominate.tags import h1, ul, li, a
 from pathlib import Path
 
 from data.games import load_games, GAMES_DST
-from util import make_doc
+from pages.page_utils import make_doc
 
 
 def generate_games():

@@ -9,17 +9,13 @@ import pandas as pd
 import league as lg
 from constants import CURRENT_SEASON, num_games, SEASON_RANGE
 from data import teams as teams_data
-from util import make_doc, render_table, fmt_round, fmt_rdiff
+from pages.page_utils import make_doc, render_table, fmt_round
 from registry import REGISTRY
 import leaders as ld
 from seasons import split_records, h2h_records
 
 _BAT_LEADER_STATS = ['war', 'hr', 'rbi', 'avg', 'ops', 'sb']
 _PIT_LEADER_STATS = ['p_war', 'p_w', 'p_sv', 'p_era', 'p_k', 'p_whip']
-
-
-def _fmt_gb(v):
-    return '-' if v == 0 else f"{v:.1f}"
 
 
 def _fmt_rec(w, l):
@@ -31,9 +27,6 @@ def _standings_section(season_num):
     season_rows = teams_data.standings[teams_data.standings['Season'] == season_num].copy()
     if season_rows.empty:
         return
-    season_rows['Pct'] = (
-        season_rows['gamesWon'] / (season_rows['gamesWon'] + season_rows['gamesLost'])
-    ).map(lambda v: f"{v:.3f}".lstrip('0'))
     season_rows['Diff'] = season_rows['runsFor'] - season_rows['runsAgainst']
 
     sched = teams_data.schedules.get(season_num)
@@ -47,51 +40,49 @@ def _standings_section(season_num):
         )
         split = split_records(sched, div_map, conf_map, winning_teams)
 
-    extra_cols = ['L10', 'Div', 'Conf', 'Inter', '1-Run', 'Blowout', 'Home', 'Away', 'vs. >.500',
-                  '1st Half', '2nd Half', 'SHO'] if split else []
-
     h2("Standings")
     for conf_name, conf_group in season_rows.groupby('conference_name', sort=False):
         h3(conf_name)
         for div_name, div_group in conf_group.groupby('division_name', sort=False):
             h4(div_name)
-            # FOR CLAUDE: use render_table here too. You may want to add to
-            # src/registry.py team-based stats (i.e. all the records) and use the
-            # utility there (perhaps update to render_table required) to make sure
-            # that the records are formatted as records properly
-            # When you add team-based columns to src/registry.py, remember to follow
-            # our rules for the names of the slugs (something like RA would be t_ra, for example)
-            with table(border=0):
-                with thead():
-                    with tr():
-                        for col in ['Team', 'W', 'L', 'Pct', 'GB', 'RS', 'RA', 'Diff'] + extra_cols:
-                            th(col)
-                with tbody():
-                    for _, row in div_group.sort_values(['gamesWon', 'Diff'], ascending=[False, False]).iterrows():
-                        slug = row['teamName'].replace(' ', '')
-                        with tr():
-                            td(a(row['teamName'], href=f"../teams/{slug}/{season_num}.html"))
-                            td(row['gamesWon'])
-                            td(row['gamesLost'])
-                            td(row['Pct'])
-                            td(_fmt_gb(row['GB']))
-                            td(row['runsFor'])
-                            td(row['runsAgainst'])
-                            td(fmt_rdiff(row['Diff']))
-                            if split:
-                                rec = split[row['teamName']]
-                                td(_fmt_rec(*rec['last10']))
-                                td(_fmt_rec(*rec['div']))
-                                td(_fmt_rec(*rec['conf']))
-                                td(_fmt_rec(*rec['inter']))
-                                td(_fmt_rec(*rec['one_run']))
-                                td(_fmt_rec(*rec['blowout']))
-                                td(_fmt_rec(*rec['home']))
-                                td(_fmt_rec(*rec['away']))
-                                td(_fmt_rec(*rec['vs500']))
-                                td(_fmt_rec(*rec['first_half']))
-                                td(_fmt_rec(*rec['second_half']))
-                                td(_fmt_rec(*rec['shutout']))
+            rows = []
+            for _, row in div_group.sort_values(['gamesWon', 'Diff'], ascending=[False, False]).iterrows():
+                rec = {
+                    'team_name': row['teamName'],
+                    't_w':    row['gamesWon'],
+                    't_l':    row['gamesLost'],
+                    't_pct':  row['gamesWon'] / (row['gamesWon'] + row['gamesLost']),
+                    't_gb':   row['GB'],
+                    't_rs':   row['runsFor'],
+                    't_ra':   row['runsAgainst'],
+                    't_diff': row['Diff'],
+                    'season': season_num,
+                    'stat_type': 'season',
+                }
+                if split:
+                    sp = split[row['teamName']]
+                    rec.update({
+                        't_last10':      _fmt_rec(*sp['last10']),
+                        't_div':         _fmt_rec(*sp['div']),
+                        't_conf':        _fmt_rec(*sp['conf']),
+                        't_inter':       _fmt_rec(*sp['inter']),
+                        't_one_run':     _fmt_rec(*sp['one_run']),
+                        't_blowout':     _fmt_rec(*sp['blowout']),
+                        't_home':        _fmt_rec(*sp['home']),
+                        't_away':        _fmt_rec(*sp['away']),
+                        't_vs500':       _fmt_rec(*sp['vs500']),
+                        't_first_half':  _fmt_rec(*sp['first_half']),
+                        't_second_half': _fmt_rec(*sp['second_half']),
+                        't_shutout':     _fmt_rec(*sp['shutout']),
+                    })
+                rows.append(rec)
+            cols = ['team_name', 't_w', 't_l', 't_pct', 't_gb', 't_rs', 't_ra', 't_diff']
+            if split:
+                cols += ['t_last10', 't_div', 't_conf', 't_inter', 't_one_run',
+                         't_blowout', 't_home', 't_away', 't_vs500',
+                         't_first_half', 't_second_half', 't_shutout']
+            render_table(pd.DataFrame(rows)[cols + ['season', 'stat_type']],
+                         depth=1, hidden={'season'}, pitching=False)
 
     _wildcard_section(season_num, season_rows, split)
 
@@ -108,29 +99,28 @@ def _wildcard_section(season_num, season_rows, split):
         max_w, min_l = leader['gamesWon'], leader['gamesLost']
         conf_group['WC_GB'] = ((max_w - conf_group['gamesWon']) + (conf_group['gamesLost'] - min_l)) / 2
         conf_group = conf_group.sort_values(['WC_GB', 'Diff'], ascending=[True, False])
-        wc_cols = ['Team', 'W', 'L', 'Pct', 'GB', 'RS', 'RA', 'Diff']
+        rows = []
+        for _, row in conf_group.iterrows():
+            rec = {
+                'team_name': row['teamName'],
+                't_w':    row['gamesWon'],
+                't_l':    row['gamesLost'],
+                't_pct':  row['gamesWon'] / (row['gamesWon'] + row['gamesLost']),
+                't_gb':   row['WC_GB'],
+                't_rs':   row['runsFor'],
+                't_ra':   row['runsAgainst'],
+                't_diff': row['Diff'],
+                'season': season_num,
+                'stat_type': 'season',
+            }
+            if split:
+                rec['t_last10'] = _fmt_rec(*split[row['teamName']]['last10'])
+            rows.append(rec)
+        cols = ['team_name', 't_w', 't_l', 't_pct', 't_gb', 't_rs', 't_ra', 't_diff']
         if split:
-            wc_cols.append('L10')
-        # FOR CLAUDE: like identified above, use render_table after refactoring column names
-        with table(border=0):
-            with thead():
-                with tr():
-                    for col in wc_cols:
-                        th(col)
-            with tbody():
-                for _, row in conf_group.iterrows():
-                    slug = row['teamName'].replace(' ', '')
-                    with tr():
-                        td(a(row['teamName'], href=f"../teams/{slug}/{season_num}.html"))
-                        td(row['gamesWon'])
-                        td(row['gamesLost'])
-                        td(row['Pct'])
-                        td(_fmt_gb(row['WC_GB']))
-                        td(row['runsFor'])
-                        td(row['runsAgainst'])
-                        td(fmt_rdiff(row['Diff']))
-                        if split:
-                            td(_fmt_rec(*split[row['teamName']]['last10']))
+            cols.append('t_last10')
+        render_table(pd.DataFrame(rows)[cols + ['season', 'stat_type']],
+                     depth=1, hidden={'season'}, pitching=False)
 
 
 def _league_stats_section(season_num):
@@ -146,7 +136,7 @@ def _league_stats_section(season_num):
         'hr': sb['hr'], 'bb': sb['bb'], 'k': sb['k'],
         'stat_type': 'season',
     }])
-    render_table(bat_row, depth=1)
+    render_table(bat_row, depth=1, pitching=False)
 
     h3("Pitching")
     pit_row = pd.DataFrame([{
@@ -154,15 +144,15 @@ def _league_stats_section(season_num):
         'p_k_per_9': sp['p_k_per_9'], 'p_bb_per_9': sp['p_bb_per_9'], 'p_babip': sp['p_babip'],
         'stat_type': 'season',
     }])
-    render_table(pit_row, depth=1)
+    render_table(pit_row, depth=1, pitching=True)
 
 
-def _leader_table(stat, rows):
+def _leader_table(stat, rows, pitching):
     h4(REGISTRY[stat]['name'] if stat in REGISTRY else stat)
     df = rows.reset_index().rename(columns={'index': '#'})
-    df = df[['#', 'First Name', 'Last Name', 'team', stat]].copy()
+    df = df[['#', 'first_name', 'last_name', 'team', stat]].copy()
     df.insert(2, 'player', '')
-    render_table(df, depth=1)
+    render_table(df, depth=1, pitching=pitching)
 
 
 def _leaders_section(season_num):
@@ -170,11 +160,11 @@ def _leaders_section(season_num):
     h3("Batting")
     for stat in _BAT_LEADER_STATS:
         rows = ld.get_batting_leaders(stat, season=season_num, num=5)
-        _leader_table(stat, rows)
+        _leader_table(stat, rows, pitching=False)
     h3("Pitching")
     for stat in _PIT_LEADER_STATS:
         rows = ld.get_pitching_leaders(stat, season=season_num, num=5)
-        _leader_table(stat, rows)
+        _leader_table(stat, rows, pitching=True)
 
 def _h2h_matrix(season_num):
     team_order, abbr_map, records = h2h_records(season_num)

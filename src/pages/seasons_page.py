@@ -6,8 +6,22 @@ from dominate.tags import *
 from dominate.util import raw
 
 import league as lg
-from util import fmt_df, per_game_df, make_doc, render_table
+from pages.page_utils import per_game_df, make_doc, render_table
 
+
+def _season_df(df, cols):
+    """Reset index to season column and add stat_type for render_table."""
+    out = df[cols].copy()
+    out.index.name = 'season'
+    out = out.reset_index()
+    out['stat_type'] = 'league'
+    return out
+
+
+def _link_index(df):
+    df = df.copy()
+    df.index = [f'<a href="{i}.html">Season {i}</a>' for i in df.index]
+    return df
 
 
 def generate_seasons():
@@ -16,16 +30,18 @@ def generate_seasons():
 
     # ── Counting ─────────────────────────────────────────────────────────────
 
-    off_count = fmt_df(sb[[
+    off_count_cols = [
         'g', 'pa', 'ab', 'r', 'h', 'b_1b', 'b_2b', 'b_3b', 'hr', 'rbi',
         'sb', 'cs', 'bb', 'k', 'tb', 'hbp', 'sh', 'sf', 'bip',
-    ]])
+    ]
+    off_count = _season_df(sb, off_count_cols)
 
     def_raw = sp[['g', 'p_cg', 'p_sho', 'p_sv', 'p_ip', 'p_h', 'p_ra', 'p_er', 'p_hr',
                   'p_bb', 'p_k', 'p_hbp', 'p_wp', 'p_bf', 'p_tp']].copy()
     def_raw['e']  = sb['e']
     def_raw['pb'] = sb['pb']
-    def_count = fmt_df(def_raw).rename(columns={'RA': 'R'})
+    def_count_cols = list(def_raw.columns)
+    def_count = _season_df(def_raw, def_count_cols)
 
     # ── Per game ──────────────────────────────────────────────────────────────
 
@@ -46,16 +62,13 @@ def generate_seasons():
 
     # ── Rates ─────────────────────────────────────────────────────────────────
 
-    rates_raw = sb[['r_per_g', 'avg', 'obp', 'slg', 'ops', 'woba', 'sb_pct']].copy()
-    rates_raw = rates_raw.join(sp[['p_ra9', 'p_era', 'p_whip', 'p_babip',
-                                   'p_k_pct', 'p_bb_pct', 'p_hr_pct',
-                                   'p_p_per_ip', 'p_p_per_pa']])
-    rates = fmt_df(rates_raw)
-
-    def _link_index(df):
-        df = df.copy()
-        df.index = [f'<a href="{i}.html">Season {i}</a>' for i in df.index]
-        return df
+    bat_rate_cols = ['r_per_g', 'avg', 'obp', 'slg', 'ops', 'woba', 'sb_pct']
+    pit_rate_cols = ['p_ra9', 'p_era', 'p_whip', 'p_babip',
+                     'p_k_pct', 'p_bb_pct', 'p_hr_pct', 'p_p_per_ip', 'p_p_per_pa']
+    rates_raw = sb[bat_rate_cols].copy()
+    rates_raw = rates_raw.join(sp[pit_rate_cols])
+    bat_rates = _season_df(sb[bat_rate_cols], bat_rate_cols)
+    pit_rates = _season_df(sp[pit_rate_cols], pit_rate_cols)
 
     # ── Page ──────────────────────────────────────────────────────────────────
 
@@ -65,9 +78,9 @@ def generate_seasons():
 
         h2("Counting Stats")
         h3("Offense")
-        raw(_link_index(off_count).to_html(border=0, index=True, escape=False))
+        render_table(off_count, depth=1, pitching=False)
         h3("Defense")
-        raw(_link_index(def_count).to_html(border=0, index=True, escape=False))
+        render_table(def_count, depth=1, pitching=False)
 
         h2("Per-Game Counting")
         h3("Offense")
@@ -76,6 +89,9 @@ def generate_seasons():
         raw(_link_index(def_pg).to_html(border=0, index=True, escape=False))
 
         h2("Rate Stats")
-        raw(_link_index(rates).to_html(border=0, index=True, escape=False))
+        h3("Batting")
+        render_table(bat_rates, depth=1, pitching=False)
+        h3("Pitching")
+        render_table(pit_rates, depth=1, pitching=False)
 
     Path("docs/seasons/index.html").write_text(str(doc))

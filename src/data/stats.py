@@ -35,6 +35,7 @@ def load_batting():
     ]]
     data['2P'] = data['2P'].fillna(value="")
     data = data.rename(columns={
+        'First Name': 'first_name', 'Last Name': 'last_name',
         'PP': 'pos1', '2P': 'pos2',
         'Team': 'team', 'Age': 'age', 'Season': 'season',
         'GP': 'b_gp', 'GB': 'gb', 'PA': 'pa', 'AB': 'ab', 'H': 'h',
@@ -66,12 +67,12 @@ def _load_season21_batting():
 
     abbr = _name_to_abbr()
     d = pd.DataFrame()
-    d['season']  = raw['seasonNum']
-    d['First Name'] = raw['firstName']
-    d['Last Name']  = raw['lastName']
-    d['team']    = raw['mostRecentTeam'].map(abbr)
-    d['age']     = raw['age']
-    d['pos1']    = raw['primaryPosition'].map(_POS_MAP)
+    d['season']     = raw['seasonNum']
+    d['first_name'] = raw['firstName']
+    d['last_name']  = raw['lastName']
+    d['team']       = raw['mostRecentTeam'].map(abbr)
+    d['age']        = raw['age']
+    d['pos1']       = raw['primaryPosition'].map(_POS_MAP)
     d['pos2']    = raw['secondaryPosition'].fillna(0).astype(int).map(_SPOS_MAP).fillna('')
     d['gb']      = raw['gamesBatting']
     d['b_gp']    = raw['gamesPlayed']
@@ -109,6 +110,7 @@ def load_pitching():
     data['p_ip'] = np.floor(ip) + (ip - np.floor(ip)) * (10/3)
     data = data.drop(columns=['IP'])
     data = data.rename(columns={
+        'First Name': 'first_name', 'Last Name': 'last_name',
         'Team': 'team', 'Age': 'age', 'Season': 'season', 'Role': 'role',
         'W': 'p_w', 'L': 'p_l', 'GP': 'p_gp', 'GS': 'p_gs',
         'CG': 'p_cg', 'SHO': 'p_sho', 'SV': 'p_sv',
@@ -139,9 +141,9 @@ def _load_season21_pitching():
     p_ip = outs // 3 + (outs % 3) / 10
 
     d = pd.DataFrame()
-    d['season'] = raw['seasonNum']
-    d['First Name'] = raw['firstName']
-    d['Last Name']  = raw['lastName']
+    d['season']     = raw['seasonNum']
+    d['first_name'] = raw['firstName']
+    d['last_name']  = raw['lastName']
     abbr = _name_to_abbr()
     d['team']   = raw['mostRecentTeam'].map(abbr)
     d['age']    = raw['age']

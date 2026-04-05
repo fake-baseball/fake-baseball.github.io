@@ -6,7 +6,7 @@ from dominate.tags import *
 from pages.team_page import generate_team_page
 from data import players
 from data import teams as teams_data
-from util import make_doc
+from pages.page_utils import make_doc
 
 
 def generate_teams_index():

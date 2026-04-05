@@ -15,7 +15,7 @@ from leaders import (
     get_pitching_leaders, get_career_pitching_leaders, get_pitching_leaders_by_season,
 )
 from registry import REGISTRY
-from util import make_doc, render_table
+from pages.page_utils import make_doc, render_table
 
 
 def generate_leaders():
@@ -40,31 +40,31 @@ def generate_leaders():
         _index_row(title, slug)
 
         df = get_batting_leaders(stat, num=100, worst=worst)
-        cols = list(dict.fromkeys(['First Name', 'Last Name', stat, 'season', qual_col, 'team']))
+        cols = list(dict.fromkeys(['first_name', 'last_name', stat, 'season', qual_col, 'team']))
         df = df[cols].copy()
         df.insert(0, '#', df.index)
         df.insert(1, 'player', '')
-        pages.append((title, slug, 'season', df))
+        pages.append((title, slug, 'season', df, False))
 
         df = get_leaders_by_season(stat, worst=worst)
-        cols = list(dict.fromkeys(['season', 'First Name', 'Last Name', stat, qual_col, 'team']))
+        cols = list(dict.fromkeys(['season', 'first_name', 'last_name', stat, qual_col, 'team']))
         df = df[cols].copy()
         df.insert(1, 'player', '')
-        pages.append((title, slug, 'yearly', df))
+        pages.append((title, slug, 'yearly', df, False))
 
         df = get_career_batting_leaders(stat, num=100, worst=worst)
-        cols = list(dict.fromkeys(['First Name', 'Last Name', stat, qual_col]))
+        cols = list(dict.fromkeys(['first_name', 'last_name', stat, qual_col]))
         df = df[cols].copy()
         df.insert(0, '#', df.index)
         df.insert(1, 'player', '')
-        pages.append((title, slug, 'career', df))
+        pages.append((title, slug, 'career', df, False))
 
         df = get_career_batting_leaders(stat, active=True, num=100, worst=worst)
-        cols = list(dict.fromkeys(['First Name', 'Last Name', stat, qual_col]))
+        cols = list(dict.fromkeys(['first_name', 'last_name', stat, qual_col]))
         df = df[cols].copy()
         df.insert(0, '#', df.index)
         df.insert(1, 'player', '')
-        pages.append((title, slug, 'active', df))
+        pages.append((title, slug, 'active', df, False))
 
     def _render_batting():
         def render(stat, meta):
@@ -84,55 +84,55 @@ def generate_leaders():
         # Season table
         df = get_pitching_leaders(stat, num=100, worst=worst)
         if stat == 'p_ip':
-            cols = ['First Name', 'Last Name', 'role', 'p_ip', 'season', 'team']
+            cols = ['first_name', 'last_name', 'role', 'p_ip', 'season', 'team']
         else:
-            cols = ['First Name', 'Last Name', 'role', stat, 'season', 'p_ip', 'team']
+            cols = ['first_name', 'last_name', 'role', stat, 'season', 'p_ip', 'team']
         df = df[list(dict.fromkeys(cols))].copy()
         df.insert(0, '#', df.index)
         df.insert(1, 'player', '')
-        pages.append((title, slug, 'season', df))
+        pages.append((title, slug, 'season', df, True))
 
         # Yearly table
         df = get_pitching_leaders_by_season(stat, worst=worst)
         if stat == 'p_ip':
-            cols = ['season', 'First Name', 'Last Name', 'role', 'p_ip', 'team']
+            cols = ['season', 'first_name', 'last_name', 'role', 'p_ip', 'team']
         else:
-            cols = ['season', 'First Name', 'Last Name', 'role', stat, 'p_ip', 'team']
+            cols = ['season', 'first_name', 'last_name', 'role', stat, 'p_ip', 'team']
         df = df[list(dict.fromkeys(cols))].copy()
         df.insert(1, 'player', '')
-        pages.append((title, slug, 'yearly', df))
+        pages.append((title, slug, 'yearly', df, True))
 
         # Career role lookup
         import pitching as _pit
         season_role = (
             _pit.stats[_pit.stats['stat_type'] == 'season']
             .sort_values('season')
-            .groupby(['First Name', 'Last Name'])['role']
+            .groupby(['first_name', 'last_name'])['role']
             .last()
         )
 
         if stat == 'p_ip':
-            career_cols = ['First Name', 'Last Name', 'role', 'p_ip']
+            career_cols = ['first_name', 'last_name', 'role', 'p_ip']
         else:
-            career_cols = ['First Name', 'Last Name', 'role', stat, 'p_ip']
+            career_cols = ['first_name', 'last_name', 'role', stat, 'p_ip']
 
         # Career table
         df = get_career_pitching_leaders(stat, num=100, worst=worst)
         df = df.copy()
-        df['role'] = df.apply(lambda r: season_role.get((r['First Name'], r['Last Name']), r['role']), axis=1)
+        df['role'] = df.apply(lambda r: season_role.get((r['first_name'], r['last_name']), r['role']), axis=1)
         df = df[list(dict.fromkeys(career_cols))].copy()
         df.insert(0, '#', df.index)
         df.insert(1, 'player', '')
-        pages.append((title, slug, 'career', df))
+        pages.append((title, slug, 'career', df, True))
 
         # Active table
         df = get_career_pitching_leaders(stat, active=True, num=100, worst=worst)
         df = df.copy()
-        df['role'] = df.apply(lambda r: season_role.get((r['First Name'], r['Last Name']), r['role']), axis=1)
+        df['role'] = df.apply(lambda r: season_role.get((r['first_name'], r['last_name']), r['role']), axis=1)
         df = df[list(dict.fromkeys(career_cols))].copy()
         df.insert(0, '#', df.index)
         df.insert(1, 'player', '')
-        pages.append((title, slug, 'active', df))
+        pages.append((title, slug, 'active', df, True))
 
     def render_pitching(stat, meta):
         slug = meta.get('slug', stat)
@@ -194,12 +194,12 @@ def generate_leaders():
         'career': 'Career Leaders',
         'active': 'Active Leaders',
     }
-    for title, slug, suffix, df in pages:
+    for title, slug, suffix, df, is_pitching in pages:
         # Determine display name for page title: use meta['name'] if available
         stat_cols = [c for c in df.columns if c in REGISTRY and REGISTRY[c].get('type', 'stat') == 'stat']
         display_name = REGISTRY[stat_cols[0]]['name'] if stat_cols else slug
         subdoc = make_doc(f"{display_name} - {labels[suffix]}")
         with subdoc:
             h1(f"{labels[suffix]} for {title}")
-            render_table(df, depth=1)
+            render_table(df, depth=1, pitching=is_pitching)
         Path(f"docs/leaders/{slug}_{suffix}.html").write_text(str(subdoc))

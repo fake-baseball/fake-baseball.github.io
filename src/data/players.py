@@ -47,7 +47,7 @@ def _load_players21(path):
     _pitch_cols = [c for c in raw.columns if c.startswith('has_')]
     df['pitchTypes'] = raw[_pitch_cols].apply(
         lambda row: ', '.join(c[4:].upper() for c in _pitch_cols if row[c]), axis=1)
-    df['salary']     = raw['salary'].apply(lambda v: f'${v/1_000_000:.1f}m')
+    df['salary']     = raw['salary'] / 1_000_000
 
     df = df.set_index(['first_name', 'last_name'])
     df['spos'] = df['spos'].fillna('')
@@ -62,7 +62,7 @@ def load_retirements():
 
 def _load_retirement_csv(path):
     df = pd.read_csv(path)[['First Name', 'Last Name', 'Age', 'Retirement Season']]
-    df = df.rename(columns={'Age': 'age'})
+    df = df.rename(columns={'First Name': 'first_name', 'Last Name': 'last_name', 'Age': 'age'})
     df = df.fillna(0)
     df['Retirement Season'] = df['Retirement Season'].astype(int)
     return df

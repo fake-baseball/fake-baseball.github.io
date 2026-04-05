@@ -11,7 +11,7 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 
 import pitching as pit_module
-import projections as proj_module
+import bat_projections as proj_module
 import league as lg
 from data import players
 from data import teams as teams_data
@@ -53,11 +53,11 @@ def compute():
         (pit_module.stats['season'].isin(PROJ_SEASONS)) &
         (pit_module.stats['stat_type'] == 'season')
     ].copy()
-    df = df[df.apply(lambda r: (r['First Name'], r['Last Name']) in active, axis=1)]
+    df = df[df.apply(lambda r: (r['first_name'], r['last_name']) in active, axis=1)]
 
     # Filter to pitchers (ppos == 'P')
     pit_keys = {k for k in active if players.player_info.loc[k]['ppos'] == 'P'}
-    df = df[df.apply(lambda r: (r['First Name'], r['Last Name']) in pit_keys, axis=1)]
+    df = df[df.apply(lambda r: (r['first_name'], r['last_name']) in pit_keys, axis=1)]
 
     # Compute lg_bf_per_ip from this filtered data
     valid_bf_ip = df[(df['p_bf'] > 0) & (df['p_ip'] > 0)]
@@ -70,12 +70,12 @@ def compute():
     # ── Step 1: Fit component regression on pitchers qualified in all 3 seasons ──
 
     df_qual    = df[df['p_ip'] >= PIT_SEASON_MIN_IP].copy()
-    full_counts = df_qual.groupby(['First Name', 'Last Name'])['season'].nunique()
+    full_counts = df_qual.groupby(['first_name', 'last_name'])['season'].nunique()
     full_names  = full_counts[full_counts == len(PROJ_SEASONS)].index
-    df_train   = df_qual[df_qual.set_index(['First Name', 'Last Name']).index.isin(full_names)].copy()
+    df_train   = df_qual[df_qual.set_index(['first_name', 'last_name']).index.isin(full_names)].copy()
 
     train_rows = []
-    for (first, last), group in df_train.groupby(['First Name', 'Last Name']):
+    for (first, last), group in df_train.groupby(['first_name', 'last_name']):
         blended = {comp: sum(
             group.loc[group['season'] == s, f'{comp}_rate'].iloc[0] * WEIGHTS[s]
             for s in PROJ_SEASONS
@@ -142,7 +142,7 @@ def compute():
         season_app = {}   # p_gs for SP, p_gr for relievers
         app_col    = 'p_gs' if role == 'SP' else 'p_gr'
         for s in PROJ_SEASONS:
-            season_row    = df[(df['First Name'] == first) & (df['Last Name'] == last) & (df['season'] == s)]
+            season_row    = df[(df['first_name'] == first) & (df['last_name'] == last) & (df['season'] == s)]
             season_ip[s]  = float(season_row.iloc[0]['p_ip']) if not season_row.empty else 0.0
             season_app[s] = float(season_row.iloc[0][app_col])  if not season_row.empty else 0.0
 
@@ -150,7 +150,7 @@ def compute():
         for comp in COMPONENTS:
             weighted_sum = 0.0
             for s in PROJ_SEASONS:
-                season_row  = df[(df['First Name'] == first) & (df['Last Name'] == last) & (df['season'] == s)]
+                season_row  = df[(df['first_name'] == first) & (df['last_name'] == last) & (df['season'] == s)]
                 actual_ip   = season_ip[s]
                 actual_bf   = float(season_row.iloc[0]['p_bf']) if not season_row.empty else 0.0
                 actual_stat = float(season_row.iloc[0][comp]) if not season_row.empty else 0.0
@@ -198,8 +198,7 @@ def fit_ip_model():
 
     pi = players.player_info_proj.reset_index()
     pi = pi[pi['ppos'] == 'P'][['first_name', 'last_name'] + IP_FEATURES]
-    merged = s20.merge(pi, left_on=['First Name', 'Last Name'],
-                           right_on=['first_name', 'last_name'])
+    merged = s20.merge(pi, on=['first_name', 'last_name'])
 
     results = {}
     for group, roles, app_col in [

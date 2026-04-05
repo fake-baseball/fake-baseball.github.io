@@ -24,8 +24,6 @@ from formulas import compute_tb, compute_avg, compute_obp, compute_slg, compute_
 COMPONENTS   = ['bb', 'hbp', 'b_1b', 'b_2b', 'b_3b', 'hr', 'k', 'sb', 'cs']
 SKILLS       = ['power', 'contact', 'speed', 'fielding', 'arm']
 
-# FOR CLAUDE: to disambiguate this from pit_projections.py, rename this file to bat_projections.py
-
 def compute():
     """Return (rows, metrics) for all active players.
 
@@ -42,20 +40,20 @@ def compute():
         (bat_module.stats['season'].isin(PROJ_SEASONS)) &
         (bat_module.stats['stat_type'] == 'season')
     ].copy()
-    df = df[df.apply(lambda r: (r['First Name'], r['Last Name']) in active, axis=1)]
+    df = df[df.apply(lambda r: (r['first_name'], r['last_name']) in active, axis=1)]
 
     # ── Step 1: Fit regression on players qualified in all 3 seasons ─────────
 
     df_qual     = df[df['pa'] >= BAT_SEASON_MIN_PA].copy()
-    full_counts = df_qual.groupby(['First Name', 'Last Name'])['season'].nunique()
+    full_counts = df_qual.groupby(['first_name', 'last_name'])['season'].nunique()
     full_names  = full_counts[full_counts == len(PROJ_SEASONS)].index
-    df_train    = df_qual[df_qual.set_index(['First Name', 'Last Name']).index.isin(full_names)].copy()
+    df_train    = df_qual[df_qual.set_index(['first_name', 'last_name']).index.isin(full_names)].copy()
 
     for comp in COMPONENTS:
         df_train[f'{comp}_rate'] = df_train[comp] / df_train['pa']
 
     train_rows = []
-    for (first, last), group in df_train.groupby(['First Name', 'Last Name']):
+    for (first, last), group in df_train.groupby(['first_name', 'last_name']):
         proj = {comp: sum(
             group.loc[group['season'] == s, f'{comp}_rate'].iloc[0] * WEIGHTS[s]
             for s in PROJ_SEASONS
@@ -96,14 +94,14 @@ def compute():
 
         season_pa = {}
         for s in PROJ_SEASONS:
-            season_row     = df[(df['First Name'] == first) & (df['Last Name'] == last) & (df['season'] == s)]
+            season_row     = df[(df['first_name'] == first) & (df['last_name'] == last) & (df['season'] == s)]
             season_pa[s]   = int(season_row.iloc[0]['pa']) if not season_row.empty else 0
 
         proj = {}
         for comp in COMPONENTS:
             weighted_sum = 0.0
             for s in PROJ_SEASONS:
-                season_row  = df[(df['First Name'] == first) & (df['Last Name'] == last) & (df['season'] == s)]
+                season_row  = df[(df['first_name'] == first) & (df['last_name'] == last) & (df['season'] == s)]
                 actual_pa   = season_pa[s]
                 actual_stat = float(season_row.iloc[0][comp]) if not season_row.empty else 0.0
 
@@ -151,8 +149,7 @@ def fit_pa_model():
 
     pi = players.player_info_proj.reset_index()
     pi = pi[pi['ppos'] != 'P'][['first_name', 'last_name'] + PA_FEATURES]
-    merged = s20.merge(pi, left_on=['First Name', 'Last Name'],
-                           right_on=['first_name', 'last_name'])
+    merged = s20.merge(pi, on=['first_name', 'last_name'])
 
     X = merged[PA_FEATURES].values.astype(float)
     y = merged['pa'].values.astype(float)

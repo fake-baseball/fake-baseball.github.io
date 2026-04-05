@@ -92,6 +92,7 @@ def main():
     do_glossary    = build_all or args.glossary
     do_dh          = build_all or args.dh
 
+    # TODO need to do a better build system, NOT hide errors in cases it's None
     # ── Ensure output directories exist ──────────────────────────────────────
     Path("docs/players").mkdir(parents=True, exist_ok=True)
     Path("docs/leaders").mkdir(parents=True, exist_ok=True)
@@ -139,10 +140,10 @@ def main():
         leaders.compute_season_leaders()
 
         print("Generating player pages...")
-        for first, last in batting.stats[['First Name', 'Last Name']].drop_duplicates().itertuples(index=False):
+        for first, last in batting.stats[['first_name', 'last_name']].drop_duplicates().itertuples(index=False):
             generate_batter_page(first, last)
 
-        for first, last in pitching.stats[['First Name', 'Last Name']].drop_duplicates().itertuples(index=False):
+        for first, last in pitching.stats[['first_name', 'last_name']].drop_duplicates().itertuples(index=False):
             generate_pitcher_page(first, last)
 
         print("Generating players index...")
@@ -203,10 +204,6 @@ def main():
         print("Generating salaries page...")
         generate_salaries()
 
-    if do_cy_young:
-        print("Generating Cy Young Predictor page...")
-        generate_cy_young()
-
     if do_glossary:
         print("Generating Glossary page...")
         generate_glossary()
@@ -218,6 +215,10 @@ def main():
     if do_leaders:
         print("Generating leaders pages...")
         generate_leaders()
+
+    if do_cy_young:
+        print("Generating Cy Young Predictor page...")
+        generate_cy_young()
 
     print("Done.")
 
