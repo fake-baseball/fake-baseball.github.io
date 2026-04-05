@@ -130,8 +130,8 @@ def compute_salary_models(pi, bat_stats, pit_stats, proj_rows, pit_proj_rows):
              bat_war_model_info, pit_war_model_info,
              combined_war_model_info, bat_war_linear_info, pit_war_linear_info).
     """
-    bat_pi = pi[pi['ppos'] != 'P']
-    pit_pi = pi[pi['ppos'] == 'P']
+    bat_pi = pi[pi['pos1'] != 'P']
+    pit_pi = pi[pi['pos1'] == 'P']
 
     bat_war_map = _build_war_map(bat_stats, war_col='war')
     pit_war_map = _build_war_map(pit_stats, war_col='p_war')

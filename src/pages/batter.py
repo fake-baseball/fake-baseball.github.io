@@ -102,8 +102,8 @@ def _bat_proj_row(first, last, cols):
     if h > 0:
         d['xbh_pct'] = xbh / h
     if pi_row is not None:
-        d['pos1'] = pi_row['ppos']
-        d['pos2'] = pi_row['spos']
+        d['pos1'] = pi_row['pos1']
+        d['pos2'] = pi_row['pos2']
     return pd.DataFrame([d])
 
 
@@ -160,8 +160,8 @@ def generate_batter_page(first_name, last_name):
         jersey_number = pi['jersey']
         bat_hand      = pi['bats']
         throw_hand    = pi['throws']
-        primary_pos   = pi['ppos']
-        secondary_pos = pi['spos']
+        primary_pos   = pi['pos1']
+        secondary_pos = pi['pos2']
         age           = pi['age']
         salary        = pi['salary']
     else:

@@ -78,7 +78,7 @@ def compute():
 
     rows = []
     for (first, last) in active:
-        if players.player_info.loc[(first, last)]['ppos'] == 'P':
+        if players.player_info.loc[(first, last)]['pos1'] == 'P':
             continue
         try:
             pi = players.player_info_proj.loc[(first, last)]
@@ -148,7 +148,7 @@ def fit_pa_model():
     ].copy()
 
     pi = players.player_info_proj.reset_index()
-    pi = pi[pi['ppos'] != 'P'][['first_name', 'last_name'] + PA_FEATURES]
+    pi = pi[pi['pos1'] != 'P'][['first_name', 'last_name'] + PA_FEATURES]
     merged = s20.merge(pi, on=['first_name', 'last_name'])
 
     X = merged[PA_FEATURES].values.astype(float)
@@ -225,8 +225,8 @@ def compute_all():
     for row in rows:
         first, last = row['first'], row['last']
         pi = players.player_info.loc[(first, last)]
-        pp = pi['ppos']
-        sp = pi['spos']
+        pp = pi['pos1']
+        sp = pi['pos2']
         team_abbr = abbr_map.get(row['team'], '')
         pf     = (1 + park_factors.get(team_abbr, 1.0)) / 2
         r_bat  = ((row['woba'] - lg_wOBA_20 * pf) / scale_wOBA) * row['proj_pa']

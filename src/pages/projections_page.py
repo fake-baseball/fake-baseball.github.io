@@ -197,7 +197,7 @@ def generate_projections():
     player_team = {(row['first_name'], row['last_name']): row['team_name']
                    for _, row in pi.iterrows()}
     abbr_map = teams_data.teams.set_index('team_name')['abbr'] if teams_data.teams is not None else {}
-    ppos_map = {(row['first_name'], row['last_name']): row['ppos'] for _, row in pi.iterrows()}
+    ppos_map = {(row['first_name'], row['last_name']): row['pos1'] for _, row in pi.iterrows()}
     for r in rows + pit_rows:
         r['_team_abbr'] = abbr_map.get(r['team'], r['team']) if r['team'] != 'FREE AGENT' else None
 

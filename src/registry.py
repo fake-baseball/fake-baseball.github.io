@@ -1021,6 +1021,7 @@ REGISTRY = {
     },
     'first_name': {'name': 'First Name', 'type': 'text',   'align': 'left',  'context': 'meta'},
     'last_name':  {'name': 'Last Name',  'type': 'text',   'align': 'left',  'context': 'meta'},
+    'jersey':     {'name': '#', 'label': 'Jersey Number', 'type': 'integer', 'align': 'right', 'context': 'meta'},
     'salary':     {'name': 'Salary',     'type': 'salary', 'align': 'right', 'context': 'meta'},
     'rank':     {'name': 'Rank',   'type': 'integer', 'align': 'right', 'context': 'meta'},
 

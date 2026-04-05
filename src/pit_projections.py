@@ -56,7 +56,7 @@ def compute():
     df = df[df.apply(lambda r: (r['first_name'], r['last_name']) in active, axis=1)]
 
     # Filter to pitchers (ppos == 'P')
-    pit_keys = {k for k in active if players.player_info.loc[k]['ppos'] == 'P'}
+    pit_keys = {k for k in active if players.player_info.loc[k]['pos1'] == 'P'}
     df = df[df.apply(lambda r: (r['first_name'], r['last_name']) in pit_keys, axis=1)]
 
     # Compute lg_bf_per_ip from this filtered data
@@ -197,7 +197,7 @@ def fit_ip_model():
     ].copy()
 
     pi = players.player_info_proj.reset_index()
-    pi = pi[pi['ppos'] == 'P'][['first_name', 'last_name'] + IP_FEATURES]
+    pi = pi[pi['pos1'] == 'P'][['first_name', 'last_name'] + IP_FEATURES]
     merged = s20.merge(pi, on=['first_name', 'last_name'])
 
     results = {}

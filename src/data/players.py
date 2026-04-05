@@ -23,7 +23,7 @@ def _load_players21(path):
 
     df = pd.DataFrame()
     df['id']         = raw['id']
-    df['#']          = raw['jersey']
+    df['jersey']     = raw['jersey']
     df['first_name'] = raw['firstName']
     df['last_name']  = raw['lastName']
     df['age']        = raw['age']

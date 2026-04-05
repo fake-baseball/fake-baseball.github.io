@@ -12,8 +12,8 @@ from registry import REGISTRY
 from pages.page_utils import make_doc, fmt_round, fmt_rdiff, render_table
 from util import fmt_ip
 
-_PITCHER_COLS  = ['Name', '#', 'role', 'throws', 'velocity', 'junk', 'accuracy', 'fielding', 'arsenal', 'age', 'salary']
-_POSITION_COLS = ['Name', '#', 'pos1', 'pos2', 'bats', 'power', 'contact', 'speed', 'fielding', 'arm', 'age', 'salary']
+_PITCHER_COLS  = ['jersey', 'Name',  'role', 'throws', 'velocity', 'junk', 'accuracy', 'fielding', 'arsenal', 'age', 'salary']
+_POSITION_COLS = ['jersey', 'Name',  'pos1', 'pos2', 'bats', 'power', 'contact', 'speed', 'fielding', 'arm', 'age', 'salary']
 
 
 def _batter_stats(first, last):
@@ -116,8 +116,8 @@ def generate_team_page(team_name, roster, team_info):
     roster    - DataFrame of players on this team (rows from player_info, reset_index'd)
     """
     slug     = team_name.replace(' ', '')
-    pitchers = roster[roster['ppos'] == 'P'].sort_values(['last_name', 'first_name']).copy()
-    position = roster[roster['ppos'] != 'P'].sort_values(['last_name', 'first_name']).copy()
+    pitchers = roster[roster['pos1'] == 'P'].sort_values(['last_name', 'first_name']).copy()
+    position = roster[roster['pos1'] != 'P'].sort_values(['last_name', 'first_name']).copy()
 
     for df in (pitchers, position):
         df['Name'] = None  # placeholder; _roster_table uses first_name/last_name directly
@@ -129,12 +129,12 @@ def generate_team_page(team_name, roster, team_info):
     rotation_names = set(zip(rotation['firstName'], rotation['lastName']))
 
     bench = roster[
-        (roster['ppos'] != 'P') &
+        (roster['pos1'] != 'P') &
         ~roster.apply(lambda r: (r['first_name'], r['last_name']) in lineup_names, axis=1)
     ].sort_values(['last_name', 'first_name'])
 
     bullpen = roster[
-        (roster['ppos'] == 'P') &
+        (roster['pos1'] == 'P') &
         ~roster.apply(lambda r: (r['first_name'], r['last_name']) in rotation_names, axis=1)
     ]
 

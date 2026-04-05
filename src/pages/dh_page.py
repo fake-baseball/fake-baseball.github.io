@@ -49,8 +49,8 @@ def _dh_table(rows):
 
 def generate_dh():
     pi = players.player_info
-    ppos_map = pi['ppos'].to_dict()  # keyed by (first_name, last_name) index
-    spos_map = pi['spos'].to_dict()
+    ppos_map = pi['pos1'].to_dict()  # keyed by (first_name, last_name) index
+    spos_map = pi['pos2'].to_dict()
     abbr_map = teams_data.teams.set_index('team_name')['abbr'] if teams_data.teams is not None else {}
 
     rows = proj_module.compute_all()

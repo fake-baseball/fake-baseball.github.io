@@ -132,7 +132,7 @@ def _team_salary_table(abbr_map, bat_rows, pit_rows, bat_war_model_info, pit_war
             totals[team] = {'bat': 0.0, 'pit': 0.0,
                             'bat_xwar': 0.0, 'bat_pred': 0.0,
                             'pit_xwar': 0.0, 'pit_pred': 0.0}
-        if row['ppos'] == 'P':
+        if row['pos1'] == 'P':
             totals[team]['pit'] += sal
         else:
             totals[team]['bat'] += sal
