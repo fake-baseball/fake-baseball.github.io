@@ -1058,7 +1058,7 @@ REGISTRY = {
     'gl_streak':     {'name': 'Streak',    'label': 'Win/Loss Streak',   'type': 'text',      'align': 'left',  'context': 'meta'},
     'player':        {'name': 'Player',    'type': 'link',    'align': 'left',  'context': 'meta'},
     'team':          {'name': 'Team',      'type': 'text',    'align': 'left',  'context': 'meta'},
-    'season':        {'name': 'Season',    'type': 'season_link', 'align': 'right', 'context': 'meta'},
+    'season':        {'name': 'Season',    'type': 'season_link', 'align': 'left', 'context': 'meta'},
     'stream':        {'name': 'Stream',    'type': 'text',    'align': 'right', 'context': 'meta'},
     'age':           {'name': 'Age',       'type': 'integer', 'align': 'right', 'context': 'meta'},
     'pos1':          {'name': 'PP',        'label': 'Primary Position',   'type': 'text',    'align': 'left',  'context': 'meta'},

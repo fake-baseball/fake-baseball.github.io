@@ -120,17 +120,17 @@ def _load_schedule21():
         return
     raw = read_s21(path)
     raw.columns = raw.columns.str.strip()
-    played = raw.dropna(subset=['home_score', 'away_score']).copy()
-    if played.empty:
+    if raw.empty:
         return
-    played = played.rename(columns={
+    all_games = raw.rename(columns={
         'home_team':  'Home Team',
         'home_score': 'Home Score',
         'away_score': 'Away Score',
         'away_team':  'Away Team',
-    })
-    played['Home Score'] = played['Home Score'].astype(int)
-    played['Away Score'] = played['Away Score'].astype(int)
-    played['Game #'] = range(1, len(played) + 1)
-    played['Day']    = None
-    schedules[CURRENT_SEASON] = played[['Game #', 'Day', 'Home Team', 'Home Score', 'Away Score', 'Away Team']]
+    }).copy()
+    played_mask = all_games['Home Score'].notna() & all_games['Away Score'].notna()
+    all_games.loc[played_mask, 'Home Score'] = all_games.loc[played_mask, 'Home Score'].astype(int)
+    all_games.loc[played_mask, 'Away Score'] = all_games.loc[played_mask, 'Away Score'].astype(int)
+    all_games['Game #'] = range(1, len(all_games) + 1)
+    all_games['Day']    = None
+    schedules[CURRENT_SEASON] = all_games[['Game #', 'Day', 'Home Team', 'Home Score', 'Away Score', 'Away Team']]

@@ -12,7 +12,7 @@ from data import teams as teams_data
 from pages.page_utils import make_doc, render_table, fmt_round
 from registry import REGISTRY
 import leaders as ld
-from seasons import split_records, h2h_records
+from seasons import split_records, h2h_records, vs_division_records
 
 _BAT_LEADER_STATS = ['war', 'hr', 'rbi', 'avg', 'ops', 'sb']
 _PIT_LEADER_STATS = ['p_war', 'p_w', 'p_sv', 'p_era', 'p_k', 'p_whip']
@@ -166,12 +166,50 @@ def _leaders_section(season_num):
         rows = ld.get_leaders(stat, season=season_num, num=5)
         _leader_table(stat, rows, pitching=True)
 
+def _division_standings_section(season_num):
+    season_rows = teams_data.standings[teams_data.standings['Season'] == season_num].copy()
+    if season_rows.empty:
+        return
+    divisions, vs_div = vs_division_records(season_num)
+    season_rows['Diff'] = season_rows['runsFor'] - season_rows['runsAgainst']
+
+    h2("Division Records")
+    for conf_name, conf_group in season_rows.groupby('conference_name', sort=False):
+        h3(conf_name)
+        for div_name, div_group in conf_group.groupby('division_name', sort=False):
+            h4(div_name)
+            rows = []
+            for _, row in div_group.sort_values(['gamesWon', 'Diff'], ascending=[False, False]).iterrows():
+                team = row['teamName']
+                rec = {
+                    'team_name': team,
+                    't_w':   row['gamesWon'],
+                    't_l':   row['gamesLost'],
+                    't_pct': row['gamesWon'] / (row['gamesWon'] + row['gamesLost']),
+                    't_gb':  row['GB'],
+                    'season': season_num,
+                    'stat_type': 'season',
+                }
+                if vs_div and team in vs_div:
+                    for d in divisions:
+                        w, l = vs_div[team][d]
+                        rec[f'_div_{d}'] = f"{w}-{l}" if (w or l) else ''
+                rows.append(rec)
+            cols = ['team_name', 't_w', 't_l', 't_pct', 't_gb']
+            if vs_div:
+                cols += [f'_div_{d}' for d in divisions]
+            df = pd.DataFrame(rows)[cols + ['season', 'stat_type']]
+            if vs_div:
+                df = df.rename(columns={f'_div_{d}': d for d in divisions})
+            render_table(df, depth=1, hidden={'season'}, pitching=False)
+
+
 def _h2h_matrix(season_num):
     team_order, abbr_map, records = h2h_records(season_num)
     if team_order is None:
         return
     h2("Head-to-Head")
-    with table(border=1):
+    with table(border=1, cls='compact'):
         with thead():
             with tr():
                 th('')
@@ -206,7 +244,7 @@ def generate_season_page(season_num):
             if next_season:
                 a(f"Season {next_season} >>", href=f"{next_season}.html")
         _standings_section(season_num)
+        #_division_standings_section(season_num)
         _leaders_section(season_num)
-        if season_num == CURRENT_SEASON:
-            _h2h_matrix(season_num)
+        _h2h_matrix(season_num)
     Path(f"docs/seasons/{season_num}.html").write_text(str(doc))

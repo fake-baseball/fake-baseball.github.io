@@ -3,29 +3,14 @@ from pathlib import Path
 
 from dominate.tags import *
 
-from pages.page_utils import make_doc
-
-
-_LINKS = [
-    ('players',     "Players",              "players/index.html"),
-    ('leaders',     "Leaders",              "leaders/index.html"),
-    ('seasons',     "Seasons",              "seasons/index.html"),
-    ('teams',       "Teams",                "teams/index.html"),
-    ('games',       "Games",                "games/index.html"),
-    ('awards',      "Awards",               "awards.html"),
-    ('projections', "Projections",          "projections.html"),
-    ('dh',          "Positional Adjustments", "dh.html"),
-    ('salaries',    "Salaries",             "salaries.html"),
-    ('cy_young',    "Cy Young Predictor",   "cy_young.html"),
-    ('glossary',    "Glossary",             "glossary.html"),
-]
+from pages.page_utils import make_doc, NAV_LINKS
 
 
 def generate_home(sections):
-    doc = make_doc("BFBL Homepage", depth=0)
+    doc = make_doc("BFBL Homepage", depth=0, nav=False)
     with doc:
         h1("Bryonato's Fake Baseball League")
-        for key, label, href in _LINKS:
+        for key, label, href in NAV_LINKS:
             if key in sections:
                 h2(a(label, href=href))
     Path("docs/index.html").write_text(str(doc))

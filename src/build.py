@@ -52,6 +52,7 @@ from pages.season_page   import generate_season_page
 from pages.teams_page      import generate_teams_index
 from pages.team_season_page import generate_team_season_page
 from pages.home          import generate_home
+import pages.page_utils as page_utils
 from pages.projections_page import generate_projections
 from pages.games_page    import generate_games
 from pages.awards_page   import generate_awards
@@ -93,6 +94,21 @@ def main():
     do_dh          = build_all or args.dh
 
     # TODO need to do a better build system, NOT hide errors in cases it's None
+    # ── Set active sections for site-wide nav ────────────────────────────────
+    page_utils.active_sections = {k for k, v in {
+        'players':     do_players,
+        'leaders':     do_leaders,
+        'seasons':     do_seasons,
+        'teams':       do_teams,
+        'games':       do_games,
+        'awards':      do_awards,
+        'projections': do_projections,
+        'dh':          do_dh,
+        'salaries':    do_salaries,
+        'cy_young':    do_cy_young,
+        'glossary':    do_glossary,
+    }.items() if v}
+
     # ── Ensure output directories exist ──────────────────────────────────────
     Path("docs/players").mkdir(parents=True, exist_ok=True)
     Path("docs/leaders").mkdir(parents=True, exist_ok=True)

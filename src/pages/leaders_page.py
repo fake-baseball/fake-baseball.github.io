@@ -14,6 +14,8 @@ from data import teams as teams_data
 from registry import REGISTRY
 from pages.page_utils import make_doc, render_table
 
+_TOTAL_LEADERS = 100
+_CONF_LEADERS  = 25
 
 def generate_leaders():
     # Each entry: (title, slug, suffix, df, is_pitching, conf_sections)
@@ -36,8 +38,8 @@ def generate_leaders():
         tr(td(title), *[
             td(a(label, href=f"{slug}_{suffix}.html"))
             for label, suffix in zip(
-                ['Single-Season', 'Yearly', 'Career', 'Active'],
-                ['season',        'yearly', 'career', 'active'],
+                ['Single-Season', 'Seasonal', 'Career', 'Active'],
+                ['season',        'seasonal', 'career', 'active'],
             )
         ])
 
@@ -47,7 +49,7 @@ def generate_leaders():
         qual_col = meta['qual_col']
         _index_row(title, slug)
 
-        df = get_leaders(stat, num=100, worst=worst)
+        df = get_leaders(stat, num=_TOTAL_LEADERS, worst=worst)
         cols = list(dict.fromkeys(['first_name', 'last_name', stat, 'season', qual_col, 'team']))
         df = df[cols].copy()
         df.insert(0, '#', df.index)
@@ -55,7 +57,7 @@ def generate_leaders():
         conf_sections = []
         for conf in _conf_order:
             abbrs = _conf_teams[conf]
-            cdf = get_leaders(stat, num=100, worst=worst, teams=abbrs)
+            cdf = get_leaders(stat, num=_CONF_LEADERS, worst=worst, teams=abbrs)
             cdf = cdf[cols].copy()
             cdf.insert(0, '#', cdf.index)
             cdf.insert(1, 'player', '')
@@ -73,37 +75,21 @@ def generate_leaders():
             cdf = cdf[cols].copy()
             cdf.insert(1, 'player', '')
             conf_sections.append((conf, cdf))
-        pages.append((title, slug, 'yearly', df, False, conf_sections))
+        pages.append((title, slug, 'seasonal', df, False, conf_sections))
 
         career_cols = list(dict.fromkeys(['first_name', 'last_name', stat, qual_col]))
 
-        df = get_career_leaders(stat, num=100, worst=worst)
+        df = get_career_leaders(stat, num=_TOTAL_LEADERS, worst=worst)
         df = df[career_cols].copy()
         df.insert(0, '#', df.index)
         df.insert(1, 'player', '')
-        conf_sections = []
-        for conf in _conf_order:
-            abbrs = _conf_teams[conf]
-            cdf = get_career_leaders(stat, num=50, worst=worst, teams=abbrs)
-            cdf = cdf[career_cols].copy()
-            cdf.insert(0, '#', cdf.index)
-            cdf.insert(1, 'player', '')
-            conf_sections.append((conf, cdf))
-        pages.append((title, slug, 'career', df, False, conf_sections))
+        pages.append((title, slug, 'career', df, False, []))
 
-        df = get_career_leaders(stat, active=True, num=100, worst=worst)
+        df = get_career_leaders(stat, active=True, num=_CONF_LEADERS, worst=worst)
         df = df[career_cols].copy()
         df.insert(0, '#', df.index)
         df.insert(1, 'player', '')
-        conf_sections = []
-        for conf in _conf_order:
-            abbrs = _conf_teams[conf]
-            cdf = get_career_leaders(stat, active=True, num=50, worst=worst, teams=abbrs)
-            cdf = cdf[career_cols].copy()
-            cdf.insert(0, '#', cdf.index)
-            cdf.insert(1, 'player', '')
-            conf_sections.append((conf, cdf))
-        pages.append((title, slug, 'active', df, False, conf_sections))
+        pages.append((title, slug, 'active', df, False, []))
 
     def _render_batting():
         def render(stat, meta):
@@ -122,40 +108,40 @@ def generate_leaders():
 
         if stat == 'p_ip':
             season_cols = ['first_name', 'last_name', 'role', 'p_ip', 'season', 'team']
-            yearly_cols = ['season', 'first_name', 'last_name', 'role', 'p_ip', 'team']
+            seasonal_cols = ['season', 'first_name', 'last_name', 'role', 'p_ip', 'team']
             career_cols = ['first_name', 'last_name', 'role', 'p_ip']
         else:
             season_cols = ['first_name', 'last_name', 'role', stat, 'season', 'p_ip', 'team']
-            yearly_cols = ['season', 'first_name', 'last_name', 'role', stat, 'p_ip', 'team']
+            seasonal_cols = ['season', 'first_name', 'last_name', 'role', stat, 'p_ip', 'team']
             career_cols = ['first_name', 'last_name', 'role', stat, 'p_ip']
 
         # Season table
-        df = get_leaders(stat, num=100, worst=worst)
+        df = get_leaders(stat, num=_TOTAL_LEADERS, worst=worst)
         df = df[list(dict.fromkeys(season_cols))].copy()
         df.insert(0, '#', df.index)
         df.insert(1, 'player', '')
         conf_sections = []
         for conf in _conf_order:
             abbrs = _conf_teams[conf]
-            cdf = get_leaders(stat, num=100, worst=worst, teams=abbrs)
+            cdf = get_leaders(stat, num=_CONF_LEADERS, worst=worst, teams=abbrs)
             cdf = cdf[list(dict.fromkeys(season_cols))].copy()
             cdf.insert(0, '#', cdf.index)
             cdf.insert(1, 'player', '')
             conf_sections.append((conf, cdf))
         pages.append((title, slug, 'season', df, True, conf_sections))
 
-        # Yearly table
+        # Seasonal table
         df = get_leaders_by_season(stat, worst=worst)
-        df = df[list(dict.fromkeys(yearly_cols))].copy()
+        df = df[list(dict.fromkeys(seasonal_cols))].copy()
         df.insert(1, 'player', '')
         conf_sections = []
         for conf in _conf_order:
             abbrs = _conf_teams[conf]
             cdf = get_leaders_by_season(stat, worst=worst, teams=abbrs)
-            cdf = cdf[list(dict.fromkeys(yearly_cols))].copy()
+            cdf = cdf[list(dict.fromkeys(seasonal_cols))].copy()
             cdf.insert(1, 'player', '')
             conf_sections.append((conf, cdf))
-        pages.append((title, slug, 'yearly', df, True, conf_sections))
+        pages.append((title, slug, 'seasonal', df, True, conf_sections))
 
         # Career role lookup
         import pitching as _pit
@@ -172,34 +158,18 @@ def generate_leaders():
             return d
 
         # Career table
-        df = _apply_role(get_career_leaders(stat, num=100, worst=worst))
+        df = _apply_role(get_career_leaders(stat, num=_TOTAL_LEADERS, worst=worst))
         df = df[list(dict.fromkeys(career_cols))].copy()
         df.insert(0, '#', df.index)
         df.insert(1, 'player', '')
-        conf_sections = []
-        for conf in _conf_order:
-            abbrs = _conf_teams[conf]
-            cdf = _apply_role(get_career_leaders(stat, num=50, worst=worst, teams=abbrs))
-            cdf = cdf[list(dict.fromkeys(career_cols))].copy()
-            cdf.insert(0, '#', cdf.index)
-            cdf.insert(1, 'player', '')
-            conf_sections.append((conf, cdf))
-        pages.append((title, slug, 'career', df, True, conf_sections))
+        pages.append((title, slug, 'career', df, True, []))
 
         # Active table
-        df = _apply_role(get_career_leaders(stat, active=True, num=100, worst=worst))
+        df = _apply_role(get_career_leaders(stat, active=True, num=_CONF_LEADERS, worst=worst))
         df = df[list(dict.fromkeys(career_cols))].copy()
         df.insert(0, '#', df.index)
         df.insert(1, 'player', '')
-        conf_sections = []
-        for conf in _conf_order:
-            abbrs = _conf_teams[conf]
-            cdf = _apply_role(get_career_leaders(stat, active=True, num=50, worst=worst, teams=abbrs))
-            cdf = cdf[list(dict.fromkeys(career_cols))].copy()
-            cdf.insert(0, '#', cdf.index)
-            cdf.insert(1, 'player', '')
-            conf_sections.append((conf, cdf))
-        pages.append((title, slug, 'active', df, True, conf_sections))
+        pages.append((title, slug, 'active', df, True, []))
 
     def render_pitching(stat, meta):
         slug = meta.get('slug', stat)
@@ -230,9 +200,9 @@ def generate_leaders():
         )
         if has_qualified:
             p(qual_note)
-        with table():
+        with table(cls='leaders-index'):
             with thead():
-                tr(th("Statistic"), th("Single-Season"), th("Yearly"), th("Career"), th("Active"))
+                tr(th("Statistic"), th("Single-Season"), th("Seasonal"), th("Career"), th("Active"))
             with tbody():
                 for stat, meta in stat_dict.items():
                     if meta['leaders']:
@@ -257,7 +227,7 @@ def generate_leaders():
 
     labels = {
         'season': 'Single-Season Records',
-        'yearly': 'Yearly Leaders',
+        'seasonal': 'Seasonal Leaders',
         'career': 'Career Leaders',
         'active': 'Active Leaders',
     }

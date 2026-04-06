@@ -1,4 +1,5 @@
 """Season-level calculations: split records, head-to-head matrix."""
+import math
 from constants import num_games
 from data import teams as teams_data
 
@@ -16,11 +17,15 @@ def split_records(sched, div_map, conf_map, winning_teams):
     HALF = num_games // 2  # first half = games 1-40, second half = games 41-80
     total_games = {t: 0 for t in div_map}
     for _, g in sched.iterrows():
+        if isinstance(g['Home Score'], float) and math.isnan(g['Home Score']):
+            continue
         total_games[g['Home Team']] += 1
         total_games[g['Away Team']] += 1
     game_count = {t: 0 for t in div_map}
 
     for _, g in sched.sort_values('Game #').iterrows():
+        if isinstance(g['Home Score'], float) and math.isnan(g['Home Score']):
+            continue
         ht, at = g['Home Team'], g['Away Team']
         hs, as_ = int(g['Home Score']), int(g['Away Score'])
         margin = abs(hs - as_)
@@ -54,6 +59,38 @@ def split_records(sched, div_map, conf_map, winning_teams):
     return records
 
 
+def vs_division_records(season_num):
+    """Return (divisions, records_dict) for per-division records.
+
+    divisions: ordered list of division names.
+    records_dict: team -> div_name -> [wins, losses]
+    Returns (None, None) if no schedule data available.
+    """
+    sched = teams_data.schedules.get(season_num)
+    if sched is None:
+        return None, None
+    teams_df = teams_data.teams
+    div_map = teams_df.set_index('team_name')['division_name'].to_dict()
+    divisions = list(dict.fromkeys(teams_df['division_name']))
+    records = {t: {d: [0, 0] for d in divisions} for t in div_map}
+    for _, g in sched.iterrows():
+        ht, at = g['Home Team'], g['Away Team']
+        hs, as_ = int(g['Home Score']), int(g['Away Score'])
+        opp_div_ht = div_map.get(at)
+        opp_div_at = div_map.get(ht)
+        if opp_div_ht and ht in records:
+            if hs > as_:
+                records[ht][opp_div_ht][0] += 1
+            else:
+                records[ht][opp_div_ht][1] += 1
+        if opp_div_at and at in records:
+            if as_ > hs:
+                records[at][opp_div_at][0] += 1
+            else:
+                records[at][opp_div_at][1] += 1
+    return divisions, records
+
+
 def h2h_records(season_num):
     """Return (team_order, abbr_map, records_dict) for a head-to-head matrix.
 
@@ -71,6 +108,8 @@ def h2h_records(season_num):
     abbr_map = teams_data.teams.set_index('team_name')['abbr'].to_dict()
     records = {}
     for _, g in sched.iterrows():
+        if isinstance(g['Home Score'], float) and math.isnan(g['Home Score']):
+            continue
         ht, at = g['Home Team'], g['Away Team']
         hs, as_ = int(g['Home Score']), int(g['Away Score'])
         records.setdefault((ht, at), [0, 0])

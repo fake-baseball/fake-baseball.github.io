@@ -10,17 +10,48 @@ from pages.slug import convert_name
 from util import fmt_ip, weighted_avg
 
 
-def make_doc(title, depth=1):
+NAV_LINKS = [
+    ("players",     "Players",                "players/index.html"),
+    ("leaders",     "Leaders",                "leaders/index.html"),
+    ("seasons",     "Seasons",                "seasons/index.html"),
+    ("teams",       "Teams",                  "teams/index.html"),
+    ("games",       "Games",                  "games/index.html"),
+    ("awards",      "Awards",                 "awards.html"),
+    ("projections", "Projections",            "projections.html"),
+    ("dh",          "Positional Adjustments", "dh.html"),
+    ("salaries",    "Salaries",               "salaries.html"),
+    ("cy_young",    "Cy Young Predictor",     "cy_young.html"),
+    ("glossary",    "Glossary",               "glossary.html"),
+]
+
+# Set of active section keys; populated by build.py before page generation.
+# When None (e.g. running page generators standalone), all links are shown.
+active_sections = None
+
+
+def make_doc(title, depth=1, nav=True):
     """Create a dominate document pre-linked to the global stylesheet.
 
     depth - number of directory levels below docs/ root for the calling page.
             0 = docs/ (e.g. index.html), 1 = docs/leaders/, 2 = docs/teams/Team/.
             The href is built as '../' * depth + 'style.css'.
+    nav   - if True (default), prepend a site-wide navigation header to the body.
+            Pass nav=False for the home page.
     """
-    css = '../' * depth + 'style.css'
+    from dominate.tags import nav as nav_tag, span
+    root = '../' * depth
+    css = root + 'style.css'
     doc = dominate.document(title=title)
     with doc.head:
         link(rel='stylesheet', href=css)
+    if nav:
+        with doc:
+            with nav_tag(cls='site-nav'):
+                with anchor_tag(href=root + 'index.html', cls='site-nav-home'):
+                    bold_tag('BFBL')
+                for key, label, href in NAV_LINKS:
+                    if active_sections is None or key in active_sections:
+                        anchor_tag(label, href=root + href, cls='site-nav-link')
     return doc
 
 
@@ -181,6 +212,7 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
                         meta    = col_meta[col]
                         raw_val = raw_row[col]
 
+## TODO clear up differencees between ctype (why are we using ctype for this stuff? when column name would suffice)
                         ctype = meta.get('type', 'text')
                         if col == 'player' and has_player_link:
                             first  = raw_row['first_name']
@@ -253,7 +285,20 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
                         align_style = f"text-align: {meta['align']}" if meta['align'] != 'right' else None
                         extra_style = cell_style(col, raw_val, raw_row) if cell_style else None
                         style_str = '; '.join(filter(None, [align_style, extra_style])) or None
-                        td(content, style=style_str) if style_str else td(content)
+                        is_name_col = (col == 'player' and has_player_link) or ctype == 'team_link'
+                        is_streak_col = col == 'gl_streak'
+                        if style_str and is_name_col:
+                            td(content, style=style_str, cls='name-col')
+                        elif style_str and is_streak_col:
+                            td(content, style=style_str, cls='mono-col')
+                        elif style_str:
+                            td(content, style=style_str)
+                        elif is_name_col:
+                            td(content, cls='name-col')
+                        elif is_streak_col:
+                            td(content, cls='mono-col')
+                        else:
+                            td(content)
     return t
 
 

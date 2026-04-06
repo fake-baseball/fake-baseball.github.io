@@ -67,8 +67,8 @@ def generate_seasons():
                      'p_k_pct', 'p_bb_pct', 'p_hr_pct', 'p_p_per_ip', 'p_p_per_pa']
     rates_raw = sb[bat_rate_cols].copy()
     rates_raw = rates_raw.join(sp[pit_rate_cols])
-    bat_rates = _season_df(sb[bat_rate_cols], bat_rate_cols)
-    pit_rates = _season_df(sp[pit_rate_cols], pit_rate_cols)
+    all_rate_cols = bat_rate_cols + pit_rate_cols
+    rates = _season_df(rates_raw, all_rate_cols)
 
     # ── Page ──────────────────────────────────────────────────────────────────
 
@@ -82,16 +82,13 @@ def generate_seasons():
         h3("Defense")
         render_table(def_count, depth=1, pitching=False)
 
-        h2("Per-Game Counting")
-        h3("Offense")
-        raw(_link_index(off_pg).to_html(border=0, index=True, escape=False))
-        h3("Defense")
-        raw(_link_index(def_pg).to_html(border=0, index=True, escape=False))
+        #h2("Per-Game Counting")
+        #h3("Offense")
+        #raw(_link_index(off_pg).to_html(border=0, index=True, escape=False))
+        #h3("Defense")
+        #raw(_link_index(def_pg).to_html(border=0, index=True, escape=False))
 
         h2("Rate Stats")
-        h3("Batting")
-        render_table(bat_rates, depth=1, pitching=False)
-        h3("Pitching")
-        render_table(pit_rates, depth=1, pitching=False)
+        render_table(rates, depth=1, pitching=False)
 
     Path("docs/seasons/index.html").write_text(str(doc))

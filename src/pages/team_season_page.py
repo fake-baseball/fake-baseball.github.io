@@ -40,6 +40,9 @@ def generate_team_season_page(team_name, season_num, abbr):
         df = df.copy()
         df['player'] = ''
         available = ['first_name', 'last_name'] + [c for c in cols if c in df.columns]
+        for extra in ('season', 'team'):
+            if extra in df.columns and extra not in available:
+                available.append(extra)
         return df[list(dict.fromkeys(available))]
 
     bat_stats = bat_module.stats[
@@ -78,10 +81,10 @@ def generate_team_season_page(team_name, season_num, abbr):
         p("Individual player stats here may show stats that a player achieved with another team "
           "or may not be present at all (in the case of mid-season transactions).")
         h3("Standard Batting")
-        render_table(_prep(bat_stats, _BAT_COLS), depth=2, pitching=False)
+        render_table(_prep(bat_stats, _BAT_COLS), depth=2, hidden={'season', 'team'}, pitching=False)
 
         h3("Standard Pitching")
-        render_table(_prep(pit_stats, _PIT_COLS), depth=2, pitching=True)
+        render_table(_prep(pit_stats, _PIT_COLS), depth=2, hidden={'season', 'team'}, pitching=True)
 
         if teams_data.schedules.get(season_num) is not None:
             h2("Game Log")
@@ -91,37 +94,54 @@ def generate_team_season_page(team_name, season_num, abbr):
             games = games.sort_values('Game #').reset_index(drop=True)
             w_count = l_count = streak_char = streak_len = 0
             gl_rows = []
+            import math
             for game_num, (_, g) in enumerate(games.iterrows(), start=1):
-                home = g['Home Team'] == team_name
-                opp  = g['Away Team'] if home else g['Home Team']
-                r    = int(g['Home Score'] if home else g['Away Score'])
-                ra   = int(g['Away Score'] if home else g['Home Score'])
-                win  = r > ra
-                if win:
-                    w_count += 1
-                    if streak_char == 'W':
-                        streak_len += 1
+                home      = g['Home Team'] == team_name
+                opp       = g['Away Team'] if home else g['Home Team']
+                rs        = g['Home Score'] if home else g['Away Score']
+                ras       = g['Away Score'] if home else g['Home Score']
+                played    = rs is not None and not (isinstance(rs, float) and math.isnan(rs))
+                day       = g.get('Day')
+                if played:
+                    r, ra = int(rs), int(ras)
+                    win = r > ra
+                    if win:
+                        w_count += 1
+                        if streak_char == 'W':
+                            streak_len += 1
+                        else:
+                            streak_char, streak_len = 'W', 1
                     else:
-                        streak_char, streak_len = 'W', 1
+                        l_count += 1
+                        if streak_char == 'L':
+                            streak_len += 1
+                        else:
+                            streak_char, streak_len = 'L', 1
+                    gl_rows.append({
+                        'gl_num':    int(day) if day is not None else game_num,
+                        'gl_ha':     'H' if home else 'A',
+                        'gl_opp':    opp,
+                        'gl_r':      r,
+                        'gl_ra':     ra,
+                        'gl_wl':     'W' if win else 'L',
+                        'gl_rec':    f"{w_count}-{l_count}",
+                        'gl_streak': '+' * streak_len if streak_char == 'W' else '-' * streak_len,
+                        'season':    season_num,
+                        'stat_type': 'season',
+                    })
                 else:
-                    l_count += 1
-                    if streak_char == 'L':
-                        streak_len += 1
-                    else:
-                        streak_char, streak_len = 'L', 1
-                day = g.get('Day')
-                gl_rows.append({
-                    'gl_num':    int(day) if day is not None else game_num,
-                    'gl_ha':     'H' if home else 'A',
-                    'gl_opp':    opp,
-                    'gl_r':      r,
-                    'gl_ra':     ra,
-                    'gl_wl':     'W' if win else 'L',
-                    'gl_rec':    f"{w_count}-{l_count}",
-                    'gl_streak': '+' * streak_len if streak_char == 'W' else '−' * streak_len,
-                    'season':    season_num,
-                    'stat_type': 'season',
-                })
+                    gl_rows.append({
+                        'gl_num':    int(day) if day is not None else game_num,
+                        'gl_ha':     'H' if home else 'A',
+                        'gl_opp':    opp,
+                        'gl_r':      '',
+                        'gl_ra':     '',
+                        'gl_wl':     '',
+                        'gl_rec':    f"{w_count}-{l_count}",
+                        'gl_streak': '',
+                        'season':    season_num,
+                        'stat_type': 'season',
+                    })
             render_table(pd.DataFrame(gl_rows), depth=2, hidden={'season'}, pitching=False)
 
     slug = team_name.replace(' ', '')
