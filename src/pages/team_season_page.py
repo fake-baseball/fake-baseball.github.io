@@ -1,6 +1,7 @@
 """Generate individual team-season pages (docs/teams/{slug}/{n}.html)."""
 from pathlib import Path
 
+import pandas as pd
 from dominate.tags import *
 
 import batting as bat_module
@@ -8,6 +9,7 @@ import pitching as pit_module
 from constants import CURRENT_SEASON
 from data import teams as teams_data
 from pages.page_utils import make_doc, render_table, fmt_round
+from util import weighted_avg
 
 
 _BAT_COLS = [
@@ -36,8 +38,37 @@ def generate_team_season_page(team_name, season_num, abbr):
     w, l = int(row['gamesWon']), int(row['gamesLost'])
     win_pct = fmt_round(w / (w + l), 3, False)
 
-    def _prep(df, cols):
+    def _bat_totals(df):
+        season_rows = df[df['stat_type'] == 'season']
+        total = season_rows.sum(numeric_only=True).to_frame().T
+        bat_module._recompute_rates(total)
+        for col, wt in [('woba', 'pa'), ('ops_plus', 'pa'), ('wrc_plus', 'pa')]:
+            if col in season_rows.columns and wt in season_rows.columns:
+                total[col] = weighted_avg(season_rows, col, wt)
+        total['first_name'] = ''
+        total['last_name']  = 'Team Total'
+        total['player']     = ''
+        total['stat_type']  = 'career'
+        return total
+
+    def _pit_totals(df):
+        season_rows = df[df['stat_type'] == 'season']
+        total = season_rows.sum(numeric_only=True).to_frame().T
+        pit_module._recompute_rates(total)
+        for col, wt in [('p_era_minus', 'p_ip'), ('p_fip', 'p_ip'), ('p_ra9_def', 'p_ip')]:
+            if col in season_rows.columns and wt in season_rows.columns:
+                total[col] = weighted_avg(season_rows, col, wt)
+        total['first_name'] = ''
+        total['last_name']  = 'Team Total'
+        total['player']     = ''
+        total['stat_type']  = 'career'
+        return total
+
+    def _prep(df, cols, totals_fn=None):
         df = df.copy()
+        if totals_fn is not None:
+            total_row = totals_fn(df)
+            df = pd.concat([df, total_row], ignore_index=True)
         df['player'] = ''
         available = ['first_name', 'last_name'] + [c for c in cols if c in df.columns]
         for extra in ('season', 'team'):
@@ -81,14 +112,13 @@ def generate_team_season_page(team_name, season_num, abbr):
         p("Individual player stats here may show stats that a player achieved with another team "
           "or may not be present at all (in the case of mid-season transactions).")
         h3("Standard Batting")
-        render_table(_prep(bat_stats, _BAT_COLS), depth=2, hidden={'season', 'team'}, pitching=False)
+        render_table(_prep(bat_stats, _BAT_COLS, _bat_totals), depth=2, hidden={'season', 'team'}, pitching=False)
 
         h3("Standard Pitching")
-        render_table(_prep(pit_stats, _PIT_COLS), depth=2, hidden={'season', 'team'}, pitching=True)
+        render_table(_prep(pit_stats, _PIT_COLS, _pit_totals), depth=2, hidden={'season', 'team'}, pitching=True)
 
         if teams_data.schedules.get(season_num) is not None:
             h2("Game Log")
-            import pandas as pd
             sched = teams_data.schedules[season_num]
             games = sched[(sched['Home Team'] == team_name) | (sched['Away Team'] == team_name)].copy()
             games = games.sort_values('Game #').reset_index(drop=True)
