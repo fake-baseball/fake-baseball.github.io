@@ -1,6 +1,30 @@
 /* BFBL global stylesheet */
 @import url('https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&family=PT+Sans+Caption:wght@400;700&family=PT+Mono&display=swap');
 
+nav.site-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 1rem;
+}
+
+a.site-nav-home {
+    font-family: "PT Sans Caption", sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    color: #222;
+    margin-right: 0.5rem;
+}
+
+a.site-nav-link {
+    font-family: "PT Sans", sans-serif;
+    font-size: 0.9rem;
+    color: #1a5fa8;
+}
+
 body {
     font-family: "PT Sans", sans-serif;
     max-width: 1200px;
