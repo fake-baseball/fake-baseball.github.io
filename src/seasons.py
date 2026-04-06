@@ -4,6 +4,47 @@ from constants import num_games
 from data import teams as teams_data
 
 
+def strength_of_schedule(sched, standings_rows):
+    """Return dict: team -> {'sos': float or None, 'sos_rem': float or None}.
+
+    sos:     average win% of opponents in games already played (NaN-score rows skipped).
+    sos_rem: average win% of opponents in unplayed games (NaN-score rows only).
+             None if all games have been played.
+
+    Win% for each opponent is computed from standings_rows (final/current standings).
+    """
+    win_pct = {}
+    for _, row in standings_rows.iterrows():
+        w = row['gamesWon']
+        l = row['gamesLost']
+        total = w + l
+        win_pct[row['teamName']] = w / total if total > 0 else 0.5
+
+    all_teams = set(win_pct)
+    played   = {t: [] for t in all_teams}
+    unplayed = {t: [] for t in all_teams}
+
+    for _, g in sched.iterrows():
+        ht, at = g['Home Team'], g['Away Team']
+        score_missing = isinstance(g['Home Score'], float) and math.isnan(g['Home Score'])
+        if score_missing:
+            if ht in unplayed: unplayed[ht].append(at)
+            if at in unplayed: unplayed[at].append(ht)
+        else:
+            if ht in played: played[ht].append(at)
+            if at in played: played[at].append(ht)
+
+    result = {}
+    for team in all_teams:
+        opps_p = [win_pct[o] for o in played[team]   if o in win_pct]
+        opps_r = [win_pct[o] for o in unplayed[team] if o in win_pct]
+        result[team] = {
+            'sos':     sum(opps_p) / len(opps_p) if opps_p else None,
+            'sos_rem': sum(opps_r) / len(opps_r) if opps_r else None,
+        }
+    return result
+
+
 def split_records(sched, div_map, conf_map, winning_teams):
     """Return dict: team -> split W-L records, each a [w, l] list.
 

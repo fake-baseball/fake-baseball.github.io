@@ -1,9 +1,8 @@
 """Generate an individual season page (docs/seasons/{n}.html)."""
+import math
 from pathlib import Path
 
 from dominate.tags import *
-
-import pandas as pd
 
 import pandas as pd
 import league as lg
@@ -12,7 +11,7 @@ from data import teams as teams_data
 from pages.page_utils import make_doc, render_table, fmt_round
 from registry import REGISTRY
 import leaders as ld
-from seasons import split_records, h2h_records, vs_division_records
+from seasons import split_records, h2h_records, vs_division_records, strength_of_schedule
 
 _BAT_LEADER_STATS = ['war', 'hr', 'rbi', 'avg', 'ops', 'sb']
 _PIT_LEADER_STATS = ['p_war', 'p_w', 'p_sv', 'p_era', 'p_k', 'p_whip']
@@ -31,6 +30,7 @@ def _standings_section(season_num):
 
     sched = teams_data.schedules.get(season_num)
     split = None
+    sos   = None
     if sched is not None:
         teams_df = teams_data.teams
         div_map  = teams_df.set_index('team_name')['division_name'].to_dict()
@@ -39,6 +39,7 @@ def _standings_section(season_num):
             season_rows[season_rows['gamesWon'] > season_rows['gamesLost']]['teamName']
         )
         split = split_records(sched, div_map, conf_map, winning_teams)
+        sos   = strength_of_schedule(sched, season_rows)
 
     h2("Standings")
     for conf_name, conf_group in season_rows.groupby('conference_name', sort=False):
@@ -46,7 +47,9 @@ def _standings_section(season_num):
         for div_name, div_group in conf_group.groupby('division_name', sort=False):
             h4(div_name)
             rows = []
-            for _, row in div_group.sort_values(['gamesWon', 'Diff'], ascending=[False, False]).iterrows():
+            div_group = div_group.copy()
+            div_group['t_pct'] = div_group['gamesWon'] / (div_group['gamesWon'] + div_group['gamesLost'])
+            for _, row in div_group.sort_values(['t_pct', 'Diff'], ascending=[False, False]).iterrows():
                 rec = {
                     'team_name': row['teamName'],
                     't_w':    row['gamesWon'],
@@ -75,19 +78,25 @@ def _standings_section(season_num):
                         't_second_half': _fmt_rec(*sp['second_half']),
                         't_shutout':     _fmt_rec(*sp['shutout']),
                     })
+                if sos:
+                    s = sos[row['teamName']]
+                    rec['t_sos']     = s['sos']     if s['sos']     is not None else float('nan')
+                    rec['t_sos_rem'] = s['sos_rem'] if s['sos_rem'] is not None else float('nan')
                 rows.append(rec)
             cols = ['team_name', 't_w', 't_l', 't_pct', 't_gb', 't_rs', 't_ra', 't_diff']
             if split:
                 cols += ['t_last10', 't_div', 't_conf', 't_inter', 't_one_run',
                          't_blowout', 't_home', 't_away', 't_vs500',
                          't_first_half', 't_second_half', 't_shutout']
+            if sos:
+                cols += ['t_sos', 't_sos_rem']
             render_table(pd.DataFrame(rows)[cols + ['season', 'stat_type']],
                          depth=1, hidden={'season'}, pitching=False)
 
-    _wildcard_section(season_num, season_rows, split)
+    _wildcard_section(season_num, season_rows, split, sos)
 
 
-def _wildcard_section(season_num, season_rows, split):
+def _wildcard_section(season_num, season_rows, split, sos):
     wc = season_rows[season_rows['GB'] != 0].copy()
     if wc.empty:
         return
@@ -115,10 +124,16 @@ def _wildcard_section(season_num, season_rows, split):
             }
             if split:
                 rec['t_last10'] = _fmt_rec(*split[row['teamName']]['last10'])
+            if sos:
+                s = sos[row['teamName']]
+                rec['t_sos']     = s['sos']     if s['sos']     is not None else float('nan')
+                rec['t_sos_rem'] = s['sos_rem'] if s['sos_rem'] is not None else float('nan')
             rows.append(rec)
         cols = ['team_name', 't_w', 't_l', 't_pct', 't_gb', 't_rs', 't_ra', 't_diff']
         if split:
             cols.append('t_last10')
+        if sos:
+            cols += ['t_sos', 't_sos_rem']
         render_table(pd.DataFrame(rows)[cols + ['season', 'stat_type']],
                      depth=1, hidden={'season'}, pitching=False)
 

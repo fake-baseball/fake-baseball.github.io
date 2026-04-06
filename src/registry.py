@@ -1047,6 +1047,8 @@ REGISTRY = {
     't_first_half':  {'name': '1st',       'label': 'Record in First Half of Season',       'type': 'text',      'align': 'right', 'context': 'meta'},
     't_second_half': {'name': '2nd',       'label': 'Record in Second Half of Season',      'type': 'text',      'align': 'right', 'context': 'meta'},
     't_shutout':     {'name': 'SHO',       'label': 'Record in Shutouts',                   'type': 'text',      'align': 'right', 'context': 'meta'},
+    't_sos':         {'name': 'SOS',       'label': 'Strength of Schedule (played)',         'type': 'stat',      'align': 'right', 'context': 'meta', 'decimal_places': 3, 'leading_zero': False, 'percentage': False},
+    't_sos_rem':     {'name': 'SOSR',   'label': 'Strength of Schedule (remaining)',      'type': 'stat',      'align': 'right', 'context': 'meta', 'decimal_places': 3, 'leading_zero': False, 'percentage': False},
     # Game log columns
     'gl_num':        {'name': '#',         'label': 'Game Number',       'type': 'integer',   'align': 'right', 'context': 'meta'},
     'gl_ha':         {'name': 'H/A',       'label': 'Home or Away',      'type': 'text',      'align': 'center','context': 'meta'},

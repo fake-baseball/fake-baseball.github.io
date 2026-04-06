@@ -58,7 +58,8 @@ def load_standings():
     for _, group in df.groupby(['Season', 'division_name']):
         group = group.copy()
         group['run_diff'] = group['runsFor'] - group['runsAgainst']
-        group_sorted = group.sort_values(['gamesWon', 'run_diff'], ascending=[False, False])
+        group['t_pct'] = group['gamesWon'] / (group['gamesWon'] + group['gamesLost'])
+        group_sorted = group.sort_values(['t_pct', 'run_diff'], ascending=[False, False])
         leader = group_sorted.iloc[0]
         max_w, min_l = leader['gamesWon'], leader['gamesLost']
         group['GB'] = ((max_w - group['gamesWon']) + (group['gamesLost'] - min_l)) / 2
