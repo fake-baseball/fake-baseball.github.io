@@ -11,6 +11,7 @@
 
 ## Players
 - [X] Players landing page — alphabetical list with search/filter, basic stats (team, position, WAR)
+  - [ ] Table
 - [ ] Player search by name
 - [ ] Individual player page
   - [X] Header: name, team, position, age, handedness, salary
@@ -21,6 +22,8 @@
   - [ ] Awards and honors received
   - [X] WAR chart by season
   - [ ] Percentile rankings vs. league (like Baseball Savant)
+  - [ ] Season rankings
+  - [ ] Similarity score
 
 ## Teams
 - [ ] Teams landing page — list of all teams grouped by division/conference, with current season record and key stats
@@ -54,6 +57,7 @@
   - [ ] Game results
   - [ ] magic numbers
   - [ ] playoff % projections
+  - [ ] Strength of schedule
 
 ## Leaders
 - [X] Leaders landing page — index of all stat categories with links
@@ -88,6 +92,7 @@
   - [ ] Career stat summary for each inductee
   - [ ] Eligibility criteria
   - [ ] Voting history if applicable
+  - [ ] JAWS, Black Ink, Gray Ink
 
 ## Glossary
 - [ ] Glossary page
