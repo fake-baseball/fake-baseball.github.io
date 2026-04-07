@@ -11,6 +11,8 @@ from data import teams as teams_data
 from pages.page_utils import make_doc, render_table, fmt_round
 from registry import REGISTRY
 import leaders as ld
+import team_ranks
+from team_ranks import BAT_RANK_COLS, PIT_RANK_COLS
 from seasons import split_records, h2h_records, vs_division_records, strength_of_schedule
 
 _BAT_LEADER_STATS = ['war', 'hr', 'rbi', 'avg', 'ops', 'sb']
@@ -242,6 +244,60 @@ def _h2h_matrix(season_num):
                             td(f"{rec[0]}-{rec[1]}" if rec[0] or rec[1] else '')
 
 
+def _totals_section(season_num):
+    conf_map = teams_data.teams.set_index('abbr')['conference_name'].to_dict()
+    name_map = teams_data.teams.set_index('abbr')['team_name'].to_dict()
+
+    h2("Totals")
+    for label, cols, df in [
+        ('Batting',  BAT_RANK_COLS, team_ranks.batting),
+        ('Pitching', PIT_RANK_COLS, team_ranks.pitching),
+    ]:
+        h3(label)
+        if season_num not in df.index.get_level_values('season'):
+            continue
+        season_data = df.xs(season_num, level='season').reset_index()
+        season_data['team_name'] = season_data['team'].map(name_map)
+        season_data['stat_type'] = 'season'
+        available_cols = [c for c in cols if c in season_data.columns]
+        pitching = label == 'Pitching'
+        render_table(
+            season_data[['team_name'] + available_cols + ['stat_type']],
+            depth=1, pitching=pitching,
+        )
+
+
+def _rankings_section(season_num):
+    name_map = teams_data.teams.set_index('abbr')['team_name'].to_dict()
+
+    h2("Rankings")
+    for label, cols, df in [
+        ('Batting',  BAT_RANK_COLS, team_ranks.batting),
+        ('Pitching', PIT_RANK_COLS, team_ranks.pitching),
+    ]:
+        h3(label)
+        if season_num not in df.index.get_level_values('season'):
+            continue
+        season_data = df.xs(season_num, level='season')
+        available_cols = [c for c in cols if c in season_data.columns]
+        ranks = team_ranks.season_ranks(season_num, df, cols)
+
+        with table(cls='leaders-index', border=0):
+            with thead():
+                with tr():
+                    th('Team')
+                    for col in available_cols:
+                        meta = REGISTRY.get(col, {})
+                        th(meta.get('name', col))
+            with tbody():
+                for abbr in season_data.index:
+                    with tr():
+                        td(name_map.get(abbr, abbr))
+                        for col in available_cols:
+                            conf_str, bfbl_str = ranks.get(abbr, {}).get(col, ('-', '-'))
+                            td(f"{bfbl_str}")
+
+
 def generate_season_page(season_num):
     all_seasons = sorted(SEASON_RANGE)
     idx         = all_seasons.index(season_num)
@@ -260,6 +316,8 @@ def generate_season_page(season_num):
                 a(f"Season {next_season} >>", href=f"{next_season}.html")
         _standings_section(season_num)
         #_division_standings_section(season_num)
-        _leaders_section(season_num)
         _h2h_matrix(season_num)
+        _leaders_section(season_num)
+        _totals_section(season_num)
+        _rankings_section(season_num)
     Path(f"docs/seasons/{season_num}.html").write_text(str(doc))

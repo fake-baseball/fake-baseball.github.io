@@ -15,6 +15,8 @@ from data import teams as teams_data
 from registry import REGISTRY
 from pages.page_utils import fmt_round, render_table, convert_name, make_doc
 from data.stats import batting_stream_rows
+from leaders import SEASON_THRESHOLDS
+from team_ranks import BAT_RANK_COLS, ordinal
 
 _BAT_CONTEXTS = {'batting', 'baserunning', 'fielding'}
 _ALL_BAT = {k: v for k, v in REGISTRY.items() if v.get('context') in _BAT_CONTEXTS}
@@ -152,6 +154,71 @@ def _bat_streams_section(first, last):
     render_table(stream_df, depth=1, pitching=False)
 
 
+def _bat_rankings_section(first_name, last_name, player_seasons):
+    """Render a Rankings table: one row per season, one column per BAT_RANK_COL."""
+    import league as lg
+    all_seasons = batting.stats[batting.stats['stat_type'] == 'season'].copy()
+    cols = [c for c in BAT_RANK_COLS if c in all_seasons.columns]
+
+    rows = []
+    for _, ps in player_seasons.iterrows():
+        season = ps['season']
+        season_df = all_seasons[all_seasons['season'] == season]
+        if season_df.empty:
+            continue
+        row = {'season': season}
+        for col in cols:
+            meta = REGISTRY.get(col, {})
+            qualified = meta.get('qualified', False)
+            lowest = meta.get('lowest', False)
+            qual_col = meta.get('qual_col', 'pa')
+            if qualified:
+                base = SEASON_THRESHOLDS.get(qual_col, 0)
+                scale = lg.season_scale.get(season, 1.0)
+                threshold = base * scale
+                pool = season_df[season_df[qual_col] >= threshold]
+                player_val = ps.get(col, np.nan)
+                if pd.isna(player_val) or (ps.get(qual_col, 0) < threshold):
+                    row[col] = '--'
+                    continue
+            else:
+                pool = season_df
+                player_val = ps.get(col, np.nan)
+                if pd.isna(player_val):
+                    row[col] = '--'
+                    continue
+
+            vals = pool[col].dropna()
+            if vals.empty:
+                row[col] = '--'
+                continue
+            if lowest:
+                rank_val = int((vals < player_val).sum() + 1)
+                tied = (vals == player_val).sum() > 1
+            else:
+                rank_val = int((vals > player_val).sum() + 1)
+                tied = (vals == player_val).sum() > 1
+            row[col] = ('T-' if tied else '') + ordinal(rank_val)
+        rows.append(row)
+
+    if not rows:
+        return
+
+    h2("Rankings")
+    col_headers = ['Season'] + [REGISTRY.get(c, {}).get('name', c) for c in cols]
+    with table(cls='leaders-index'):
+        with thead():
+            with tr():
+                for hdr in col_headers:
+                    th(hdr)
+        with tbody():
+            for row in rows:
+                with tr():
+                    td(str(row['season']))
+                    for col in cols:
+                        td(row.get(col, '--'))
+
+
 def generate_batter_page(first_name, last_name):
     if (first_name, last_name) in players.player_info.index:
         active        = True
@@ -250,6 +317,12 @@ def generate_batter_page(first_name, last_name):
         ]], depth=1, pitching=False)
 
         if active:
+            player_seasons = batting.stats[
+                (batting.stats['first_name'] == first_name) &
+                (batting.stats['last_name']  == last_name) &
+                (batting.stats['stat_type'] == 'season')
+            ]
+            _bat_rankings_section(first_name, last_name, player_seasons)
             _bat_streams_section(first_name, last_name)
 
         h2("Awards")

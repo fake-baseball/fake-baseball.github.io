@@ -1,15 +1,17 @@
 """Generate individual team-season pages (docs/teams/{slug}/{n}.html)."""
 from pathlib import Path
+import math
 
 import pandas as pd
 from dominate.tags import *
 
 import batting as bat_module
 import pitching as pit_module
+import team_ranks
 from constants import CURRENT_SEASON
 from data import teams as teams_data
+from registry import REGISTRY
 from pages.page_utils import make_doc, render_table, fmt_round
-from util import weighted_avg
 
 
 _BAT_COLS = [
@@ -26,6 +28,36 @@ _PIT_COLS = [
     'stat_type',
 ]
 
+from team_ranks import BAT_RANK_COLS, PIT_RANK_COLS
+
+
+def _totals_row(season_num, abbr):
+    """Return a one-row DataFrame of team totals from team_ranks for use as the summary row."""
+    key = (season_num, abbr)
+    bat_row = team_ranks.batting.loc[[key]].copy() if key in team_ranks.batting.index else None
+    pit_row = team_ranks.pitching.loc[[key]].copy() if key in team_ranks.pitching.index else None
+    return bat_row, pit_row
+
+
+def _rank_table(season_num, abbr, conference, cols, ranks_df):
+    """Render a transposed ranking table: columns=stats, rows=Conf rank / BFBL rank."""
+    conf_map = teams_data.teams.set_index('abbr')['conference_name'].to_dict()
+    conf_teams = {a for a, c in conf_map.items() if c == conference}
+
+    with table(cls='leaders-index', border=0):
+        with thead():
+            with tr():
+                th('')
+                for col in cols:
+                    meta = REGISTRY.get(col, {})
+                    th(meta.get('name', col))
+        with tbody():
+            for scope_label, scope_abbrs in [('Conf', conf_teams), ('BFBL', None)]:
+                with tr():
+                    th(scope_label)
+                    for col in cols:
+                        td(team_ranks.rank_label(season_num, abbr, col, ranks_df, scope_abbrs))
+
 
 def generate_team_season_page(team_name, season_num, abbr):
     standing = teams_data.standings[
@@ -37,37 +69,18 @@ def generate_team_season_page(team_name, season_num, abbr):
     row = standing.iloc[0]
     w, l = int(row['gamesWon']), int(row['gamesLost'])
     win_pct = fmt_round(w / (w + l), 3, False)
+    conference = row['conference_name']
 
-    def _bat_totals(df):
-        season_rows = df[df['stat_type'] == 'season']
-        total = season_rows.sum(numeric_only=True).to_frame().T
-        bat_module._recompute_rates(total)
-        for col, wt in [('woba', 'pa'), ('ops_plus', 'pa'), ('wrc_plus', 'pa')]:
-            if col in season_rows.columns and wt in season_rows.columns:
-                total[col] = weighted_avg(season_rows, col, wt)
-        total['first_name'] = ''
-        total['last_name']  = 'Team Total'
-        total['player']     = ''
-        total['stat_type']  = 'career'
-        return total
+    bat_total, pit_total = _totals_row(season_num, abbr)
 
-    def _pit_totals(df):
-        season_rows = df[df['stat_type'] == 'season']
-        total = season_rows.sum(numeric_only=True).to_frame().T
-        pit_module._recompute_rates(total)
-        for col, wt in [('p_era_minus', 'p_ip'), ('p_fip', 'p_ip'), ('p_ra9_def', 'p_ip')]:
-            if col in season_rows.columns and wt in season_rows.columns:
-                total[col] = weighted_avg(season_rows, col, wt)
-        total['first_name'] = ''
-        total['last_name']  = 'Team Total'
-        total['player']     = ''
-        total['stat_type']  = 'career'
-        return total
-
-    def _prep(df, cols, totals_fn=None):
+    def _prep(df, cols, total_row=None):
         df = df.copy()
-        if totals_fn is not None:
-            total_row = totals_fn(df)
+        if total_row is not None:
+            total_row = total_row.copy()
+            total_row['first_name'] = ''
+            total_row['last_name']  = 'Team Total'
+            total_row['player']     = ''
+            total_row['stat_type']  = 'career'
             df = pd.concat([df, total_row], ignore_index=True)
         df['player'] = ''
         available = ['first_name', 'last_name'] + [c for c in cols if c in df.columns]
@@ -108,14 +121,20 @@ def generate_team_season_page(team_name, season_num, abbr):
         p(f"{row['conference_name']} - {row['division_name']}")
         p(f"Record: {w}-{l} ({win_pct})")
 
+        h2("Rankings")
+        h3("Batting")
+        _rank_table(season_num, abbr, conference, BAT_RANK_COLS, team_ranks.batting)
+        h3("Pitching")
+        _rank_table(season_num, abbr, conference, PIT_RANK_COLS, team_ranks.pitching)
+
         h2("Stats")
         p("Individual player stats here may show stats that a player achieved with another team "
           "or may not be present at all (in the case of mid-season transactions).")
         h3("Standard Batting")
-        render_table(_prep(bat_stats, _BAT_COLS, _bat_totals), depth=2, hidden={'season', 'team'}, pitching=False)
+        render_table(_prep(bat_stats, _BAT_COLS, bat_total), depth=2, hidden={'season', 'team'}, pitching=False)
 
         h3("Standard Pitching")
-        render_table(_prep(pit_stats, _PIT_COLS, _pit_totals), depth=2, hidden={'season', 'team'}, pitching=True)
+        render_table(_prep(pit_stats, _PIT_COLS, pit_total), depth=2, hidden={'season', 'team'}, pitching=True)
 
         if teams_data.schedules.get(season_num) is not None:
             h2("Game Log")
@@ -124,7 +143,6 @@ def generate_team_season_page(team_name, season_num, abbr):
             games = games.sort_values('Game #').reset_index(drop=True)
             w_count = l_count = streak_char = streak_len = 0
             gl_rows = []
-            import math
             for game_num, (_, g) in enumerate(games.iterrows(), start=1):
                 home      = g['Home Team'] == team_name
                 opp       = g['Away Team'] if home else g['Home Team']

@@ -37,6 +37,7 @@ import league
 import batting
 import pitching
 import leaders
+import team_ranks
 
 from data.stats    import load_batting, load_pitching
 from data.players  import load_player_info, load_retirements
@@ -147,6 +148,7 @@ def main():
         print("Computing player stats...")
         batting.compute()
         pitching.compute()
+        team_ranks.compute()
 
         print("Loading retirements...")
         load_retirements()

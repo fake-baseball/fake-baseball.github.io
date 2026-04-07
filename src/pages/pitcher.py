@@ -16,6 +16,8 @@ from registry import REGISTRY
 from pages.page_utils import fmt_round, render_table, convert_name, make_doc
 from util import fmt_ip
 from data.stats import pitching_stream_rows
+from leaders import SEASON_THRESHOLDS
+from team_ranks import PIT_RANK_COLS, ordinal
 
 _PIT_SUMMARY_COLS = ['season', 'p_war', 'p_w', 'p_l', 'p_era', 'p_gp', 'p_gs', 'p_sv', 'p_ip', 'p_k', 'p_whip']
 
@@ -99,6 +101,71 @@ _PIT_STREAM_COLS = [
     'p_h', 'p_ra', 'p_er', 'p_hr', 'p_bb', 'p_k', 'p_hbp', 'p_wp', 'p_bf', 'p_tp', 'p_whip', 'p_babip',
     'stat_type',
 ]
+
+
+def _pit_rankings_section(first_name, last_name, player_seasons):
+    """Render a Rankings table: one row per season, one column per PIT_RANK_COL."""
+    import league as lg
+    all_seasons = pitching.stats[pitching.stats['stat_type'] == 'season'].copy()
+    cols = [c for c in PIT_RANK_COLS if c in all_seasons.columns]
+
+    rows = []
+    for _, ps in player_seasons.iterrows():
+        season = ps['season']
+        season_df = all_seasons[all_seasons['season'] == season]
+        if season_df.empty:
+            continue
+        row = {'season': season}
+        for col in cols:
+            meta = REGISTRY.get(col, {})
+            qualified = meta.get('qualified', False)
+            lowest = meta.get('lowest', False)
+            qual_col = meta.get('qual_col', 'p_ip')
+            if qualified:
+                base = SEASON_THRESHOLDS.get(qual_col, 0)
+                scale = lg.season_scale.get(season, 1.0)
+                threshold = base * scale
+                pool = season_df[season_df[qual_col] >= threshold]
+                player_val = ps.get(col, np.nan)
+                if pd.isna(player_val) or (ps.get(qual_col, 0) < threshold):
+                    row[col] = '--'
+                    continue
+            else:
+                pool = season_df
+                player_val = ps.get(col, np.nan)
+                if pd.isna(player_val):
+                    row[col] = '--'
+                    continue
+
+            vals = pool[col].dropna()
+            if vals.empty:
+                row[col] = '--'
+                continue
+            if lowest:
+                rank_val = int((vals < player_val).sum() + 1)
+                tied = (vals == player_val).sum() > 1
+            else:
+                rank_val = int((vals > player_val).sum() + 1)
+                tied = (vals == player_val).sum() > 1
+            row[col] = ('T-' if tied else '') + ordinal(rank_val)
+        rows.append(row)
+
+    if not rows:
+        return
+
+    h2("Rankings")
+    col_headers = ['Season'] + [REGISTRY.get(c, {}).get('name', c) for c in cols]
+    with table(cls='leaders-index'):
+        with thead():
+            with tr():
+                for hdr in col_headers:
+                    th(hdr)
+        with tbody():
+            for row in rows:
+                with tr():
+                    td(str(row['season']))
+                    for col in cols:
+                        td(row.get(col, '--'))
 
 
 def _pit_streams_section(first, last):
@@ -226,6 +293,12 @@ def generate_pitcher_page(first_name, last_name):
         ]], depth=1, pitching=True)
 
         if active:
+            player_seasons = pitching.stats[
+                (pitching.stats['first_name'] == first_name) &
+                (pitching.stats['last_name']  == last_name) &
+                (pitching.stats['stat_type'] == 'season')
+            ]
+            _pit_rankings_section(first_name, last_name, player_seasons)
             _pit_streams_section(first_name, last_name)
 
         h2("Awards")
