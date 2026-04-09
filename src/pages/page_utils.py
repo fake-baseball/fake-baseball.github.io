@@ -93,7 +93,7 @@ def per_game_df(df):
     return out
 
 
-def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, border=0, pitching):
+def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, border=0):
     """Render a DataFrame as a dominate table with formatting, bolding, and player links.
 
     df         - DataFrame; may contain 'first_name'/'last_name' for Player links,
@@ -115,10 +115,18 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
     _always_hidden = {'stat_type', 'first_name', 'last_name'}
     _hidden = _always_hidden | (set(hidden) if hidden else set())
 
+    _LEFT_ALIGNED  = {'player_link', 'team_link', 'season_link', 'mono', 'text'}
+    _RIGHT_ALIGNED = {'stat', 'ip', 'integer', 'salary', 'gb', 'rdiff', 'record'}
+
+    def _align(ctype):
+        if ctype in _LEFT_ALIGNED:
+            return 'left'
+        return 'right'
+
     def _resolve_meta(col):
         if col in REGISTRY:
             return REGISTRY[col]
-        return {'name': col, 'type': 'text', 'align': 'right'}
+        return {'name': col, 'type': 'text'}
 
     def _header_name(col, meta):
         return meta.get('name', col)
@@ -157,9 +165,7 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
         return str(val) if val is not None else ''
 
     visible_cols = [c for c in df.columns if c not in _hidden]
-    has_player_link = ('player' in visible_cols
-                       and 'first_name' in df.columns
-                       and 'last_name' in df.columns)
+    has_name_cols = 'first_name' in df.columns and 'last_name' in df.columns
     col_meta = {c: _resolve_meta(c) for c in visible_cols}
 
     bat_ldr      = leaders_mod.batting_leaders
@@ -171,23 +177,12 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
     if teams_data.teams is not None:
         abbr_to_conf = teams_data.teams.set_index('abbr')['conference_name'].to_dict()
 
-    _is_pitching_table = pitching
-
     def _leaders_for_col(col):
-        """Return (overall_ldr, conf_ldr_dict) for a stat column, or (None, None).
-        Check pitching leaders first for pitcher tables so overlapping stat names
-        (K, BB, HR, H, HBP) resolve to the correct leaders DataFrame."""
-        # TODO fix this, because we don't use overlapping stat names
-        if _is_pitching_table:
-            if pit_ldr is not None and col in pit_ldr.columns:
-                return pit_ldr, pit_ldr_conf
-            if bat_ldr is not None and col in bat_ldr.columns:
-                return bat_ldr, bat_ldr_conf
-        else:
-            if bat_ldr is not None and col in bat_ldr.columns:
-                return bat_ldr, bat_ldr_conf
-            if pit_ldr is not None and col in pit_ldr.columns:
-                return pit_ldr, pit_ldr_conf
+        """Return (overall_ldr, conf_ldr_dict) for a stat column, or (None, None)."""
+        if bat_ldr is not None and col in bat_ldr.columns:
+            return bat_ldr, bat_ldr_conf
+        if pit_ldr is not None and col in pit_ldr.columns:
+            return pit_ldr, pit_ldr_conf
         return None, None
 
     t = table(border=border)
@@ -196,9 +191,10 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
             with tr():
                 for col in visible_cols:
                     meta = col_meta[col]
+                    ctype = meta.get('type', 'text')
                     label = meta.get('label', '')
                     header = _header_name(col, meta)
-                    align_style = f"text-align: {meta['align']}" if meta['align'] != 'right' else None
+                    align_style = 'text-align: left' if _align(ctype) == 'left' else None
                     if label:
                         th(abbr_tag(header, title=label), style=align_style) if align_style else th(abbr_tag(header, title=label))
                     else:
@@ -212,9 +208,8 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
                         meta    = col_meta[col]
                         raw_val = raw_row[col]
 
-## TODO clear up differencees between ctype (why are we using ctype for this stuff? when column name would suffice)
                         ctype = meta.get('type', 'text')
-                        if col == 'player' and has_player_link:
+                        if ctype == 'player_link' and has_name_cols:
                             first  = raw_row['first_name']
                             last   = raw_row['last_name']
                             slug   = convert_name(first, last)
@@ -282,21 +277,18 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
                             else:
                                 content = disp_val
 
-                        align_style = f"text-align: {meta['align']}" if meta['align'] != 'right' else None
+                        align_style = 'text-align: left' if _align(ctype) == 'left' else None
                         extra_style = cell_style(col, raw_val, raw_row) if cell_style else None
                         style_str = '; '.join(filter(None, [align_style, extra_style])) or None
-                        is_name_col = (col == 'player' and has_player_link) or ctype == 'team_link'
-                        is_streak_col = col == 'gl_streak'
-                        if style_str and is_name_col:
-                            td(content, style=style_str, cls='name-col')
-                        elif style_str and is_streak_col:
-                            td(content, style=style_str, cls='mono-col')
+                        is_name_col = ctype in ('player_link', 'team_link')
+                        is_streak_col = ctype == 'mono'
+                        cls_val = 'name-col' if is_name_col else ('mono-col' if is_streak_col else None)
+                        if style_str and cls_val:
+                            td(content, style=style_str, cls=cls_val)
                         elif style_str:
                             td(content, style=style_str)
-                        elif is_name_col:
-                            td(content, cls='name-col')
-                        elif is_streak_col:
-                            td(content, cls='mono-col')
+                        elif cls_val:
+                            td(content, cls=cls_val)
                         else:
                             td(content)
     return t

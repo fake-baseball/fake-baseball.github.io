@@ -107,7 +107,7 @@ def _roster_table(group, cols, link_col='Name'):
     df = group.copy()
     df['player'] = ''
     display_cols = ['player' if c == link_col else c for c in cols]
-    render_table(df[display_cols + ['first_name', 'last_name']], depth=2, pitching=False)
+    render_table(df[display_cols + ['first_name', 'last_name']], depth=2)
 
 
 def generate_team_page(team_name, roster, team_info):
@@ -193,6 +193,6 @@ def generate_team_page(team_name, roster, team_info):
             }
             for _, row in team_standings.iterrows()
         ]
-        render_table(pd.DataFrame(hist_rows), depth=2, pitching=False)
+        render_table(pd.DataFrame(hist_rows), depth=2)
 
     Path(f"docs/teams/{slug}/index.html").write_text(str(doc))

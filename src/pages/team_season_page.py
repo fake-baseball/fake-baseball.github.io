@@ -131,10 +131,10 @@ def generate_team_season_page(team_name, season_num, abbr):
         p("Individual player stats here may show stats that a player achieved with another team "
           "or may not be present at all (in the case of mid-season transactions).")
         h3("Standard Batting")
-        render_table(_prep(bat_stats, _BAT_COLS, bat_total), depth=2, hidden={'season', 'team'}, pitching=False)
+        render_table(_prep(bat_stats, _BAT_COLS, bat_total), depth=2, hidden={'season', 'team'})
 
         h3("Standard Pitching")
-        render_table(_prep(pit_stats, _PIT_COLS, pit_total), depth=2, hidden={'season', 'team'}, pitching=True)
+        render_table(_prep(pit_stats, _PIT_COLS, pit_total), depth=2, hidden={'season', 'team'})
 
         if teams_data.schedules.get(season_num) is not None:
             h2("Game Log")
@@ -190,7 +190,7 @@ def generate_team_season_page(team_name, season_num, abbr):
                         'season':    season_num,
                         'stat_type': 'season',
                     })
-            render_table(pd.DataFrame(gl_rows), depth=2, hidden={'season'}, pitching=False)
+            render_table(pd.DataFrame(gl_rows), depth=2, hidden={'season'})
 
     slug = team_name.replace(' ', '')
     Path(f"docs/teams/{slug}/{season_num}.html").write_text(str(doc))

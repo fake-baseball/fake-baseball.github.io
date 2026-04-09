@@ -38,7 +38,7 @@ def _pit_summary_table(stats, proj_row):
         return
 
     summary_df = pd.concat(frames)[_PIT_SUMMARY_COLS + ['stat_type']]
-    render_table(summary_df, depth=1, pitching=True)
+    render_table(summary_df, depth=1)
 
 def _pit_proj_row(first, last, cols):
     """Return a single-row DataFrame for the projected season, or None."""
@@ -203,7 +203,7 @@ def _pit_streams_section(first, last):
 
     stream_df = pd.DataFrame(frames, columns=_PIT_STREAM_COLS)
     h2("Stream Log")
-    render_table(stream_df, depth=1, pitching=True)
+    render_table(stream_df, depth=1)
 
 
 def generate_pitcher_page(first_name, last_name):
@@ -275,7 +275,7 @@ def generate_pitcher_page(first_name, last_name):
             'p_h', 'p_ra', 'p_er', 'p_hr', 'p_bb', 'p_k', 'p_hbp', 'p_wp', 'p_bf', 'p_era_minus', 'p_fip', 'p_whip',
             'stat_type',
         ]]
-        render_table(standard_pitching, depth=1, pitching=True)
+        render_table(standard_pitching, depth=1)
 
         h3("Advanced Pitching")
         render_table(stats[[
@@ -283,14 +283,14 @@ def generate_pitcher_page(first_name, last_name):
             'p_era', 'p_fip', 'p_ra9', 'p_baa', 'p_obpa', 'p_bip', 'p_babip',
             'p_h_per_9', 'p_hr_per_9', 'p_k_per_9', 'p_bb_per_9', 'p_k_per_bb', 'p_k_pct', 'p_bb_pct',
             'p_tp', 'p_p_per_gp', 'p_ip_per_gp', 'p_p_per_ip', 'p_p_per_pa', 'stat_type',
-        ]], depth=1, pitching=True)
+        ]], depth=1)
 
         h3("Value Pitching")
         render_table(stats[[
             'season', 'age', 'team', 'p_ip', 'p_gp', 'p_gs',
             'p_ra', 'p_r_def', 'p_ra9', 'p_ra9_def', 'p_r_lev', 'p_r_corr',
             'p_raa', 'p_raa_lev', 'p_waa', 'p_r_rep', 'p_rar', 'p_war', 'stat_type',
-        ]], depth=1, pitching=True)
+        ]], depth=1)
 
         if active:
             player_seasons = pitching.stats[

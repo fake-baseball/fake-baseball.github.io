@@ -16,7 +16,7 @@ def _triple_crown_table(winners, pitching):
         p("No triple crown winners.")
         return
     rows = [{**w, 'player': '', 'stat_type': 'season'} for w in winners]
-    render_table(pd.DataFrame(rows), depth=0, pitching=pitching)
+    render_table(pd.DataFrame(rows), depth=0)
 
 
 def _batting_title_table(winners):
@@ -29,7 +29,7 @@ def _batting_title_table(winners):
          'Note': '* hitless AB rule' if w['unqualified'] else ''}
         for w in winners
     ]
-    render_table(pd.DataFrame(rows), depth=0, pitching=False)
+    render_table(pd.DataFrame(rows), depth=0)
 
 
 def _era_title_table(winners):
@@ -37,7 +37,7 @@ def _era_title_table(winners):
         p("No ERA title winners.")
         return
     rows = [{**w, 'player': '', 'stat_type': 'season'} for w in winners]
-    render_table(pd.DataFrame(rows), depth=0, pitching=True)
+    render_table(pd.DataFrame(rows), depth=0)
 
 
 def _hr_sb_table(members):
@@ -45,7 +45,7 @@ def _hr_sb_table(members):
         p("No members.")
         return
     rows = [{**w, 'player': '', 'stat_type': 'season'} for w in members]
-    render_table(pd.DataFrame(rows), depth=0, pitching=False)
+    render_table(pd.DataFrame(rows), depth=0)
 
 
 def generate_awards():
@@ -63,16 +63,16 @@ def generate_awards():
 
         h2("Triple Crown")
         h3("Batting")
-        _triple_crown_table(bat_winners, pitching=False)
+        _triple_crown_table(bat_winners)
         h3("Pitching")
-        _triple_crown_table(pit_winners, pitching=True)
+        _triple_crown_table(pit_winners)
 
         for conf in conferences:
             h2(f"{conf} Triple Crown")
             h3("Batting")
-            _triple_crown_table(conf_bat[conf], pitching=False)
+            _triple_crown_table(conf_bat[conf])
             h3("Pitching")
-            _triple_crown_table(conf_pit[conf], pitching=True)
+            _triple_crown_table(conf_pit[conf])
 
         h2("Batting Title")
         for conf in conferences:

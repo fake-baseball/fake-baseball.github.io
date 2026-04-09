@@ -85,7 +85,7 @@ def _standings_section(season_num):
         if sos:
             conf_cols += ['t_sos', 't_sos_rem']
         render_table(pd.DataFrame(conf_rows)[conf_cols + ['season', 'stat_type']],
-                     depth=1, hidden={'season'}, pitching=False)
+                     depth=1, hidden={'season'})
         for div_name, div_group in conf_group.groupby('division_name', sort=False):
             h4(div_name)
             rows = []
@@ -133,7 +133,7 @@ def _standings_section(season_num):
             if sos:
                 cols += ['t_sos', 't_sos_rem']
             render_table(pd.DataFrame(rows)[cols + ['season', 'stat_type']],
-                         depth=1, hidden={'season'}, pitching=False)
+                         depth=1, hidden={'season'})
 
     _wildcard_section(season_num, season_rows, split, sos)
 
@@ -199,7 +199,7 @@ def _wildcard_section(season_num, season_rows, split, sos):
         if sos:
             cols += ['t_sos', 't_sos_rem']
         render_table(pd.DataFrame(rows)[cols + ['season', 'stat_type']],
-                     depth=1, hidden={'season'}, pitching=False)
+                     depth=1, hidden={'season'})
 
 
 def _league_stats_section(season_num):
@@ -215,7 +215,7 @@ def _league_stats_section(season_num):
         'hr': sb['hr'], 'bb': sb['bb'], 'k': sb['k'],
         'stat_type': 'season',
     }])
-    render_table(bat_row, depth=1, pitching=False)
+    render_table(bat_row, depth=1)
 
     h3("Pitching")
     pit_row = pd.DataFrame([{
@@ -223,7 +223,7 @@ def _league_stats_section(season_num):
         'p_k_per_9': sp['p_k_per_9'], 'p_bb_per_9': sp['p_bb_per_9'], 'p_babip': sp['p_babip'],
         'stat_type': 'season',
     }])
-    render_table(pit_row, depth=1, pitching=True)
+    render_table(pit_row, depth=1)
 
 
 def _leader_table(stat, rows, pitching):
@@ -231,7 +231,7 @@ def _leader_table(stat, rows, pitching):
     df = rows.reset_index().rename(columns={'index': '#'})
     df = df[['#', 'first_name', 'last_name', 'team', stat]].copy()
     df.insert(2, 'player', '')
-    render_table(df, depth=1, pitching=pitching)
+    render_table(df, depth=1)
 
 
 def _leaders_section(season_num):
@@ -239,11 +239,11 @@ def _leaders_section(season_num):
     h3("Batting")
     for stat in _BAT_LEADER_STATS:
         rows = ld.get_leaders(stat, season=season_num, num=10)
-        _leader_table(stat, rows, pitching=False)
+        _leader_table(stat, rows)
     h3("Pitching")
     for stat in _PIT_LEADER_STATS:
         rows = ld.get_leaders(stat, season=season_num, num=10)
-        _leader_table(stat, rows, pitching=True)
+        _leader_table(stat, rows)
 
 def _division_standings_section(season_num):
     season_rows = teams_data.standings[teams_data.standings['Season'] == season_num].copy()
@@ -280,7 +280,7 @@ def _division_standings_section(season_num):
             df = pd.DataFrame(rows)[cols + ['season', 'stat_type']]
             if vs_div:
                 df = df.rename(columns={f'_div_{d}': d for d in divisions})
-            render_table(df, depth=1, hidden={'season'}, pitching=False)
+            render_table(df, depth=1, hidden={'season'})
 
 
 def _h2h_matrix(season_num):
@@ -322,10 +322,9 @@ def _totals_section(season_num):
         season_data['team_name'] = season_data['team'].map(name_map)
         season_data['stat_type'] = 'season'
         available_cols = [c for c in cols if c in season_data.columns]
-        pitching = label == 'Pitching'
         render_table(
             season_data[['team_name'] + available_cols + ['stat_type']],
-            depth=1, pitching=pitching,
+            depth=1,
         )
 
 

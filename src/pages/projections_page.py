@@ -47,7 +47,7 @@ def _proj_table(rows):
             'ops': row['ops'], 'wrc_plus': row['wrc_plus'], 'war': row['war'],
         }
         records.append(rec)
-    render_table(pd.DataFrame(records), depth=0, pitching=False)
+    render_table(pd.DataFrame(records), depth=0)
 
 
 def _team_summary_table(team_rows):
@@ -68,7 +68,7 @@ def _team_summary_table(team_rows):
             'hr': total_hr, 'ops': w_ops, 'wrc_plus': w_wrc, 'war': total_war,
             'stat_type': 'season',
         })
-    render_table(pd.DataFrame(records), depth=0, pitching=False)
+    render_table(pd.DataFrame(records), depth=0)
 
 
 
@@ -88,7 +88,7 @@ def _pit_all_table(pit_rows):
             'p_whip': row['p_whip'], 'p_k_pct': row['p_k_pct'], 'p_bb_pct': row['p_bb_pct'],
             'p_war': row['p_war'],
         })
-    render_table(pd.DataFrame(records), depth=0, pitching=True)
+    render_table(pd.DataFrame(records), depth=0)
 
 def _pit_team_summary_table(team_rows):
     """Render one row per team: summed xIP/xWAR, IP-weighted rate stats."""
@@ -110,7 +110,7 @@ def _pit_team_summary_table(team_rows):
             'p_k_pct': w_kpct, 'p_bb_pct': w_bbpct, 'p_war': total_war,
             'stat_type': 'season',
         })
-    render_table(pd.DataFrame(records), depth=0, pitching=True)
+    render_table(pd.DataFrame(records), depth=0)
 
 
 def _war_delta_table(deltas):

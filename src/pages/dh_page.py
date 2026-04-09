@@ -44,7 +44,7 @@ def _dh_table(rows):
             'rdef_old':    row.get('_dh_rdef_old'),
             'rdef':        row['_dh_rdef'],
         })
-    render_table(pd.DataFrame(records), depth=0, pitching=False)
+    render_table(pd.DataFrame(records), depth=0)
 
 
 def generate_dh():

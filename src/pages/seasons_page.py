@@ -78,9 +78,9 @@ def generate_seasons():
 
         h2("Counting Stats")
         h3("Offense")
-        render_table(off_count, depth=1, pitching=False)
+        render_table(off_count, depth=1)
         h3("Defense")
-        render_table(def_count, depth=1, pitching=False)
+        render_table(def_count, depth=1)
 
         #h2("Per-Game Counting")
         #h3("Offense")
@@ -89,6 +89,6 @@ def generate_seasons():
         #raw(_link_index(def_pg).to_html(border=0, index=True, escape=False))
 
         h2("Rate Stats")
-        render_table(rates, depth=1, pitching=False)
+        render_table(rates, depth=1)
 
     Path("docs/seasons/index.html").write_text(str(doc))
