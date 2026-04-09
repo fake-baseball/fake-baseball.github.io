@@ -214,17 +214,15 @@ def fit_ip_model():
     return results
 
 
-_cache = None
+rows = None
 
 
 def compute_all():
     """Full projection computation: blended rates + IP model + derived stats.
 
-    Returns list of enriched row dicts. Results are cached after first call.
+    Sets and returns pit_projections.rows (list of enriched row dicts).
     """
-    global _cache
-    if _cache is not None:
-        return _cache
+    global rows
 
     rows, ra9_metric = compute()
     ip_models        = fit_ip_model()
@@ -518,5 +516,4 @@ def compute_all():
         row['p_baa']     = p_baa
         row['p_obpa']    = p_obpa
 
-    _cache = rows
-    return _cache
+    return rows

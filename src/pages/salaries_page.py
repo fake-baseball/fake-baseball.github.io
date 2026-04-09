@@ -401,7 +401,7 @@ def generate_salaries():
      bat_war_model_info, pit_war_model_info,
      combined_war_model_info, bat_war_linear_info, pit_war_linear_info) = compute_salary_models(
         pi, bat_module.stats, pit_module.stats,
-        proj_module.compute_all(), pit_proj_module.compute_all(),
+        proj_module.rows, pit_proj_module.rows,
     )
 
     bat_rows.sort(key=lambda d: -d['sal'])

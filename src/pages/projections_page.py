@@ -189,8 +189,8 @@ _REPL_WINS = replacement_level * num_games
 
 
 def generate_projections():
-    rows = proj_module.compute_all()
-    pit_rows = pit_proj_module.compute_all()
+    rows = proj_module.rows
+    pit_rows = pit_proj_module.rows
 
     # Build player -> team lookup and team name -> abbreviation map
     pi = players.player_info.reset_index()

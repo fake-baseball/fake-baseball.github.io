@@ -43,8 +43,7 @@ def _pit_summary_table(stats, proj_row):
 
 def _pit_proj_row(first, last, cols):
     """Return a single-row DataFrame for the projected season, or None."""
-    rows = pit_proj_module.compute_all()
-    proj = next((r for r in rows if r['first'] == first and r['last'] == last), None)
+    proj = next((r for r in pit_proj_module.rows if r['first'] == first and r['last'] == last), None)
     if proj is None:
         return None
 

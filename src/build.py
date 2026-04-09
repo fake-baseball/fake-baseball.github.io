@@ -22,6 +22,7 @@ import argparse
 import sys
 import os
 import time
+import multiprocessing
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -32,6 +33,8 @@ import pitching
 import leaders
 import team_ranks
 import player_ranks
+import bat_projections
+import pit_projections
 from constants         import SEASON_RANGE
 from data.stats        import load_batting, load_pitching
 from data.players      import load_player_info, load_retirements
@@ -52,7 +55,7 @@ from pages.projections_page import generate_projections
 from pages.salaries_page    import generate_salaries
 from pages.glossary_page    import generate_glossary
 from pages.dh_page          import generate_dh
-from pages.leaders_page     import generate_leaders
+from pages.leaders_page     import generate_leaders, write_leader_page
 from pages.cy_young_page    import generate_cy_young
 
 # Dependencies
@@ -68,21 +71,23 @@ _DATA_DEPS = {
     'standings':   {'teams'},
     'league':      {'raw'},
     'stats':       {'raw', 'league', 'teams', 'standings'},
-    'team_ranks':   {'raw', 'league', 'teams', 'standings', 'stats'},
-    'player_ranks': {'raw', 'league', 'stats'},
-    'leaders':      {'raw', 'league', 'teams', 'standings', 'stats'},
+    'team_ranks':    {'raw', 'league', 'teams', 'standings', 'stats'},
+    'player_ranks':  {'raw', 'league', 'stats'},
+    'leaders':       {'raw', 'league', 'teams', 'standings', 'stats'},
+    'bat_proj':      {'raw', 'league', 'teams', 'standings', 'stats', 'leaders', 'player_info'},
+    'pit_proj':      {'raw', 'league', 'teams', 'standings', 'stats', 'leaders', 'player_info'},
 }
 
 _PAGE_DEPS = {
-    'players':     {'raw', 'league', 'teams', 'standings', 'stats', 'team_ranks', 'player_ranks', 'leaders', 'player_info', 'retirements'},
+    'players':     {'raw', 'league', 'teams', 'standings', 'stats', 'team_ranks', 'player_ranks', 'leaders', 'player_info', 'retirements', 'bat_proj', 'pit_proj'},
     'leaders_page':{'raw', 'league', 'teams', 'standings', 'stats', 'leaders'},
     'seasons':     {'raw', 'league', 'teams', 'standings', 'schedule', 'stats', 'team_ranks', 'leaders'},
     'teams_page':  {'raw', 'league', 'teams', 'standings', 'schedule', 'rotations', 'lineups', 'player_info', 'stats', 'team_ranks', 'leaders'},
     'awards':      {'raw', 'league', 'teams', 'standings', 'stats', 'leaders'},
     'cy_young':    {'raw', 'league', 'teams', 'standings', 'stats', 'leaders'},
-    'projections': {'raw', 'league', 'teams', 'standings', 'stats', 'leaders', 'player_info'},
-    'salaries':    {'raw', 'league', 'teams', 'standings', 'stats', 'leaders', 'player_info'},
-    'dh':          {'raw', 'league', 'teams', 'standings', 'stats', 'leaders', 'player_info'},
+    'projections': {'raw', 'league', 'teams', 'standings', 'stats', 'leaders', 'player_info', 'bat_proj', 'pit_proj'},
+    'salaries':    {'raw', 'league', 'teams', 'standings', 'stats', 'leaders', 'player_info', 'bat_proj', 'pit_proj'},
+    'dh':          {'raw', 'league', 'teams', 'standings', 'stats', 'leaders', 'player_info', 'bat_proj'},
     'home':        set(),
     'games':       set(),
     'glossary':    set(),
@@ -94,6 +99,7 @@ _LOAD_ORDER = [
     'raw', 'teams', 'schedule', 'rotations', 'lineups', 'player_info', 'retirements',
     # data processing
     'standings', 'league', 'stats', 'leaders', 'team_ranks', 'player_ranks',
+    'bat_proj', 'pit_proj',
 ]
 
 _NAV_PAGE_MAP = {
@@ -114,6 +120,29 @@ _ALL_PAGES = {'players', 'leaders_page', 'seasons', 'teams_page', 'home',
               'awards', 'projections', 'salaries', 'cy_young', 'glossary', 'dh', 'games'}
 
 
+def _gen_batter(args):
+    first, last = args
+    generate_batter_page(first, last)
+
+
+def _gen_pitcher(args):
+    first, last = args
+    generate_pitcher_page(first, last)
+
+
+def _gen_team_season(args):
+    tname, season_num, abbr = args
+    generate_team_season_page(tname, season_num, abbr)
+
+
+def _gen_leader_page(desc):
+    write_leader_page(desc)
+
+
+def _done(t):
+    print(f" done in {time.time() - t:.2f}s")
+
+
 def main():
     t0 = time.time()
     parser = argparse.ArgumentParser(description="Build the BFBL website.")
@@ -129,6 +158,7 @@ def main():
     parser.add_argument("--glossary",    action="store_true")
     parser.add_argument("--dh",          action="store_true")
     parser.add_argument("--games",       action="store_true")
+    parser.add_argument("--workers",     type=int, default=os.cpu_count())
     args = parser.parse_args()
 
     requested = {
@@ -162,110 +192,132 @@ def main():
         if key not in needed:
             continue
         if key == 'raw':
-            print("Loading raw data...")
-            load_batting()
-            load_pitching()
+            print("Loading raw data...", end='', flush=True)
+            t = time.time(); load_batting(); load_pitching(); _done(t)
         elif key == 'teams':
-            print("Loading teams...")
-            load_teams()
+            print("Loading teams...", end='', flush=True)
+            t = time.time(); load_teams(); _done(t)
         elif key == 'standings':
-            print("Loading standings...")
-            load_standings()
+            print("Loading standings...", end='', flush=True)
+            t = time.time(); load_standings(); _done(t)
         elif key == 'schedule':
-            print("Loading schedule...")
-            load_schedule20()
+            print("Loading schedule...", end='', flush=True)
+            t = time.time(); load_schedule20(); _done(t)
         elif key == 'rotations':
-            print("Loading rotations...")
-            load_rotations()
+            print("Loading rotations...", end='', flush=True)
+            t = time.time(); load_rotations(); _done(t)
         elif key == 'lineups':
-            print("Loading lineups...")
-            load_lineups()
+            print("Loading lineups...", end='', flush=True)
+            t = time.time(); load_lineups(); _done(t)
         elif key == 'player_info':
-            print("Loading player info...")
-            load_player_info()
+            print("Loading player info...", end='', flush=True)
+            t = time.time(); load_player_info(); _done(t)
         elif key == 'league':
-            print("Computing league averages...")
-            league.compute_league()
+            print("Computing league averages...", end='', flush=True)
+            t = time.time(); league.compute_league(); _done(t)
         elif key == 'stats':
-            print("Computing player stats...")
-            batting.compute()
-            pitching.compute()
+            print("Computing player stats...", end='', flush=True)
+            t = time.time(); batting.compute(); pitching.compute(); _done(t)
         elif key == 'retirements':
-            print("Loading retirements...")
-            load_retirements()
+            print("Loading retirements...", end='', flush=True)
+            t = time.time(); load_retirements(); _done(t)
         elif key == 'team_ranks':
-            print("Computing team ranks...")
-            team_ranks.compute()
+            print("Computing team ranks...", end='', flush=True)
+            t = time.time(); team_ranks.compute(); _done(t)
         elif key == 'player_ranks':
-            print("Computing player ranks...")
-            player_ranks.compute()
+            print("Computing player ranks...", end='', flush=True)
+            t = time.time(); player_ranks.compute(); _done(t)
+        elif key == 'bat_proj':
+            print("Computing batter projections...", end='', flush=True)
+            t = time.time(); bat_projections.compute_all(); _done(t)
+        elif key == 'pit_proj':
+            print("Computing pitcher projections...", end='', flush=True)
+            t = time.time(); pit_projections.compute_all(); _done(t)
         elif key == 'leaders':
-            print("Computing season leaders...")
-            leaders.compute_season_leaders()
+            print("Computing season leaders...", end='', flush=True)
+            t = time.time(); leaders.compute_season_leaders(); _done(t)
 
     # ── Phase 2: generate pages ───────────────────────────────────────────────
     if 'players' in pages:
-        print("Generating player pages...")
-        for first, last in batting.stats[['first_name', 'last_name']].drop_duplicates().itertuples(index=False):
-            generate_batter_page(first, last)
-        for first, last in pitching.stats[['first_name', 'last_name']].drop_duplicates().itertuples(index=False):
-            generate_pitcher_page(first, last)
-        print("Generating players index...")
-        generate_players_index()
+        batters  = list(batting.stats[['first_name', 'last_name']].drop_duplicates().itertuples(index=False, name=None))
+        pitchers = list(pitching.stats[['first_name', 'last_name']].drop_duplicates().itertuples(index=False, name=None))
+        print(f"Generating player pages ({args.workers} workers)...", end='', flush=True)
+        t = time.time()
+        ctx = multiprocessing.get_context('fork')
+        with ctx.Pool(args.workers) as pool:
+            pool.map(_gen_batter, batters)
+            pool.map(_gen_pitcher, pitchers)
+        _done(t)
+        print("Generating players index...", end='', flush=True)
+        t = time.time(); generate_players_index(); _done(t)
 
     if 'seasons' in pages:
-        print("Generating seasons page...")
-        generate_seasons()
-        print("Generating individual season pages...")
+        print("Generating seasons page...", end='', flush=True)
+        t = time.time(); generate_seasons(); _done(t)
+        print(f"Generating individual season pages...", end='', flush=True)
+        t = time.time()
         for season_num in SEASON_RANGE:
             generate_season_page(season_num)
+        _done(t)
 
     if 'teams_page' in pages:
-        print("Generating teams pages...")
+        print("Generating teams pages...", end='', flush=True)
+        t = time.time()
         for _, t_row in teams_data.teams.iterrows():
             Path(f"docs/teams/{t_row['team_name'].replace(' ', '')}").mkdir(exist_ok=True)
         generate_teams_index()
-        print("Generating team-season pages...")
+        _done(t)
+        team_seasons = teams_data.standings[['teamName', 'Season']].drop_duplicates()
         team_abbr = teams_data.teams.set_index('team_name')['abbr']
-        for _, ts_row in teams_data.standings[['teamName', 'Season']].drop_duplicates().iterrows():
-            tname, season_num = ts_row['teamName'], ts_row['Season']
-            generate_team_season_page(tname, season_num, team_abbr[tname])
+        ts_args = [(row['teamName'], row['Season'], team_abbr[row['teamName']])
+                   for _, row in team_seasons.iterrows()]
+        print(f"Generating team-season pages ({args.workers} workers)...", end='', flush=True)
+        t = time.time()
+        ctx = multiprocessing.get_context('fork')
+        with ctx.Pool(args.workers) as pool:
+            pool.map(_gen_team_season, ts_args)
+        _done(t)
 
     if 'games' in pages:
-        print("Generating games...")
-        generate_games()
+        print("Generating games...", end='', flush=True)
+        t = time.time(); generate_games(); _done(t)
 
     if 'awards' in pages:
-        print("Generating awards page...")
-        generate_awards()
+        print("Generating awards page...", end='', flush=True)
+        t = time.time(); generate_awards(); _done(t)
 
     if 'projections' in pages:
-        print("Generating projections page...")
-        generate_projections()
+        print("Generating projections page...", end='', flush=True)
+        t = time.time(); generate_projections(); _done(t)
 
     if 'salaries' in pages:
-        print("Generating salaries page...")
-        generate_salaries()
+        print("Generating salaries page...", end='', flush=True)
+        t = time.time(); generate_salaries(); _done(t)
 
     if 'glossary' in pages:
-        print("Generating glossary page...")
-        generate_glossary()
+        print("Generating glossary page...", end='', flush=True)
+        t = time.time(); generate_glossary(); _done(t)
 
     if 'dh' in pages:
-        print("Generating DH and Defense page...")
-        generate_dh()
+        print("Generating DH and Defense page...", end='', flush=True)
+        t = time.time(); generate_dh(); _done(t)
 
     if 'leaders_page' in pages:
-        print("Generating leaders pages...")
-        generate_leaders()
+        print("Generating leaders pages...", end='', flush=True)
+        t = time.time()
+        leader_pages = generate_leaders()
+        ctx = multiprocessing.get_context('fork')
+        with ctx.Pool(args.workers) as pool:
+            pool.map(_gen_leader_page, leader_pages)
+        _done(t)
 
     if 'cy_young' in pages:
-        print("Generating Cy Young Predictor page...")
-        generate_cy_young()
+        print("Generating Cy Young Predictor page...", end='', flush=True)
+        t = time.time(); generate_cy_young(); _done(t)
 
     if 'home' in pages:
-        print("Generating home page...")
-        generate_home(page_utils.active_sections)
+        print("Generating home page...", end='', flush=True)
+        t = time.time(); generate_home(page_utils.active_sections); _done(t)
 
     print(f"Done in {time.time() - t0:.1f}s!")
 

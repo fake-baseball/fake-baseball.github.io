@@ -158,18 +158,15 @@ def fit_pa_model():
     return LinearRegression().fit(X, y)
 
 
-_cache = None
+rows = None
 
 
 def compute_all():
     """Full projection computation: blended rates + PA model + derived stats.
 
-    Returns list of enriched row dicts (sorted by last/first).
-    Results are cached after first call.
+    Sets and returns bat_projections.rows (list of enriched row dicts, sorted by last/first).
     """
-    global _cache
-    if _cache is not None:
-        return _cache
+    global rows
 
     rows   = compute()
     pa_reg = fit_pa_model()
@@ -312,5 +309,4 @@ def compute_all():
         rbi_rate_pred = max(0.0, rbi_model.predict(X_pred)[0])
         row['rbi']    = int(round(row['proj_pa'] * rbi_rate_pred))
 
-    _cache = rows
-    return _cache
+    return rows

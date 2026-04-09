@@ -53,7 +53,7 @@ def generate_dh():
     spos_map = pi['pos2'].to_dict()
     abbr_map = teams_data.teams.set_index('team_name')['abbr']
 
-    rows = proj_module.compute_all()
+    rows = proj_module.rows
     for r in rows:
         r['_team_abbr'] = abbr_map.get(r['team'], r['team']) if r['team'] != 'FREE AGENT' else None
 
