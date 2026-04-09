@@ -149,7 +149,7 @@ def _wildcard_section(season_num, season_rows, split, sos):
 
         div_leader_idx = (
             conf_group.groupby('division_name', sort=False)
-            .apply(lambda g: g.sort_values(['t_pct', 'Diff'], ascending=[False, False]).index[0])
+            .apply(lambda g: g.sort_values(['t_pct', 'Diff'], ascending=[False, False]).index[0], include_groups=False)
         )
         div_leaders = conf_group.loc[div_leader_idx].sort_values(
             ['t_pct', 'Diff'], ascending=[False, False]
