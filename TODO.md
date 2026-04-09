@@ -22,7 +22,7 @@
   - [ ] Awards and honors received
   - [X] WAR chart by season
   - [ ] Percentile rankings vs. league (like Baseball Savant)
-  - [ ] Season rankings
+  - [X] Season rankings
   - [ ] Similarity score
 
 ## Teams
@@ -46,10 +46,10 @@
 
 ## Seasons
 - [X] Seasons landing page — list of all seasons with league-wide stat totals, links to individual season pages
-  - [ ] at the top should be winners
-  - [ ] Historical Totals
+  - [ ] at the top should be winners (playoff result, etc.)
+  - [X] Historical Totals
 - [ ] Individual season page
-  - [ ] Team batting and pitching totals
+  - [X] Team batting and pitching totals
   - [X] Standings (by division and conference)
   - [ ] Stat leaders for the season (top 5 per key category)
   - [ ] Award winners (MVP, Cy Young, Rookie of the Year, etc.)
@@ -57,7 +57,7 @@
   - [ ] Game results
   - [ ] magic numbers
   - [ ] playoff % projections
-  - [ ] Strength of schedule
+  - [X] Strength of schedule
 
 ## Leaders
 - [X] Leaders landing page — index of all stat categories with links
@@ -66,7 +66,7 @@
   - [X] Yearly leaders (one per season)
   - [X] Career leaders
   - [X] Active leaders
-  - [ ] By league
+  - [X] By league
   - [ ] Yearly top 10s
 
 ## Games
