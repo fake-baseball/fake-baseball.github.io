@@ -56,12 +56,11 @@ def compute():
     # Cy Young Predictor
     from data import teams as teams_data
     div_winners = set()
-    if teams_data.standings is not None and teams_data.teams is not None:
-        abbr_map = teams_data.teams.set_index('team_name')['abbr'].to_dict()
-        for _, row in teams_data.standings[teams_data.standings['GB'] == 0].iterrows():
-            abbr = abbr_map.get(row['teamName'])
-            if abbr:
-                div_winners.add((row['Season'], abbr))
+    abbr_map = teams_data.teams.set_index('team_name')['abbr'].to_dict()
+    for _, row in teams_data.standings[teams_data.standings['GB'] == 0].iterrows():
+        abbr = abbr_map.get(row['teamName'])
+        if abbr:
+            div_winners.add((row['Season'], abbr))
     d['p_vb'] = d.apply(lambda row: 1 if (row['season'], row['team']) in div_winners else 0, axis=1)
     f.compute_p_cyp(d)
     f.compute_p_cyp2(d)

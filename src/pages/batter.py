@@ -68,7 +68,7 @@ def _bat_proj_row(first, last, cols):
     sbatt  = sb + cs
 
     pi_row = players.player_info.loc[(first, last)] if (first, last) in players.player_info.index else None
-    if pi_row is not None and teams_data.teams is not None:
+    if pi_row is not None:
         abbr_map = teams_data.teams.set_index('team_name')['abbr']
         team_abbr = abbr_map.get(pi_row['team_name'], '')
     else:

@@ -220,7 +220,7 @@ def compute_all():
     ]
     pa_per_gb = (s20['pa'] / s20['gb']).mean()
 
-    abbr_map = teams_data.teams.set_index('team_name')['abbr'] if teams_data.teams is not None else {}
+    abbr_map = teams_data.teams.set_index('team_name')['abbr']
 
     for row in rows:
         first, last = row['first'], row['last']

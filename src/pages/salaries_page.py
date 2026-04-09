@@ -395,7 +395,7 @@ def _methodology_section():
 
 def generate_salaries():
     pi       = players.player_info
-    abbr_map = teams_data.teams.set_index('team_name')['abbr'].to_dict() if teams_data.teams is not None else {}
+    abbr_map = teams_data.teams.set_index('team_name')['abbr'].to_dict()
 
     (bat_model_info, bat_rows, pit_model_info, pit_rows,
      bat_war_model_info, pit_war_model_info,

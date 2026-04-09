@@ -138,30 +138,21 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
         if ctype == 'stat':
             return fmt_round(val, meta['decimal_places'], meta['leading_zero'], meta['percentage'])
         if ctype == 'salary':
-            try:
-                if isinstance(val, float) and np.isnan(val):
-                    return '-'
-                return f'${float(val):.1f}m'
-            except (ValueError, TypeError):
-                return str(val) if val is not None else '-'
+            if isinstance(val, float) and np.isnan(val):
+                return '-'
+            return f'${float(val):.1f}m'
         if ctype == 'integer':
+            if isinstance(val, float) and np.isnan(val):
+                return '-'
             try:
-                if isinstance(val, float) and np.isnan(val):
-                    return '-'
                 return str(int(val))
             except (ValueError, TypeError):
                 return str(val) if val is not None else '-'
         if ctype == 'gb':
-            try:
-                v = float(val)
-                return '-' if v == 0 else f'{v:.1f}'
-            except (ValueError, TypeError):
-                return str(val) if val is not None else '-'
+            v = float(val)
+            return '-' if v == 0 else f'{v:.1f}'
         if ctype == 'rdiff':
-            try:
-                return fmt_rdiff(int(val))
-            except (ValueError, TypeError):
-                return str(val) if val is not None else '-'
+            return fmt_rdiff(int(val))
         return str(val) if val is not None else ''
 
     visible_cols = [c for c in df.columns if c not in _hidden]
@@ -173,17 +164,8 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
     bat_ldr_conf = leaders_mod.batting_leaders_conf
     pit_ldr_conf = leaders_mod.pitching_leaders_conf
 
-    abbr_to_conf = {}
-    if teams_data.teams is not None:
-        abbr_to_conf = teams_data.teams.set_index('abbr')['conference_name'].to_dict()
+    abbr_to_conf = teams_data.teams.set_index('abbr')['conference_name'].to_dict()
 
-    def _leaders_for_col(col):
-        """Return (overall_ldr, conf_ldr_dict) for a stat column, or (None, None)."""
-        if bat_ldr is not None and col in bat_ldr.columns:
-            return bat_ldr, bat_ldr_conf
-        if pit_ldr is not None and col in pit_ldr.columns:
-            return pit_ldr, pit_ldr_conf
-        return None, None
 
     t = table(border=border)
     with t:
@@ -228,45 +210,44 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
                         elif ctype == 'season_link':
                             try:
                                 s_int = int(raw_val)
-                                _pfx = '../' * depth + 'seasons/'
-                                content = anchor_tag(f"S{s_int}", href=f"{_pfx}{s_int}.html")
                             except (ValueError, TypeError):
                                 content = str(raw_val) if raw_val is not None else ''
+                            else:
+                                _pfx = '../' * depth + 'seasons/'
+                                content = anchor_tag(f"S{s_int}", href=f"{_pfx}{s_int}.html")
                         else:
                             disp_val = _format_cell(col, meta, raw_val)
 
                             is_bold = is_italic = False
-                            if stat_type == 'season' and meta.get('type') in ('stat', 'ip'):
-                                overall_ldr, conf_ldr_dict = _leaders_for_col(col)
-                                if overall_ldr is not None:
-                                    season = raw_row.get('season')
-                                    try:
-                                        fval     = float(raw_val)
-                                        qual_col = meta.get('qual_col', 'pa')
-                                        threshold = SEASON_THRESHOLDS.get(qual_col, 0) * lg.season_scale.get(season, 1.0)
-                                        qualifies = (
-                                            not meta['qualified']
-                                            or raw_row.get(qual_col, 0) >= threshold
-                                        )
-                                        if qualifies and season in overall_ldr.index and col in overall_ldr.columns:
-                                            best_o = float(overall_ldr.loc[season, col])
-                                            overall_best = fval <= best_o if meta['lowest'] else fval >= best_o
+                            if stat_type == 'season' and meta.get('context') not in (None, 'meta') and meta.get('type') in ('stat', 'ip'):
+                                is_pitching_col = meta.get('context') == 'pitching'
+                                overall_ldr  = pit_ldr  if is_pitching_col else bat_ldr
+                                conf_ldr_dict = pit_ldr_conf if is_pitching_col else bat_ldr_conf
+                                season   = raw_row.get('season')
+                                fval     = float(raw_val)
+                                qual_col = meta.get('qual_col', 'pa')
+                                threshold = SEASON_THRESHOLDS.get(qual_col, 0) * lg.season_scale.get(season, 1.0)
+                                qualifies = (
+                                    not meta['qualified']
+                                    or raw_row.get(qual_col, 0) >= threshold
+                                )
+                                if qualifies and season in overall_ldr.index and col in overall_ldr.columns:
+                                    best_o = float(overall_ldr.loc[season, col])
+                                    overall_best = fval <= best_o if meta['lowest'] else fval >= best_o
 
-                                            if conf_ldr_dict and 'team' in df.columns:
-                                                team     = raw_row.get('team', '')
-                                                conf     = abbr_to_conf.get(team)
-                                                conf_ldr = conf_ldr_dict.get(conf) if conf else None
-                                                if conf_ldr is not None and season in conf_ldr.index and col in conf_ldr.columns:
-                                                    best_c    = float(conf_ldr.loc[season, col])
-                                                    conf_best = fval <= best_c if meta['lowest'] else fval >= best_c
-                                                    is_bold   = conf_best
-                                                    is_italic = overall_best
-                                                else:
-                                                    is_bold = overall_best
-                                            else:
-                                                is_bold = overall_best
-                                    except (ValueError, TypeError):
-                                        pass
+                                    if 'team' in df.columns:
+                                        team     = raw_row.get('team', '')
+                                        conf     = abbr_to_conf.get(team)
+                                        conf_ldr = conf_ldr_dict.get(conf) if conf else None
+                                        if conf_ldr is not None and season in conf_ldr.index and col in conf_ldr.columns:
+                                            best_c    = float(conf_ldr.loc[season, col])
+                                            conf_best = fval <= best_c if meta['lowest'] else fval >= best_c
+                                            is_bold   = conf_best
+                                            is_italic = overall_best
+                                        else:
+                                            is_bold = overall_best
+                                    else:
+                                        is_bold = overall_best
 
                             if is_bold and is_italic:
                                 content = bold_tag(italic_tag(disp_val))

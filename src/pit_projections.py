@@ -265,19 +265,16 @@ def compute_all():
     df_all = pit_module.stats[pit_module.stats['stat_type'] == 'season'].copy()
 
     # Team name <-> abbreviation mapping (needed for RS/G lookup)
-    name_to_abbr = {}
-    if teams_data.teams is not None:
-        name_to_abbr = teams_data.teams.set_index('team_name')['abbr'].to_dict()
+    name_to_abbr = teams_data.teams.set_index('team_name')['abbr'].to_dict()
 
     # Historical team RS/G per (season, abbr) for SP W model
     hist_rs = {}
-    if teams_data.standings is not None:
-        for _, srow in teams_data.standings.iterrows():
-            abbr = name_to_abbr.get(srow['teamName'])
-            if abbr:
-                games = int(srow['gamesWon']) + int(srow['gamesLost'])
-                if games > 0:
-                    hist_rs[(int(srow['Season']), abbr)] = float(srow['runsFor']) / games
+    for _, srow in teams_data.standings.iterrows():
+        abbr = name_to_abbr.get(srow['teamName'])
+        if abbr:
+            games = int(srow['gamesWon']) + int(srow['gamesLost'])
+            if games > 0:
+                hist_rs[(int(srow['Season']), abbr)] = float(srow['runsFor']) / games
 
     # League-average RS/G (weighted blend) — fallback for free-agent SPs
     lg_rs_per_g = sum(

@@ -22,14 +22,12 @@ def generate_leaders():
     # conf_sections: list of (conf_name, conf_df) pairs, pre-built at build time
     pages = []
 
-    # Build conference -> team abbr list mapping (if teams loaded)
     _conf_teams = {}
-    if teams_data.teams is not None:
-        for row in teams_data.teams.itertuples():
-            conf = row.conference_name
-            if conf not in _conf_teams:
-                _conf_teams[conf] = []
-            _conf_teams[conf].append(row.abbr)
+    for row in teams_data.teams.itertuples():
+        conf = row.conference_name
+        if conf not in _conf_teams:
+            _conf_teams[conf] = []
+        _conf_teams[conf].append(row.abbr)
     _conf_order = list(_conf_teams.keys())
 
     # ── Shared index-row builder ──────────────────────────────────────────────

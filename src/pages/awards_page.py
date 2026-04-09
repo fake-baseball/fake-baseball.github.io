@@ -11,7 +11,7 @@ from triple_crown import (batting_triple_crown, pitching_triple_crown,
 from data import teams as teams_data
 
 
-def _triple_crown_table(winners, pitching):
+def _triple_crown_table(winners):
     if not winners:
         p("No triple crown winners.")
         return
