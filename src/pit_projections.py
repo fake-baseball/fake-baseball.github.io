@@ -8,6 +8,7 @@ The component model is a linear regression fit on pitchers who qualified in all 
 The RA9 model is a linear regression fit on all individual qualified pitcher-seasons.
 """
 import numpy as np
+import pandas as pd
 from sklearn.linear_model import LinearRegression
 
 import pitching as pit_module
@@ -53,7 +54,7 @@ def compute():
         (pit_module.stats['season'].isin(PROJ_SEASONS)) &
         (pit_module.stats['stat_type'] == 'season')
     ].copy()
-    df = df[df.apply(lambda r: (r['first_name'], r['last_name']) in active, axis=1)]
+    df = df[pd.MultiIndex.from_frame(df[['first_name', 'last_name']]).isin(active)]
 
     # Filter to pitchers (ppos == 'P')
     pit_keys = {k for k in active if players.player_info.loc[k]['pos1'] == 'P'}

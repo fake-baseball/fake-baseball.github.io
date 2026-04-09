@@ -31,6 +31,7 @@ import batting
 import pitching
 import leaders
 import team_ranks
+import player_ranks
 from constants         import SEASON_RANGE
 from data.stats        import load_batting, load_pitching
 from data.players      import load_player_info, load_retirements
@@ -67,12 +68,13 @@ _DATA_DEPS = {
     'standings':   {'teams'},
     'league':      {'raw'},
     'stats':       {'raw', 'league', 'teams', 'standings'},
-    'team_ranks':  {'raw', 'league', 'teams', 'standings', 'stats'},
-    'leaders':     {'raw', 'league', 'teams', 'standings', 'stats'},
+    'team_ranks':   {'raw', 'league', 'teams', 'standings', 'stats'},
+    'player_ranks': {'raw', 'league', 'stats'},
+    'leaders':      {'raw', 'league', 'teams', 'standings', 'stats'},
 }
 
 _PAGE_DEPS = {
-    'players':     {'raw', 'league', 'teams', 'standings', 'stats', 'team_ranks', 'leaders', 'player_info', 'retirements'},
+    'players':     {'raw', 'league', 'teams', 'standings', 'stats', 'team_ranks', 'player_ranks', 'leaders', 'player_info', 'retirements'},
     'leaders_page':{'raw', 'league', 'teams', 'standings', 'stats', 'leaders'},
     'seasons':     {'raw', 'league', 'teams', 'standings', 'schedule', 'stats', 'team_ranks', 'leaders'},
     'teams_page':  {'raw', 'league', 'teams', 'standings', 'schedule', 'rotations', 'lineups', 'player_info', 'stats', 'team_ranks', 'leaders'},
@@ -91,7 +93,7 @@ _LOAD_ORDER = [
     # data loading
     'raw', 'teams', 'schedule', 'rotations', 'lineups', 'player_info', 'retirements',
     # data processing
-    'standings', 'league', 'stats', 'leaders', 'team_ranks',
+    'standings', 'league', 'stats', 'leaders', 'team_ranks', 'player_ranks',
 ]
 
 _NAV_PAGE_MAP = {
@@ -194,6 +196,9 @@ def main():
         elif key == 'team_ranks':
             print("Computing team ranks...")
             team_ranks.compute()
+        elif key == 'player_ranks':
+            print("Computing player ranks...")
+            player_ranks.compute()
         elif key == 'leaders':
             print("Computing season leaders...")
             leaders.compute_season_leaders()

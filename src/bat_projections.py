@@ -7,6 +7,7 @@ For each active player, for each of the 3 projection seasons:
 The model is a linear regression fit on players who qualified in all 3 seasons.
 """
 import numpy as np
+import pandas as pd
 from sklearn.linear_model import LinearRegression
 
 import batting as bat_module
@@ -40,7 +41,7 @@ def compute():
         (bat_module.stats['season'].isin(PROJ_SEASONS)) &
         (bat_module.stats['stat_type'] == 'season')
     ].copy()
-    df = df[df.apply(lambda r: (r['first_name'], r['last_name']) in active, axis=1)]
+    df = df[pd.MultiIndex.from_frame(df[['first_name', 'last_name']]).isin(active)]
 
     # ── Step 1: Fit regression on players qualified in all 3 seasons ─────────
 

@@ -10,6 +10,16 @@ from pages.slug import convert_name
 from util import fmt_ip, weighted_avg
 
 
+_abbr_to_conf_cache = None
+
+def _abbr_to_conf():
+    global _abbr_to_conf_cache
+    if _abbr_to_conf_cache is None:
+        from data import teams as teams_data
+        _abbr_to_conf_cache = teams_data.teams.set_index('abbr')['conference_name'].to_dict()
+    return _abbr_to_conf_cache
+
+
 NAV_LINKS = [
     ("players",     "Players",                "players/index.html"),
     ("leaders",     "Leaders",                "leaders/index.html"),
@@ -108,7 +118,6 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
     border     - HTML border attribute on <table>.
     """
     import leaders as leaders_mod
-    from data import teams as teams_data
     from leaders import SEASON_THRESHOLDS
     import league as lg
 
@@ -164,7 +173,7 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
     bat_ldr_conf = leaders_mod.batting_leaders_conf
     pit_ldr_conf = leaders_mod.pitching_leaders_conf
 
-    abbr_to_conf = teams_data.teams.set_index('abbr')['conference_name'].to_dict()
+    abbr_to_conf = _abbr_to_conf()
 
 
     t = table(border=border)
