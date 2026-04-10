@@ -24,6 +24,14 @@ def _name_to_abbr():
 batting_stats  = None
 pitching_stats = None
 
+_s21_cache = {}  # path -> DataFrame, shared across all stream_rows calls
+
+
+def _read_s21_cached(path):
+    if path not in _s21_cache:
+        _s21_cache[path] = read_s21(path)
+    return _s21_cache[path]
+
 
 def load_batting():
     global batting_stats
@@ -197,7 +205,7 @@ def batting_stream_rows(first, last):
 
     snapshots = []
     for path in files:
-        raw = read_s21(path)
+        raw = _read_s21_cached(path)
         mask = (raw['firstName'] == first) & (raw['lastName'] == last)
         snapshots.append(raw[mask].iloc[0] if mask.any() else None)
 
@@ -273,7 +281,7 @@ def pitching_stream_rows(first, last):
 
     snapshots = []
     for path in files:
-        raw = read_s21(path)
+        raw = _read_s21_cached(path)
         mask = (raw['firstName'] == first) & (raw['lastName'] == last)
         snapshots.append(raw[mask].iloc[0] if mask.any() else None)
 

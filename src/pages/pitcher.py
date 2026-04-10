@@ -22,6 +22,23 @@ import player_ranks
 
 _PIT_SUMMARY_COLS = ['season', 'p_war', 'p_w', 'p_l', 'p_era', 'p_gp', 'p_gs', 'p_sv', 'p_ip', 'p_k', 'p_whip']
 
+_proj_index = None   # (first, last) -> proj dict, built on first use
+_abbr_map   = None   # team_name -> abbr, built on first use
+
+
+def _get_proj_index():
+    global _proj_index
+    if _proj_index is None:
+        _proj_index = {(r['first'], r['last']): r for r in pit_proj_module.rows}
+    return _proj_index
+
+
+def _get_abbr_map():
+    global _abbr_map
+    if _abbr_map is None:
+        _abbr_map = teams_data.teams.set_index('team_name')['abbr'].to_dict()
+    return _abbr_map
+
 
 def _pit_summary_table(stats, proj_row):
     """Render BB-ref style summary strip: current season, Projected, Career."""
@@ -43,7 +60,7 @@ def _pit_summary_table(stats, proj_row):
 
 def _pit_proj_row(first, last, cols):
     """Return a single-row DataFrame for the projected season, or None."""
-    proj = next((r for r in pit_proj_module.rows if r['first'] == first and r['last'] == last), None)
+    proj = _get_proj_index().get((first, last))
     if proj is None:
         return None
 
@@ -61,8 +78,7 @@ def _pit_proj_row(first, last, cols):
 
     pi_row = players.player_info.loc[(first, last)] if (first, last) in players.player_info.index else None
     if pi_row is not None:
-        abbr_map = teams_data.teams.set_index('team_name')['abbr']
-        team_abbr = abbr_map.get(pi_row['team_name'], '')
+        team_abbr = _get_abbr_map().get(pi_row['team_name'], '')
     else:
         team_abbr = ''
     d = {col: np.nan for col in cols}
