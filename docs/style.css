@@ -115,3 +115,13 @@ table.leaders-index tbody td {
     font-family: "PT Sans", sans-serif;
     text-align: left;
 }
+
+label {
+	 display: inline-block;
+	 width: 40px;
+    font-family: "PT Sans Caption";
+}
+
+meter {
+    width: 162px;
+}
