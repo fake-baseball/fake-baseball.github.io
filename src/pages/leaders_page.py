@@ -118,7 +118,8 @@ def generate_leaders():
 
     Path("docs/leaders/index.html").write_text(str(doc))
 
-    return descriptors
+    for desc in descriptors:
+        write_leader_page(desc)
 
 
 def write_leader_page(desc):

@@ -22,7 +22,6 @@ import argparse
 import sys
 import os
 import time
-import multiprocessing
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -55,7 +54,7 @@ from pages.projections_page import generate_projections
 from pages.salaries_page    import generate_salaries
 from pages.glossary_page    import generate_glossary
 from pages.dh_page          import generate_dh
-from pages.leaders_page     import generate_leaders, write_leader_page
+from pages.leaders_page     import generate_leaders
 from pages.cy_young_page    import generate_cy_young
 
 # Dependencies
@@ -120,25 +119,6 @@ _ALL_PAGES = {'players', 'leaders_page', 'seasons', 'teams_page', 'home',
               'awards', 'projections', 'salaries', 'cy_young', 'glossary', 'dh', 'games'}
 
 
-def _gen_batter(args):
-    first, last = args
-    generate_batter_page(first, last)
-
-
-def _gen_pitcher(args):
-    first, last = args
-    generate_pitcher_page(first, last)
-
-
-def _gen_team_season(args):
-    tname, season_num, abbr = args
-    generate_team_season_page(tname, season_num, abbr)
-
-
-def _gen_leader_page(desc):
-    write_leader_page(desc)
-
-
 def _done(t):
     print(f" done in {time.time() - t:.2f}s")
 
@@ -158,7 +138,6 @@ def main():
     parser.add_argument("--glossary",    action="store_true")
     parser.add_argument("--dh",          action="store_true")
     parser.add_argument("--games",       action="store_true")
-    parser.add_argument("--workers",     type=int, default=os.cpu_count())
     args = parser.parse_args()
 
     requested = {
@@ -239,14 +218,12 @@ def main():
 
     # ── Phase 2: generate pages ───────────────────────────────────────────────
     if 'players' in pages:
-        batters  = list(batting.stats[['first_name', 'last_name']].drop_duplicates().itertuples(index=False, name=None))
-        pitchers = list(pitching.stats[['first_name', 'last_name']].drop_duplicates().itertuples(index=False, name=None))
-        print(f"Generating player pages ({args.workers} workers)...", end='', flush=True)
+        print("Generating player pages...", end='', flush=True)
         t = time.time()
-        ctx = multiprocessing.get_context('fork')
-        with ctx.Pool(args.workers) as pool:
-            pool.map(_gen_batter, batters)
-            pool.map(_gen_pitcher, pitchers)
+        for first, last in batting.stats[['first_name', 'last_name']].drop_duplicates().itertuples(index=False):
+            generate_batter_page(first, last)
+        for first, last in pitching.stats[['first_name', 'last_name']].drop_duplicates().itertuples(index=False):
+            generate_pitcher_page(first, last)
         _done(t)
         print("Generating players index...", end='', flush=True)
         t = time.time(); generate_players_index(); _done(t)
@@ -267,15 +244,12 @@ def main():
             Path(f"docs/teams/{t_row['team_name'].replace(' ', '')}").mkdir(exist_ok=True)
         generate_teams_index()
         _done(t)
-        team_seasons = teams_data.standings[['teamName', 'Season']].drop_duplicates()
-        team_abbr = teams_data.teams.set_index('team_name')['abbr']
-        ts_args = [(row['teamName'], row['Season'], team_abbr[row['teamName']])
-                   for _, row in team_seasons.iterrows()]
-        print(f"Generating team-season pages ({args.workers} workers)...", end='', flush=True)
+        print("Generating team-season pages...", end='', flush=True)
         t = time.time()
-        ctx = multiprocessing.get_context('fork')
-        with ctx.Pool(args.workers) as pool:
-            pool.map(_gen_team_season, ts_args)
+        team_abbr = teams_data.teams.set_index('team_name')['abbr']
+        for _, ts_row in teams_data.standings[['teamName', 'Season']].drop_duplicates().iterrows():
+            tname, season_num = ts_row['teamName'], ts_row['Season']
+            generate_team_season_page(tname, season_num, team_abbr[tname])
         _done(t)
 
     if 'games' in pages:
@@ -305,10 +279,7 @@ def main():
     if 'leaders_page' in pages:
         print("Generating leaders pages...", end='', flush=True)
         t = time.time()
-        leader_pages = generate_leaders()
-        ctx = multiprocessing.get_context('fork')
-        with ctx.Pool(args.workers) as pool:
-            pool.map(_gen_leader_page, leader_pages)
+        generate_leaders()
         _done(t)
 
     if 'cy_young' in pages:
