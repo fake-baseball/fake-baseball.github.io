@@ -1,0 +1,117 @@
+/* BFBL global stylesheet */
+@import url('https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&family=PT+Sans+Caption:wght@400;700&family=PT+Mono&display=swap');
+
+nav.site-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 1rem;
+}
+
+a.site-nav-home {
+    font-family: "PT Sans Caption", sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    color: #222;
+    margin-right: 0.5rem;
+}
+
+a.site-nav-link {
+    font-family: "PT Sans", sans-serif;
+    font-size: 0.9rem;
+    color: #1a5fa8;
+}
+
+body {
+    font-family: "PT Sans", sans-serif;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem 2rem;
+    color: #222;
+    background: #fff;
+}
+
+h1, h2, h3 {
+    font-family: "PT Sans Caption";
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+a {
+    color: #1a5fa8;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+table {
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+}
+
+th, td {
+    padding: 0.25rem 0.5rem;
+    text-align: right;
+}
+
+thead th {
+    border-bottom: 2px solid #aaa;
+    font-weight: bold;
+}
+
+tbody td {
+    font-family: "PT Sans Caption";
+}
+
+tbody td.name-col {
+    font-family: "PT Sans", sans-serif;
+}
+
+tbody tr:nth-child(even) {
+    background: #f5f5f5;
+}
+
+tbody tr:hover {
+    background: #e8f0fb;
+}
+
+tbody tr.career td, tbody tr.career th {
+    border-top: 2px solid #aaa;
+    border-bottom: 2px solid #aaa;
+    background: #f5f5f5;
+}
+
+tbody tr.team td, tbody tr.team th {
+    background: #fff;
+    border-bottom: 1px solid #ddd;
+}
+
+tbody tr.projected td, tbody tr.projected th {
+    background: #dbeeff;
+    font-style: italic;
+}
+
+ul {
+    padding-left: 1.5rem;
+}
+
+table.compact th, table.compact td {
+    padding: 0.1rem 0.3rem;
+}
+
+td.mono-col {
+    font-family: "PT Mono", monospace;
+}
+
+table.leaders-index th,
+table.leaders-index td,
+table.leaders-index tbody td {
+    font-family: "PT Sans", sans-serif;
+    text-align: left;
+}
