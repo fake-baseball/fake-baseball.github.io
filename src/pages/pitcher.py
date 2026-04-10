@@ -219,8 +219,30 @@ def generate_pitcher_page(first_name, last_name):
             p(f"Throws: {throw_hand}")
             p(f"Role: {pitcher_role}")
             p(f"Arsenal: {pitcher_arsenal}")
-            p(f"Skills: VEL {pi['velocity']} / JNK {pi['junk']} / ACC {pi['accuracy']}")
             p(f"Salary: ${salary:.1f}m")
+
+            b("Skills")
+            with ul():
+                with li():
+                    label("VEL", _for="vel")
+                    meter(value=pi['velocity'], id="vel", min="0", max="99", low="30", high="60", optimum="99")
+                    b(str(pi['velocity']))
+                with li():
+                    label("JNK", _for="jnk")
+                    meter(value=pi['junk'], id="jnk", min="0", max="99", low="30", high="60", optimum="99")
+                    b(str(pi['junk']))
+                with li():
+                    label("ACC", _for="acc")
+                    meter(value=pi['accuracy'], id="acc", min="0", max="99", low="30", high="60", optimum="99")
+                    b(str(pi['accuracy']))
+                with li():
+                    label("SPD", _for="spd")
+                    meter(value=pi['speed'], id="spd", min="0", max="99", low="30", high="60", optimum="99")
+                    b(str(pi['speed']))
+                with li():
+                    label("FLD", _for="fld")
+                    meter(value=pi['fielding'], id="fld", min="0", max="99", low="30", high="60", optimum="99")
+                    b(str(pi['fielding']))
         else:
             strong("Retired")
             p(f"Role: {pitcher_role}")

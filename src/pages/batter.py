@@ -236,8 +236,30 @@ def generate_batter_page(first_name, last_name):
             if secondary_pos:
                 pos += f" (Secondary: {secondary_pos})"
             p(pos)
-            p(f"Skills: POW {pi['power']} / CON {pi['contact']} / SPD {pi['speed']} / FLD {pi['fielding']} / ARM {pi['arm']}")
             p(f"Salary: ${salary:.1f}m")
+
+            b("Skills")
+            with ul():
+                with li():
+                    label("POW", _for="pow")
+                    meter(value=pi['power'], id="pow", min="0", max="99", low="30", high="60", optimum="99")
+                    b(str(pi['power']))
+                with li():
+                    label("CON", _for="con")
+                    meter(value=pi['contact'], id="con", min="0", max="99", low="30", high="60", optimum="99")
+                    b(str(pi['contact']))
+                with li():
+                    label("SPD", _for="spd")
+                    meter(value=pi['speed'], id="spd", min="0", max="99", low="30", high="60", optimum="99")
+                    b(str(pi['speed']))
+                with li():
+                    label("FLD", _for="fld")
+                    meter(value=pi['fielding'], id="fld", min="0", max="99", low="30", high="60", optimum="99")
+                    b(str(pi['fielding']))
+                with li():
+                    label("ARM", _for="arm")
+                    meter(value=pi['arm'], id="arm", min="0", max="99", low="30", high="60", optimum="99")
+                    b(str(pi['arm']))
         else:
             strong("Retired")
             pos = f"Position: {primary_pos}"
