@@ -22,8 +22,9 @@ import player_ranks
 
 _PIT_SUMMARY_COLS = ['season', 'p_war', 'p_w', 'p_l', 'p_era', 'p_gp', 'p_gs', 'p_sv', 'p_ip', 'p_k', 'p_whip']
 
-_proj_index = None   # (first, last) -> proj dict, built on first use
-_abbr_map   = None   # team_name -> abbr, built on first use
+_proj_index  = None   # (first, last) -> proj dict, built on first use
+_abbr_map    = None   # team_name -> abbr, built on first use
+_stats_index = None   # (first, last) -> player DataFrame, built on first use
 
 
 def _get_proj_index():
@@ -38,6 +39,13 @@ def _get_abbr_map():
     if _abbr_map is None:
         _abbr_map = teams_data.teams.set_index('team_name')['abbr'].to_dict()
     return _abbr_map
+
+
+def _get_stats_index():
+    global _stats_index
+    if _stats_index is None:
+        _stats_index = {k: df for k, df in pitching.stats.groupby(['first_name', 'last_name'])}
+    return _stats_index
 
 
 def _pit_summary_table(stats, proj_row):
@@ -212,8 +220,8 @@ def generate_pitcher_page(first_name, last_name):
         salary          = pi['salary']
     else:
         active = False
-        mask   = (pitching.stats['last_name'] == last_name) & (pitching.stats['first_name'] == first_name)
-        pitcher_role = pitching.stats.loc[mask, 'role'].iloc[0]
+        _pstats = _get_stats_index().get((first_name, last_name))
+        pitcher_role = _pstats['role'].iloc[0]
         try:
             ret_mask          = (players.retired_pitchers['last_name'] == last_name) & (players.retired_pitchers['first_name'] == first_name)
             retirement_season = players.retired_pitchers.loc[ret_mask, 'Retirement Season'].iloc[0]
@@ -267,10 +275,7 @@ def generate_pitcher_page(first_name, last_name):
 
         hr()
 
-        stats = pitching.stats[
-            (pitching.stats['last_name']  == last_name) &
-            (pitching.stats['first_name'] == first_name)
-        ].copy()
+        stats = _get_stats_index().get((first_name, last_name), pitching.stats.iloc[0:0]).copy()
 
         proj_row = _pit_proj_row(first_name, last_name, stats.columns) if active else None
         _pit_summary_table(stats, proj_row)
@@ -308,11 +313,7 @@ def generate_pitcher_page(first_name, last_name):
         ]], depth=1)
 
         if active:
-            player_seasons = pitching.stats[
-                (pitching.stats['first_name'] == first_name) &
-                (pitching.stats['last_name']  == last_name) &
-                (pitching.stats['stat_type'] == 'season')
-            ]
+            player_seasons = stats[stats['stat_type'] == 'season']
             _pit_rankings_section(first_name, last_name, player_seasons)
             _pit_streams_section(first_name, last_name)
 

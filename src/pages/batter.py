@@ -24,8 +24,9 @@ _ALL_BAT = {k: v for k, v in REGISTRY.items() if v.get('context') in _BAT_CONTEX
 
 _SUMMARY_COLS = ['season', 'war', 'ab', 'h', 'hr', 'avg', 'r', 'rbi', 'sb', 'ops']
 
-_proj_index = None   # (first, last) -> proj dict, built on first use
-_abbr_map   = None   # team_name -> abbr, built on first use
+_proj_index  = None   # (first, last) -> proj dict, built on first use
+_abbr_map    = None   # team_name -> abbr, built on first use
+_stats_index = None   # (first, last) -> player DataFrame, built on first use
 
 
 def _get_proj_index():
@@ -40,6 +41,13 @@ def _get_abbr_map():
     if _abbr_map is None:
         _abbr_map = teams_data.teams.set_index('team_name')['abbr'].to_dict()
     return _abbr_map
+
+
+def _get_stats_index():
+    global _stats_index
+    if _stats_index is None:
+        _stats_index = {k: df for k, df in batting.stats.groupby(['first_name', 'last_name'])}
+    return _stats_index
 
 
 def _summary_table(stats, proj_row):
@@ -226,9 +234,9 @@ def generate_batter_page(first_name, last_name):
         salary        = pi['salary']
     else:
         active      = False
-        mask        = (batting.stats['last_name'] == last_name) & (batting.stats['first_name'] == first_name)
-        primary_pos   = batting.stats.loc[mask, 'pos1'].iloc[0]
-        secondary_pos = batting.stats.loc[mask, 'pos2'].iloc[0]
+        _pstats     = _get_stats_index().get((first_name, last_name))
+        primary_pos   = _pstats['pos1'].iloc[0]
+        secondary_pos = _pstats['pos2'].iloc[0]
         try:
             ret_mask          = (players.retired_batters['last_name'] == last_name) & (players.retired_batters['first_name'] == first_name)
             retirement_season = players.retired_batters.loc[ret_mask, 'Retirement Season'].iloc[0]
@@ -287,10 +295,7 @@ def generate_batter_page(first_name, last_name):
 
         hr()
 
-        stats = batting.stats[
-            (batting.stats['first_name'] == first_name) &
-            (batting.stats['last_name']  == last_name)
-        ].copy()
+        stats = _get_stats_index().get((first_name, last_name), batting.stats.iloc[0:0]).copy()
 
         proj_row = _bat_proj_row(first_name, last_name, stats.columns) if active else None
         _summary_table(stats, proj_row)
@@ -332,11 +337,7 @@ def generate_batter_page(first_name, last_name):
         ]], depth=1)
 
         if active:
-            player_seasons = batting.stats[
-                (batting.stats['first_name'] == first_name) &
-                (batting.stats['last_name']  == last_name) &
-                (batting.stats['stat_type'] == 'season')
-            ]
+            player_seasons = stats[stats['stat_type'] == 'season']
             _bat_rankings_section(first_name, last_name, player_seasons)
             _bat_streams_section(first_name, last_name)
 
