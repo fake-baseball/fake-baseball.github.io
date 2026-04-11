@@ -25,7 +25,7 @@ def _dh_table(rows):
             continue
         abbr = row.get('_team_abbr') or 'FA'
         records.append({
-            'first_name': row['first'], 'last_name': row['last'], 'player': '',
+            'player_id': row['player_id'], 'player': '',
             'team':     abbr,
             'pos':      row['_dh_pos'],
             'pos2':     row.get('_dh_spos', ''),
@@ -49,7 +49,7 @@ def _dh_table(rows):
 
 def generate_dh():
     pi = players.player_info
-    ppos_map = pi['pos1'].to_dict()  # keyed by (first_name, last_name) index
+    ppos_map = pi['pos1'].to_dict()  # keyed by player_id
     spos_map = pi['pos2'].to_dict()
     abbr_map = teams_data.teams.set_index('team_name')['abbr']
 
@@ -63,7 +63,7 @@ def generate_dh():
     edf['pb_rate'] = edf['pb'] / edf['gb']
     e_rate_map = {}
     for _, row in edf.iterrows():
-        e_rate_map[(row['first_name'], row['last_name'])] = {
+        e_rate_map[row['player_id']] = {
             'e_rate':  row['e_rate'],
             'pb_rate': row['pb_rate'],
         }
@@ -72,10 +72,10 @@ def generate_dh():
     lg_pb_rate = cat_df['pb_rate'].mean() if len(cat_df) > 0 else 0.0
 
     # Old model Rdef from current season
-    s20 = bat_module.stats[(bat_module.stats['season'] == LAST_COMPLETED_SEASON)][['first_name', 'last_name', 'r_def']]
-    old_rdef_map = {(row['first_name'], row['last_name']): row['r_def'] for _, row in s20.iterrows()}
+    s20 = bat_module.stats[(bat_module.stats['season'] == LAST_COMPLETED_SEASON)][['player_id', 'r_def']]
+    old_rdef_map = s20.set_index('player_id')['r_def'].to_dict()
     for r in rows:
-        r['_dh_rdef_old'] = old_rdef_map.get((r['first'], r['last']))
+        r['_dh_rdef_old'] = old_rdef_map.get(r['player_id'])
 
     attach_dh_model(rows, ppos_map, spos_map, e_rate_map, lg_pb_rate)
     rows.sort(key=lambda r: r['_dh_rdef'] or 0, reverse=True)

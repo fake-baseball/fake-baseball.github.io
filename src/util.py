@@ -1,7 +1,7 @@
 """Core utilities shared by non-page modules (batting, pitching, leaders)."""
 import numpy as np
 
-from pages.slug import convert_name  # re-exported for backward compat
+from data.data_utils import convert_name  # re-exported for backward compat
 
 
 def rank_column(series, ascending=False):
@@ -38,7 +38,7 @@ def weighted_avg(df, stat, weight_col):
 def append_summary_rows(d, player_keys, recompute_fn, weighted_avg_specs, extra_meta=None):
     """Build career and team-total summary rows and append to d.
 
-    player_keys        - list of player identity columns (e.g. ['first_name', 'last_name'])
+    player_keys        - list of player identity columns (e.g. ['player_id'])
     recompute_fn       - callable(df) that recomputes rate stats in-place and returns df
     weighted_avg_specs - list of (col, weight_col) pairs for weighted averages
     extra_meta         - optional dict of extra fields to set on career and team rows

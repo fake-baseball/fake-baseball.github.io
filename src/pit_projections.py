@@ -48,17 +48,17 @@ def compute():
     ra9_metric: dict with r2, rmse, coefs (dict by component name), intercept,
                 model, lg_bf_per_ip.
     """
-    active = set(players.player_info.index)
+    active = set(players.player_info.index[~players.player_info['is_retired']])
 
     df = pit_module.stats[
         (pit_module.stats['season'].isin(PROJ_SEASONS)) &
         (pit_module.stats['stat_type'] == 'season')
     ].copy()
-    df = df[pd.MultiIndex.from_frame(df[['first_name', 'last_name']]).isin(active)]
+    df = df[df['player_id'].isin(active)]
 
     # Filter to pitchers (ppos == 'P')
     pit_keys = {k for k in active if players.player_info.loc[k]['pos1'] == 'P'}
-    df = df[df.apply(lambda r: (r['first_name'], r['last_name']) in pit_keys, axis=1)]
+    df = df[df['player_id'].isin(pit_keys)]
 
     # Compute lg_bf_per_ip from this filtered data
     valid_bf_ip = df[(df['p_bf'] > 0) & (df['p_ip'] > 0)]
@@ -71,22 +71,22 @@ def compute():
     # ── Step 1: Fit component regression on pitchers qualified in all 3 seasons ──
 
     df_qual    = df[df['p_ip'] >= PIT_SEASON_MIN_IP].copy()
-    full_counts = df_qual.groupby(['first_name', 'last_name'])['season'].nunique()
+    full_counts = df_qual.groupby('player_id')['season'].nunique()
     full_names  = full_counts[full_counts == len(PROJ_SEASONS)].index
-    df_train   = df_qual[df_qual.set_index(['first_name', 'last_name']).index.isin(full_names)].copy()
+    df_train   = df_qual[df_qual['player_id'].isin(full_names)].copy()
 
     train_rows = []
-    for (first, last), group in df_train.groupby(['first_name', 'last_name']):
+    for pid, group in df_train.groupby('player_id'):
         blended = {comp: sum(
             group.loc[group['season'] == s, f'{comp}_rate'].iloc[0] * WEIGHTS[s]
             for s in PROJ_SEASONS
         ) / WEIGHT_TOTAL for comp in COMPONENTS}
         try:
-            pi = players.player_info_proj.loc[(first, last)]
+            pi = players.player_info_proj.loc[pid]
         except KeyError:
-            pi = players.player_info.loc[(first, last)]
+            pi = players.player_info.loc[pid]
         train_rows.append({
-            'first': first, 'last': last,
+            'player_id': pid,
             'velocity': int(pi['velocity']), 'junk': int(pi['junk']), 'accuracy': int(pi['accuracy']),
             **blended,
         })
@@ -127,11 +127,12 @@ def compute():
     # ── Step 3: Project all active pitchers ───────────────────────────────────
 
     rows = []
-    for (first, last) in pit_keys:
+    for pid in pit_keys:
         try:
-            pi = players.player_info_proj.loc[(first, last)]
+            pi = players.player_info_proj.loc[pid]
         except KeyError:
-            pi = players.player_info.loc[(first, last)]
+            pi = players.player_info.loc[pid]
+        first, last = pi['first_name'], pi['last_name']
         velocity = int(pi['velocity'])
         junk     = int(pi['junk'])
         accuracy = int(pi['accuracy'])
@@ -143,7 +144,7 @@ def compute():
         season_app = {}   # p_gs for SP, p_gr for relievers
         app_col    = 'p_gs' if role == 'SP' else 'p_gr'
         for s in PROJ_SEASONS:
-            season_row    = df[(df['first_name'] == first) & (df['last_name'] == last) & (df['season'] == s)]
+            season_row    = df[(df['player_id'] == pid) & (df['season'] == s)]
             season_ip[s]  = float(season_row.iloc[0]['p_ip']) if not season_row.empty else 0.0
             season_app[s] = float(season_row.iloc[0][app_col])  if not season_row.empty else 0.0
 
@@ -151,7 +152,7 @@ def compute():
         for comp in COMPONENTS:
             weighted_sum = 0.0
             for s in PROJ_SEASONS:
-                season_row  = df[(df['first_name'] == first) & (df['last_name'] == last) & (df['season'] == s)]
+                season_row  = df[(df['player_id'] == pid) & (df['season'] == s)]
                 actual_ip   = season_ip[s]
                 actual_bf   = float(season_row.iloc[0]['p_bf']) if not season_row.empty else 0.0
                 actual_stat = float(season_row.iloc[0][comp]) if not season_row.empty else 0.0
@@ -168,8 +169,7 @@ def compute():
             proj[comp] = max(0.0, weighted_sum / WEIGHT_TOTAL)
 
         rows.append({
-            'first':     first,
-            'last':      last,
+            'player_id': pid,
             'velocity':  velocity,
             'junk':      junk,
             'accuracy':  accuracy,
@@ -181,7 +181,7 @@ def compute():
             **{f'{comp}_rate': v for comp, v in proj.items()},
         })
 
-    rows.sort(key=lambda r: (r['last'], r['first']))
+    rows.sort(key=lambda r: r['player_id'])
     return rows, ra9_metric
 
 
@@ -198,8 +198,8 @@ def fit_ip_model():
     ].copy()
 
     pi = players.player_info_proj.reset_index()
-    pi = pi[pi['pos1'] == 'P'][['first_name', 'last_name'] + IP_FEATURES]
-    merged = s20.merge(pi, on=['first_name', 'last_name'])
+    pi = pi[pi['pos1'] == 'P'][['player_id'] + IP_FEATURES]
+    merged = s20.merge(pi, on='player_id')
 
     results = {}
     for group, roles, app_col in [

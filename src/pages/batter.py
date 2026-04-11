@@ -13,7 +13,7 @@ from constants import CURRENT_SEASON, LAST_COMPLETED_SEASON
 from data import players
 from data import teams as teams_data
 from registry import REGISTRY
-from pages.page_utils import fmt_round, render_table, convert_name, make_doc
+from pages.page_utils import fmt_round, render_table, make_doc
 from data.stats import batting_stream_rows
 from leaders import SEASON_THRESHOLDS
 from team_ranks import BAT_RANK_COLS
@@ -32,7 +32,7 @@ _stats_index = None   # (first, last) -> player DataFrame, built on first use
 def _get_proj_index():
     global _proj_index
     if _proj_index is None:
-        _proj_index = {(r['first'], r['last']): r for r in proj_module.rows}
+        _proj_index = {r['player_id']: r for r in proj_module.rows}
     return _proj_index
 
 
@@ -46,7 +46,7 @@ def _get_abbr_map():
 def _get_stats_index():
     global _stats_index
     if _stats_index is None:
-        _stats_index = {k: df for k, df in batting.stats.groupby(['first_name', 'last_name'])}
+        _stats_index = {k: df for k, df in batting.stats.groupby('player_id')}
     return _stats_index
 
 
@@ -69,9 +69,9 @@ def _summary_table(stats, proj_row):
     render_table(summary_df, depth=1)
 
 
-def _bat_proj_row(first, last, cols):
+def _bat_proj_row(pid, cols):
     """Return a single-row DataFrame for the projected season, or None."""
-    proj = _get_proj_index().get((first, last))
+    proj = _get_proj_index().get(pid)
     if proj is None:
         return None
 
@@ -92,7 +92,7 @@ def _bat_proj_row(first, last, cols):
     xbh    = twob + threeb + hr
     sbatt  = sb + cs
 
-    pi_row = players.player_info.loc[(first, last)] if (first, last) in players.player_info.index else None
+    pi_row = players.player_info.loc[pid] if pid in players.player_info.index else None
     if pi_row is not None:
         team_abbr = _get_abbr_map().get(pi_row['team_name'], '')
     else:
@@ -140,8 +140,11 @@ _BAT_STREAM_COLS = [
 ]
 
 
-def _bat_streams_section(first, last):
-    stream_rows = batting_stream_rows(first, last)
+def _bat_streams_section(pid):
+    pi = players.player_info.loc[pid] if pid in players.player_info.index else None
+    if pi is None:
+        return
+    stream_rows = batting_stream_rows(pi['first_name'], pi['last_name'])
     if not stream_rows:
         return
 
@@ -159,8 +162,7 @@ def _bat_streams_section(first, last):
 
     # Season total row from the already-computed stats (includes OPS+, etc.)
     s21 = batting.stats[
-        (batting.stats['first_name'] == first) &
-        (batting.stats['last_name']  == last)  &
+        (batting.stats['player_id'] == pid) &
         (batting.stats['season'] == CURRENT_SEASON) &
         (batting.stats['stat_type'] == 'season')
     ]
@@ -178,7 +180,7 @@ def _bat_streams_section(first, last):
     render_table(stream_df, depth=1)
 
 
-def _bat_rankings_section(first_name, last_name, player_seasons):
+def _bat_rankings_section(player_seasons):
     """Render a Rankings table: one row per season, one column per BAT_RANK_COL."""
     import league as lg
     cols = [c for c in BAT_RANK_COLS if c in batting.stats.columns]
@@ -220,10 +222,11 @@ def _bat_rankings_section(first_name, last_name, player_seasons):
                         td(row.get(col, '--'))
 
 
-def generate_batter_page(first_name, last_name):
-    if (first_name, last_name) in players.player_info.index:
-        active        = True
-        pi            = players.player_info.loc[(first_name, last_name)]
+def generate_batter_page(pid):
+    pi     = players.player_info.loc[pid]
+    active = not pi['is_retired']
+
+    if active:
         team_name     = pi['team_name']
         jersey_number = pi['jersey']
         bat_hand      = pi['bats']
@@ -233,24 +236,19 @@ def generate_batter_page(first_name, last_name):
         age           = pi['age']
         salary        = pi['salary']
     else:
-        active      = False
-        _pstats     = _get_stats_index().get((first_name, last_name))
+        _pstats       = _get_stats_index().get(pid)
         primary_pos   = _pstats['pos1'].iloc[0]
         secondary_pos = _pstats['pos2'].iloc[0]
-        try:
-            ret_mask          = (players.retired_batters['last_name'] == last_name) & (players.retired_batters['first_name'] == first_name)
-            retirement_season = players.retired_batters.loc[ret_mask, 'Retirement Season'].iloc[0]
-            retirement_age    = players.retired_batters.loc[ret_mask, 'age'].iloc[0]
-        except (IndexError, KeyError):
-            print("Unable to fetch retirement info for", first_name, last_name)
-            retirement_season = "Unknown"
-            retirement_age    = "Unknown"
+        retirement_season = pi['retirement_season']
+        retirement_age    = pi['age']
 
-    doc = make_doc(f"{first_name} {last_name}")
+    display_name = f"{pi['first_name']} {pi['last_name']}"
+
+    doc = make_doc(display_name)
 
     with doc:
         img(src="current.jpeg", width=100)
-        h1(f"{first_name} {last_name}")
+        h1(display_name)
 
         if active:
             strong(f"{team_name} #{jersey_number}")
@@ -295,9 +293,9 @@ def generate_batter_page(first_name, last_name):
 
         hr()
 
-        stats = _get_stats_index().get((first_name, last_name), batting.stats.iloc[0:0]).copy()
+        stats = _get_stats_index().get(pid, batting.stats.iloc[0:0]).copy()
 
-        proj_row = _bat_proj_row(first_name, last_name, stats.columns) if active else None
+        proj_row = _bat_proj_row(pid, stats.columns) if active else None
         _summary_table(stats, proj_row)
 
         if active and proj_row is not None:
@@ -338,10 +336,10 @@ def generate_batter_page(first_name, last_name):
 
         if active:
             player_seasons = stats[stats['stat_type'] == 'season']
-            _bat_rankings_section(first_name, last_name, player_seasons)
-            _bat_streams_section(first_name, last_name)
+            _bat_rankings_section(player_seasons)
+            _bat_streams_section(pid)
 
         h2("Awards")
 
-    path = Path(f"docs/players/{convert_name(first_name, last_name)}.html")
+    path = Path(f"docs/players/{pid}.html")
     path.write_text(str(doc))

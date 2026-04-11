@@ -140,8 +140,8 @@ def write_leader_page(desc):
 
 def _write_batting_pages(title, slug, stat, meta, worst, conf_order, conf_teams):
     qual_col = meta['qual_col']
-    season_cols = list(dict.fromkeys(['first_name', 'last_name', stat, 'season', qual_col, 'team']))
-    career_cols = list(dict.fromkeys(['first_name', 'last_name', stat, qual_col]))
+    season_cols = list(dict.fromkeys(['player_id', stat, 'season', qual_col, 'team']))
+    career_cols = list(dict.fromkeys(['player_id', stat, qual_col]))
 
     def _conf_sections_season():
         sections = []
@@ -157,7 +157,7 @@ def _write_batting_pages(title, slug, stat, meta, worst, conf_order, conf_teams)
         sections = []
         for conf in conf_order:
             cdf = get_leaders_by_season(stat, worst=worst, teams=conf_teams[conf])
-            cdf = cdf[list(dict.fromkeys(['season', 'first_name', 'last_name', stat, qual_col, 'team']))].copy()
+            cdf = cdf[list(dict.fromkeys(['season', 'player_id', stat, qual_col, 'team']))].copy()
             cdf.insert(1, 'player', '')
             sections.append((conf, cdf))
         return sections
@@ -171,7 +171,7 @@ def _write_batting_pages(title, slug, stat, meta, worst, conf_order, conf_teams)
 
     # Seasonal
     df = get_leaders_by_season(stat, worst=worst)
-    df = df[list(dict.fromkeys(['season', 'first_name', 'last_name', stat, qual_col, 'team']))].copy()
+    df = df[list(dict.fromkeys(['season', 'player_id', stat, qual_col, 'team']))].copy()
     df.insert(1, 'player', '')
     _write_page(title, slug, 'seasonal', df, _conf_sections_seasonal())
 
@@ -195,23 +195,23 @@ def _write_pitching_pages(title, slug, stat, meta, worst, conf_order, conf_teams
     season_role = (
         _pit.stats[_pit.stats['stat_type'] == 'season']
         .sort_values('season')
-        .groupby(['first_name', 'last_name'])['role']
+        .groupby('player_id')['role']
         .last()
     )
 
     def _apply_role(d):
         d = d.copy()
-        d['role'] = d.apply(lambda r: season_role.get((r['first_name'], r['last_name']), r['role']), axis=1)
+        d['role'] = d.apply(lambda r: season_role.get(r['player_id'], r['role']), axis=1)
         return d
 
     if stat == 'p_ip':
-        season_cols  = ['first_name', 'last_name', 'role', 'p_ip', 'season', 'team']
-        seasonal_cols = ['season', 'first_name', 'last_name', 'role', 'p_ip', 'team']
-        career_cols  = ['first_name', 'last_name', 'role', 'p_ip']
+        season_cols   = ['player_id', 'role', 'p_ip', 'season', 'team']
+        seasonal_cols = ['season', 'player_id', 'role', 'p_ip', 'team']
+        career_cols   = ['player_id', 'role', 'p_ip']
     else:
-        season_cols  = ['first_name', 'last_name', 'role', stat, 'season', 'p_ip', 'team']
-        seasonal_cols = ['season', 'first_name', 'last_name', 'role', stat, 'p_ip', 'team']
-        career_cols  = ['first_name', 'last_name', 'role', stat, 'p_ip']
+        season_cols   = ['player_id', 'role', stat, 'season', 'p_ip', 'team']
+        seasonal_cols = ['season', 'player_id', 'role', stat, 'p_ip', 'team']
+        career_cols   = ['player_id', 'role', stat, 'p_ip']
 
     def _conf_sections_season():
         sections = []

@@ -1,6 +1,2 @@
-"""URL slug helpers for players, teams, and seasons."""
-
-
-def convert_name(first, last):
-    """Turn a player name into a filename-safe string."""
-    return f"{first.replace(' ', '')}{last.replace(' ', '')}"
+"""URL slug helpers -- re-exports convert_name from data.data_utils."""
+from data.data_utils import convert_name  # noqa: F401

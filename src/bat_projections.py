@@ -35,36 +35,36 @@ def compute():
     metrics: list of dicts (one per component) with r2, rmse, and coefficients.
              Computed on the training set (players qualified in all 3 seasons).
     """
-    active = set(players.player_info.index)
+    active = set(players.player_info.index[~players.player_info['is_retired']])
 
     df = bat_module.stats[
         (bat_module.stats['season'].isin(PROJ_SEASONS)) &
         (bat_module.stats['stat_type'] == 'season')
     ].copy()
-    df = df[pd.MultiIndex.from_frame(df[['first_name', 'last_name']]).isin(active)]
+    df = df[df['player_id'].isin(active)]
 
     # ── Step 1: Fit regression on players qualified in all 3 seasons ─────────
 
     df_qual     = df[df['pa'] >= BAT_SEASON_MIN_PA].copy()
-    full_counts = df_qual.groupby(['first_name', 'last_name'])['season'].nunique()
+    full_counts = df_qual.groupby('player_id')['season'].nunique()
     full_names  = full_counts[full_counts == len(PROJ_SEASONS)].index
-    df_train    = df_qual[df_qual.set_index(['first_name', 'last_name']).index.isin(full_names)].copy()
+    df_train    = df_qual[df_qual['player_id'].isin(full_names)].copy()
 
     for comp in COMPONENTS:
         df_train[f'{comp}_rate'] = df_train[comp] / df_train['pa']
 
     train_rows = []
-    for (first, last), group in df_train.groupby(['first_name', 'last_name']):
+    for pid, group in df_train.groupby('player_id'):
         proj = {comp: sum(
             group.loc[group['season'] == s, f'{comp}_rate'].iloc[0] * WEIGHTS[s]
             for s in PROJ_SEASONS
         ) / WEIGHT_TOTAL for comp in COMPONENTS}
         try:
-            pi = players.player_info_proj.loc[(first, last)]
+            pi = players.player_info_proj.loc[pid]
         except KeyError:
-            pi = players.player_info.loc[(first, last)]
+            pi = players.player_info.loc[pid]
         train_rows.append({
-            'first': first, 'last': last,
+            'player_id': pid,
             'power': int(pi['power']), 'contact': int(pi['contact']), 'speed': int(pi['speed']),
             **proj,
         })
@@ -78,13 +78,14 @@ def compute():
     # ── Step 2: Project all active players ────────────────────────────────────
 
     rows = []
-    for (first, last) in active:
-        if players.player_info.loc[(first, last)]['pos1'] == 'P':
+    for pid in active:
+        if players.player_info.loc[pid]['pos1'] == 'P':
             continue
         try:
-            pi = players.player_info_proj.loc[(first, last)]
+            pi = players.player_info_proj.loc[pid]
         except KeyError:
-            pi = players.player_info.loc[(first, last)]
+            pi = players.player_info.loc[pid]
+        first, last = pi['first_name'], pi['last_name']
         power    = int(pi['power'])
         contact  = int(pi['contact'])
         speed    = int(pi['speed'])
@@ -95,14 +96,14 @@ def compute():
 
         season_pa = {}
         for s in PROJ_SEASONS:
-            season_row     = df[(df['first_name'] == first) & (df['last_name'] == last) & (df['season'] == s)]
+            season_row     = df[(df['player_id'] == pid) & (df['season'] == s)]
             season_pa[s]   = int(season_row.iloc[0]['pa']) if not season_row.empty else 0
 
         proj = {}
         for comp in COMPONENTS:
             weighted_sum = 0.0
             for s in PROJ_SEASONS:
-                season_row  = df[(df['first_name'] == first) & (df['last_name'] == last) & (df['season'] == s)]
+                season_row  = df[(df['player_id'] == pid) & (df['season'] == s)]
                 actual_pa   = season_pa[s]
                 actual_stat = float(season_row.iloc[0][comp]) if not season_row.empty else 0.0
 
@@ -116,8 +117,7 @@ def compute():
             proj[comp] = max(0.0, weighted_sum / WEIGHT_TOTAL)
 
         rows.append({
-            'first':     first,
-            'last':      last,
+            'player_id': pid,
             'power':     power,
             'contact':   contact,
             'speed':     speed,
@@ -129,7 +129,7 @@ def compute():
             **{f'{comp}_rate': v for comp, v in proj.items()},
         })
 
-    rows.sort(key=lambda r: (r['last'], r['first']))
+    rows.sort(key=lambda r: r['player_id'])
     return rows
 
 
@@ -149,8 +149,8 @@ def fit_pa_model():
     ].copy()
 
     pi = players.player_info_proj.reset_index()
-    pi = pi[pi['pos1'] != 'P'][['first_name', 'last_name'] + PA_FEATURES]
-    merged = s20.merge(pi, on=['first_name', 'last_name'])
+    pi = pi[pi['pos1'] != 'P'][['player_id'] + PA_FEATURES]
+    merged = s20.merge(pi, on='player_id')
 
     X = merged[PA_FEATURES].values.astype(float)
     y = merged['pa'].values.astype(float)
@@ -221,8 +221,7 @@ def compute_all():
     abbr_map = teams_data.teams.set_index('team_name')['abbr']
 
     for row in rows:
-        first, last = row['first'], row['last']
-        pi = players.player_info.loc[(first, last)]
+        pi = players.player_info.loc[row['player_id']]
         pp = pi['pos1']
         sp = pi['pos2']
         team_abbr = abbr_map.get(row['team'], '')

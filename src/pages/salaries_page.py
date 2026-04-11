@@ -5,7 +5,7 @@ import numpy as np
 from dominate.tags import *
 
 from constants import CURRENT_SEASON, LAST_COMPLETED_SEASON
-from pages.page_utils import make_doc, convert_name
+from pages.page_utils import make_doc
 from data import players
 from data import teams as teams_data
 import batting as bat_module
@@ -120,13 +120,13 @@ def _team_salary_table(abbr_map, bat_rows, pit_rows, bat_war_model_info, pit_war
 
     # Actual salaries per team
     totals = {}  # team_name -> {'bat': float, 'pit': float}
-    for (first, last), row in pi.iterrows():
+    for pid, row in pi[~pi['is_retired']].iterrows():
         try:
             sal = float(row['salary'])
         except (ValueError, TypeError):
             continue
         team = row['team_name']
-        if team == 'FREE AGENT':
+        if not team or team == 'FREE AGENT':
             continue
         if team not in totals:
             totals[team] = {'bat': 0.0, 'pit': 0.0,
@@ -144,7 +144,7 @@ def _team_salary_table(abbr_map, bat_rows, pit_rows, bat_war_model_info, pit_war
         m        = war_model_info[0]
         smearing = war_model_info[3]
         for d in rows:
-            team = pi.loc[(d['first'], d['last']), 'team_name'] if (d['first'], d['last']) in pi.index else None
+            team = pi.loc[d['player_id'], 'team_name']
             if not team or team == 'FREE AGENT' or team not in totals:
                 continue
             xwar = d.get('proj_war')
@@ -264,7 +264,10 @@ def _player_table(rows, skills, labels, abbr_map, war_model_info, war_linear_inf
                     th(col)
         with tbody():
             for d in rows:
-                first, last = d['first'], d['last']
+                pid = d['player_id']
+                pi_row = players.player_info.loc[pid]
+                first  = pi_row['first_name']
+                last   = pi_row['last_name']
                 if war_model and d.get('war') is not None and d['war'] > 0:
                     pred_war_str = _fmt_sal(war_smearing * np.exp(war_model.intercept_ + war_model.coef_[0] * d['war']))
                 else:
@@ -285,8 +288,8 @@ def _player_table(rows, skills, labels, abbr_map, war_model_info, war_linear_inf
                     pred_proj_lin_str = '-'
                     diff_proj_lin = '-'
                 with tr():
-                    td(a(f"{first} {last}", href=f"players/{convert_name(first, last)}.html"))
-                    team = players.player_info.loc[(first, last), 'team_name']
+                    td(a(f"{first} {last}", href=f"players/{pid}.html"))
+                    team = players.player_info.loc[pid, 'team_name']
                     td(abbr_map.get(team, team))
                     for val in d['X']:
                         td(val)

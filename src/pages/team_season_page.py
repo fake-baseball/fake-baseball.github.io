@@ -77,13 +77,12 @@ def generate_team_season_page(team_name, season_num, abbr):
         df = df.copy()
         if total_row is not None:
             total_row = total_row.copy()
-            total_row['first_name'] = ''
-            total_row['last_name']  = 'Team Total'
+            total_row['player_id']  = ''
             total_row['player']     = ''
             total_row['stat_type']  = 'career'
             df = pd.concat([df, total_row], ignore_index=True)
         df['player'] = ''
-        available = ['first_name', 'last_name'] + [c for c in cols if c in df.columns]
+        available = ['player_id'] + [c for c in cols if c in df.columns]
         for extra in ('season', 'team'):
             if extra in df.columns and extra not in available:
                 available.append(extra)

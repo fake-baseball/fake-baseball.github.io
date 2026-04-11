@@ -6,6 +6,7 @@ from formulas import compute_tb, compute_xbh, compute_bip_bat, compute_gf, compu
 from formulas import compute_p_bip, compute_p_gr
 from data.sources import BATTERS_CSV, PITCHERS_CSV, TEAMS_CSV, season21_latest, season21_all, read_s21
 from constants import weight_BB, weight_HBP, weight_1B, weight_2B, weight_3B, weight_HR
+from data.data_utils import convert_name
 
 # Integer position codes used in season21 files
 _POS_MAP  = {1:'P', 2:'C', 3:'1B', 4:'2B', 5:'3B', 6:'SS', 7:'LF', 8:'CF', 9:'RF'}
@@ -23,6 +24,7 @@ def _name_to_abbr():
 
 batting_stats  = None
 pitching_stats = None
+player_names   = {}  # {player_id: (first_name, last_name)} -- populated by load_batting/load_pitching
 
 _s21_cache = {}  # path -> DataFrame, shared across all stream_rows calls
 
@@ -57,6 +59,12 @@ def load_batting():
     if s21 is not None:
         data = pd.concat([data, s21], ignore_index=True)
 
+    data['player_id'] = data.apply(lambda r: convert_name(r['first_name'], r['last_name']), axis=1)
+    player_names.update(
+        {row['player_id']: (row['first_name'], row['last_name'])
+         for _, row in data[['player_id', 'first_name', 'last_name']].drop_duplicates('player_id').iterrows()}
+    )
+    data = data.drop(columns=['first_name', 'last_name'])
     compute_tb(data)
     compute_xbh(data)
     compute_bip_bat(data)
@@ -131,6 +139,12 @@ def load_pitching():
     if s21 is not None:
         data = pd.concat([data, s21], ignore_index=True)
 
+    data['player_id'] = data.apply(lambda r: convert_name(r['first_name'], r['last_name']), axis=1)
+    player_names.update(
+        {row['player_id']: (row['first_name'], row['last_name'])
+         for _, row in data[['player_id', 'first_name', 'last_name']].drop_duplicates('player_id').iterrows()}
+    )
+    data = data.drop(columns=['first_name', 'last_name'])
     compute_p_bip(data)
     compute_p_gr(data)
     pitching_stats = data

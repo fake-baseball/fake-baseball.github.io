@@ -71,7 +71,7 @@ def compute():
 def _append_summary_rows(d):
     return append_summary_rows(
         d,
-        player_keys=['first_name', 'last_name'],
+        player_keys=['player_id'],
         recompute_fn=_recompute_rates,
         weighted_avg_specs=[
             ('woba',     'pa'),

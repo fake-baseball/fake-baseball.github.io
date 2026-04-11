@@ -36,9 +36,10 @@ import bat_projections
 import pit_projections
 from constants         import SEASON_RANGE
 from data.stats        import load_batting, load_pitching
-from data.players      import load_player_info, load_retirements
+from data.players      import load_player_info
 from data.teams        import load_teams, load_rotations, load_lineups, load_standings, load_schedule20
 from data              import teams as teams_data
+from data              import players
 import pages.page_utils as page_utils
 from pages.batter           import generate_batter_page
 from pages.pitcher          import generate_pitcher_page
@@ -65,7 +66,7 @@ _DATA_DEPS = {
     'schedule':    set(),
     'rotations':   set(),
     'lineups':     set(),
-    'player_info': set(),
+    'player_info': {'raw'},
     'retirements': set(),
     'standings':   {'teams'},
     'league':      {'raw'},
@@ -198,8 +199,7 @@ def main():
             print("Computing player stats...", end='', flush=True)
             t = time.time(); batting.compute(); pitching.compute(); _done(t)
         elif key == 'retirements':
-            print("Loading retirements...", end='', flush=True)
-            t = time.time(); load_retirements(); _done(t)
+            pass  # now handled by load_player_info
         elif key == 'team_ranks':
             print("Computing team ranks...", end='', flush=True)
             t = time.time(); team_ranks.compute(); _done(t)
@@ -220,10 +220,12 @@ def main():
     if 'players' in pages:
         print("Generating player pages...", end='', flush=True)
         t = time.time()
-        for first, last in batting.stats[['first_name', 'last_name']].drop_duplicates().itertuples(index=False):
-            generate_batter_page(first, last)
-        for first, last in pitching.stats[['first_name', 'last_name']].drop_duplicates().itertuples(index=False):
-            generate_pitcher_page(first, last)
+        bat_pids = batting.stats['player_id'].unique()
+        pit_pids = pitching.stats['player_id'].unique()
+        for pid in bat_pids:
+            generate_batter_page(pid)
+        for pid in pit_pids:
+            generate_pitcher_page(pid)
         _done(t)
         print("Generating players index...", end='', flush=True)
         t = time.time(); generate_players_index(); _done(t)

@@ -33,7 +33,7 @@ def generate_cy_young():
             df = get_leaders_by_season('p_cyp', teams=abbr_by_conf[conf])
             df['player'] = ''
             df['stat_type'] = 'season'
-            render_table(df[['season', 'first_name', 'last_name', 'player', 'team', 'stat_type'] + _STAT_COLS], depth=0)
+            render_table(df[['season', 'player_id', 'player', 'team', 'stat_type'] + _STAT_COLS], depth=0)
 
         for season_num in reversed(SEASON_RANGE):
             h2(f"Season {season_num}")
@@ -46,7 +46,7 @@ def generate_cy_young():
                 df = df.reset_index(names='rank')
                 df['player'] = ''
                 df['stat_type'] = 'season'
-                render_table(df[['rank', 'season', 'first_name', 'last_name', 'player', 'team', 'stat_type'] + _STAT_COLS],
+                render_table(df[['rank', 'season', 'player_id', 'player', 'team', 'stat_type'] + _STAT_COLS],
                              depth=0, hidden='season')
 
     Path("docs/cy_young.html").write_text(str(doc))

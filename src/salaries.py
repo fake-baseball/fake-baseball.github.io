@@ -17,12 +17,12 @@ def _r2(y, preds):
 
 
 def _build_war_map(stats_df, war_col='war'):
-    """Return {(first, last): WAR} from last completed season rows."""
+    """Return {player_id: WAR} from last completed season rows."""
     s = stats_df[
         (stats_df['season'] == LAST_COMPLETED_SEASON) & (stats_df['stat_type'] == 'season')
     ]
     return {
-        (row['first_name'], row['last_name']): float(row[war_col])
+        row['player_id']: float(row[war_col])
         for _, row in s.iterrows()
     }
 
@@ -30,14 +30,14 @@ def _build_war_map(stats_df, war_col='war'):
 def _fit_skills(pi_group, skills, war_map, cat_cols=None):
     """Fit Ridge salary ~ degree-2 interaction polynomial of skills + optional one-hot categoricals."""
     data = []
-    for (first, last), row in pi_group.iterrows():
+    for pid, row in pi_group.iterrows():
         try:
             sal = float(row['salary'])
         except (ValueError, TypeError):
             continue
-        war = war_map.get((first, last))
+        war = war_map.get(pid)
         entry = {
-            'first': first, 'last': last,
+            'player_id': pid,
             'sal':   sal,
             'X':     [int(row[s]) for s in skills],
             'war':   war,
@@ -130,8 +130,9 @@ def compute_salary_models(pi, bat_stats, pit_stats, proj_rows, pit_proj_rows):
              bat_war_model_info, pit_war_model_info,
              combined_war_model_info, bat_war_linear_info, pit_war_linear_info).
     """
-    bat_pi = pi[pi['pos1'] != 'P']
-    pit_pi = pi[pi['pos1'] == 'P']
+    active = pi[~pi['is_retired']]
+    bat_pi = active[active['pos1'] != 'P']
+    pit_pi = active[active['pos1'] == 'P']
 
     bat_war_map = _build_war_map(bat_stats, war_col='war')
     pit_war_map = _build_war_map(pit_stats, war_col='p_war')
@@ -139,12 +140,12 @@ def compute_salary_models(pi, bat_stats, pit_stats, proj_rows, pit_proj_rows):
     bat_model_info, bat_rows = _fit_skills(bat_pi, BAT_SKILLS, bat_war_map)
     pit_model_info, pit_rows = _fit_skills(pit_pi, PIT_SKILLS, pit_war_map, cat_cols=['role'])
 
-    bat_proj_war = {r['first'] + '\x00' + r['last']: r['war']   for r in proj_rows}
-    pit_proj_war = {r['first'] + '\x00' + r['last']: r['p_war'] for r in pit_proj_rows}
+    bat_proj_war = {r['player_id']: r['war']   for r in proj_rows}
+    pit_proj_war = {r['player_id']: r['p_war'] for r in pit_proj_rows}
     for d in bat_rows:
-        d['proj_war'] = bat_proj_war.get(d['first'] + '\x00' + d['last'])
+        d['proj_war'] = bat_proj_war.get(d['player_id'])
     for d in pit_rows:
-        d['proj_war'] = pit_proj_war.get(d['first'] + '\x00' + d['last'])
+        d['proj_war'] = pit_proj_war.get(d['player_id'])
 
     bat_war_model_info     = _fit_war(bat_rows, war_key='proj_war')
     pit_war_model_info     = _fit_war(pit_rows, war_key='proj_war')

@@ -18,8 +18,10 @@ _POSITION_COLS = ['jersey', 'Name',  'pos1', 'pos2', 'bats', 'power', 'contact',
 
 def _batter_stats(first, last):
     """Returns dict of season 21 stats, or None if no games played."""
+    from pages.slug import convert_name
     df = bat_module.stats
-    mask = ((df['first_name'] == first) & (df['last_name'] == last) &
+    pid = convert_name(first, last)
+    mask = ((df['player_id'] == pid) &
             (df['stat_type'] == 'season') & (df['season'] == CURRENT_SEASON))
     rows = df[mask]
     if rows.empty:
@@ -39,8 +41,10 @@ def _batter_stats(first, last):
 
 def _pitcher_stats(first, last):
     """Returns dict of season 21 pitcher stats, or None if no games played."""
+    from pages.slug import convert_name
     df = pit_module.stats
-    mask = ((df['first_name'] == first) & (df['last_name'] == last) &
+    pid = convert_name(first, last)
+    mask = ((df['player_id'] == pid) &
             (df['stat_type'] == 'season') & (df['season'] == CURRENT_SEASON))
     rows = df[mask]
     if rows.empty:
@@ -107,7 +111,7 @@ def _roster_table(group, cols, link_col='Name'):
     df = group.copy()
     df['player'] = ''
     display_cols = ['player' if c == link_col else c for c in cols]
-    render_table(df[display_cols + ['first_name', 'last_name']], depth=2)
+    render_table(df[display_cols + ['player_id']], depth=2)
 
 
 def generate_team_page(team_name, roster, team_info):
@@ -116,26 +120,27 @@ def generate_team_page(team_name, roster, team_info):
     roster    - DataFrame of players on this team (rows from player_info, reset_index'd)
     """
     slug     = team_name.replace(' ', '')
+    from pages.slug import convert_name
     pitchers = roster[roster['pos1'] == 'P'].sort_values(['last_name', 'first_name']).copy()
     position = roster[roster['pos1'] != 'P'].sort_values(['last_name', 'first_name']).copy()
 
     for df in (pitchers, position):
-        df['Name'] = None  # placeholder; _roster_table uses first_name/last_name directly
+        df['Name'] = None  # placeholder; _roster_table uses player_id for the link
 
     rotation = teams_data.rotations[teams_data.rotations['teamName'] == team_name].sort_values('rotation')
     lineup   = teams_data.lineups[teams_data.lineups['teamName'] == team_name].sort_values('battingOrder')
 
-    lineup_names   = set(zip(lineup['firstName'], lineup['lastName']))
-    rotation_names = set(zip(rotation['firstName'], rotation['lastName']))
+    lineup_pids   = set(convert_name(r['firstName'], r['lastName']) for _, r in lineup.iterrows())
+    rotation_pids = set(convert_name(r['firstName'], r['lastName']) for _, r in rotation.iterrows())
 
     bench = roster[
         (roster['pos1'] != 'P') &
-        ~roster.apply(lambda r: (r['first_name'], r['last_name']) in lineup_names, axis=1)
+        ~roster['player_id'].isin(lineup_pids)
     ].sort_values(['last_name', 'first_name'])
 
     bullpen = roster[
         (roster['pos1'] == 'P') &
-        ~roster.apply(lambda r: (r['first_name'], r['last_name']) in rotation_names, axis=1)
+        ~roster['player_id'].isin(rotation_pids)
     ]
 
     doc = make_doc(team_name, depth=2)
@@ -160,7 +165,7 @@ def generate_team_page(team_name, roster, team_info):
         _ROLE_ORDER = {'CL': 0, 'RP': 1, 'SP/RP': 2}
         bp_sorted = bullpen.sort_values('role', key=lambda s: s.map(lambda r: _ROLE_ORDER.get(r, 99)))
         bullpen_list = [
-            (row['role'], row['first_name'], row['last_name'])
+            (row['role'], row['first_name'], row['last_name'])  # first_name/last_name from player_info
             for _, row in bp_sorted.iterrows()
         ]
         _pitcher_table(bullpen_list, ['SV', 'ERA', 'IP', 'K', 'WAR'])

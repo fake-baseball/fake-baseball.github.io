@@ -87,14 +87,14 @@ def attach_dh_model(rows, ppos_map, spos_map, e_rate_map=None, lg_pb_rate=0.0):
     DEF: position-weighted blend (primary + secondaries with 20-pt FLD debuff),
     then multiplied by a versatility factor (1 + alpha * sqrt(N)) so players
     who cover more positions are less likely to be designated as the DH.
-    e_rate_map: optional dict keyed by (first, last) -> {'e_rate': float, 'pb_rate': float}
+    e_rate_map: optional dict keyed by player_id -> {'e_rate': float, 'pb_rate': float}
     lg_pb_rate: league-average PB/GB for catchers (used as baseline for PB correction)
     """
     n_total = len(rows)
     eligible = []
     for r in rows:
-        ppos = ppos_map.get((r['first'], r['last']), '')
-        spos_str = spos_map.get((r['first'], r['last']), '')
+        ppos = ppos_map.get(r['player_id'], '')
+        spos_str = spos_map.get(r['player_id'], '')
         r['_dh_pos'] = ppos
         r['_dh_spos'] = spos_str
         if ppos not in POS_WEIGHTS:
@@ -189,7 +189,7 @@ def attach_dh_model(rows, ppos_map, spos_map, e_rate_map=None, lg_pb_rate=0.0):
         # Rdef_errors: actual vs expected errors given position split
         rdef_e20 = 0.0
         if e_rate_map is not None:
-            rates = e_rate_map.get((r['first'], r['last']))
+            rates = e_rate_map.get(r['player_id'])
             if rates is not None:
                 exp_e_rate = 0.0
                 if ppos in mlb_E_rate:

@@ -74,7 +74,7 @@ def get_career_leaders(stat, active=False, worst=False, num=10, team=None, teams
     df = data[data[qual_col] >= CAREER_THRESHOLDS[qual_col]] if meta['qualified'] else data
     df = df[df['season'] == 'Career']
     if active:
-        df = df[df.set_index(['first_name', 'last_name']).index.isin(players.player_info.index)]
+        df = df[df['player_id'].isin(players.player_info.index[~players.player_info['is_retired']])]
     if team is not None:
         df = df[df['team'] == team]
     if teams is not None:
@@ -82,11 +82,11 @@ def get_career_leaders(stat, active=False, worst=False, num=10, team=None, teams
         season_data = data[data['stat_type'] == 'season']
         recent_team = (
             season_data.sort_values('season')
-            .groupby(['first_name', 'last_name'])['team']
+            .groupby('player_id')['team']
             .last()
         )
         eligible = recent_team[recent_team.isin(teams)].index
-        df = df[df.set_index(['first_name', 'last_name']).index.isin(eligible)]
+        df = df[df['player_id'].isin(eligible)]
     if ascending:
         df = df[df[stat] <= df[stat].nsmallest(num).max()]
         df = df.sort_values(stat, ascending=True)

@@ -37,7 +37,7 @@ def _proj_table(rows):
     records = []
     for row in rows:
         rec = {
-            'first_name': row['first'], 'last_name': row['last'], 'player': '',
+            'player_id': row['player_id'], 'player': '',
             'team':    row['_team_abbr'] or 'FA',
             'power':   row['power'],   'contact': row['contact'],
             'speed':   row['speed'],   'fielding': row['fielding'], 'arm': row['arm'],
@@ -77,7 +77,7 @@ def _pit_all_table(pit_rows):
     records = []
     for row in pit_rows:
         records.append({
-            'first_name': row['first'], 'last_name': row['last'], 'player': '',
+            'player_id': row['player_id'], 'player': '',
             'team':     row['_team_abbr'] or 'FA',
             'velocity': row['velocity'], 'junk': row['junk'], 'accuracy': row['accuracy'],
             'role':     row['role'],
@@ -114,19 +114,21 @@ def _pit_team_summary_table(team_rows):
 
 
 def _war_delta_table(deltas):
-    """Render a table of (first, last, s20_war, xwar, delta) rows."""
+    """Render a table of (player_id, s20_war, xwar, delta) rows."""
     m = REGISTRY['war']
     def _fw(v):
         return fmt_round(v, m['decimal_places'], m['leading_zero'], False)
+    pi = players.player_info
     with table(border=0):
         with thead():
             with tr():
                 for col in ['Player', 'S20 WAR', 'xWAR', 'Delta']:
                     th(col)
         with tbody():
-            for first, last, s20_war, xwar, delta in deltas:
+            for pid, s20_war, xwar, delta in deltas:
+                lbl = f"{pi.loc[pid, 'first_name']} {pi.loc[pid, 'last_name']}"
                 with tr():
-                    td(player_link(first, last, depth=0))
+                    td(player_link(pid, depth=0, label=lbl))
                     td(_fw(s20_war))
                     td(_fw(xwar))
                     sign = '+' if delta >= 0 else ''
@@ -140,9 +142,12 @@ def _top50_section(rows, pit_rows, ppos_map):
     with ol():
         for kind, r in combined[:50]:
             abbr = r['_team_abbr'] or 'FA'
+            pid  = r['player_id']
+            pi_r = players.player_info.loc[pid]
+            name = f"{pi_r['first_name']} {pi_r['last_name']}"
             if kind == 'bat':
                 war  = _f('war', r['war'])
-                pos  = ppos_map.get((r['first'], r['last']), '')
+                pos  = ppos_map.get(pid, '')
                 line = (f"{_f('avg', r['avg'])} AVG, {r['hr']} HR, "
                         f"{r['rbi']} RBI, {_f('ops', r['ops'])} OPS ({war} WAR)")
             else:
@@ -155,7 +160,7 @@ def _top50_section(rows, pit_rows, ppos_map):
                 else:
                     line = (f"{_f('p_era', r['p_era'])} ERA, {ip} IP, "
                             f"{r['p_k']} K, {r['p_sv']} SV, {war} WAR")
-            li(f"{r['first']} {r['last']} ({pos}, {abbr}): {line}")
+            li(f"{name} ({pos}, {abbr}): {line}")
 
 from constants import replacement_level, CURRENT_SEASON, LAST_COMPLETED_SEASON, num_games
 
@@ -168,9 +173,12 @@ def _rookie_war_list(bat_rookies, pit_rookies, ppos_map, n=10):
     with ol():
         for kind, r in combined[:n]:
             abbr = r['_team_abbr'] or 'FA'
+            pid  = r['player_id']
+            pi_r = players.player_info.loc[pid]
+            name = f"{pi_r['first_name']} {pi_r['last_name']}"
             if kind == 'bat':
                 war  = _f('war', r['war'])
-                pos  = ppos_map.get((r['first'], r['last']), '')
+                pos  = ppos_map.get(pid, '')
                 line = (f"{_f('avg', r['avg'])} AVG, {r['hr']} HR, "
                         f"{r['rbi']} RBI, {_f('ops', r['ops'])} OPS ({war} WAR)")
             else:
@@ -183,7 +191,7 @@ def _rookie_war_list(bat_rookies, pit_rookies, ppos_map, n=10):
                 else:
                     line = (f"{_f('p_era', r['p_era'])} ERA, {ip} IP, "
                             f"{r['p_k']} K, {r['p_sv']} SV, {war} WAR")
-            li(f"{r['first']} {r['last']} ({pos}, {abbr}): {line}")
+            li(f"{name} ({pos}, {abbr}): {line}")
 
 _REPL_WINS = replacement_level * num_games
 
@@ -193,11 +201,10 @@ def generate_projections():
     pit_rows = pit_proj_module.rows
 
     # Build player -> team lookup and team name -> abbreviation map
-    pi = players.player_info.reset_index()
-    player_team = {(row['first_name'], row['last_name']): row['team_name']
-                   for _, row in pi.iterrows()}
+    pi = players.player_info
+    player_team = pi['team_name'].to_dict()
     abbr_map = teams_data.teams.set_index('team_name')['abbr']
-    ppos_map = {(row['first_name'], row['last_name']): row['pos1'] for _, row in pi.iterrows()}
+    ppos_map = pi['pos1'].to_dict()
     for r in rows + pit_rows:
         r['_team_abbr'] = abbr_map.get(r['team'], r['team']) if r['team'] != 'FREE AGENT' else None
 
@@ -205,11 +212,11 @@ def generate_projections():
     team_proj     = {}
     pit_team_proj = {}
     for r in rows:
-        tname = player_team.get((r['first'], r['last']))
+        tname = player_team.get(r['player_id'])
         if tname and tname != 'FREE AGENT':
             team_proj.setdefault(tname, []).append(r)
     for r in pit_rows:
-        tname = player_team.get((r['first'], r['last']))
+        tname = player_team.get(r['player_id'])
         if tname and tname != 'FREE AGENT':
             pit_team_proj.setdefault(tname, []).append(r)
 
@@ -286,14 +293,14 @@ def generate_projections():
         # WAR delta: xWAR vs last season WAR
         bat_s20 = bat_module.stats[
             (bat_module.stats['season'] == LAST_COMPLETED_SEASON) & (bat_module.stats['stat_type'] == 'season')
-        ].set_index(['first_name', 'last_name'])
+        ].set_index('player_id')
         bat_deltas = []
         for r in rows:
-            key = (r['first'], r['last'])
+            key = r['player_id']
             if key in bat_s20.index:
                 s20_war = float(bat_s20.loc[key, 'war'])
-                bat_deltas.append((r['first'], r['last'], s20_war, r['war'], r['war'] - s20_war))
-        bat_deltas.sort(key=lambda x: x[4], reverse=True)
+                bat_deltas.append((r['player_id'], s20_war, r['war'], r['war'] - s20_war))
+        bat_deltas.sort(key=lambda x: x[3], reverse=True)
 
         h3(f"WAR Delta (xWAR - S{LAST_COMPLETED_SEASON} WAR)")
         p("Bounce-back candidates (top 10):")
@@ -316,14 +323,14 @@ def generate_projections():
         # WAR delta: xWAR vs last season WAR
         pit_s20 = pit_module.stats[
             (pit_module.stats['season'] == LAST_COMPLETED_SEASON) & (pit_module.stats['stat_type'] == 'season')
-        ].set_index(['first_name', 'last_name'])
+        ].set_index('player_id')
         pit_deltas = []
         for r in pit_rows:
-            key = (r['first'], r['last'])
+            key = r['player_id']
             if key in pit_s20.index:
                 s20_war = float(pit_s20.loc[key, 'p_war'])
-                pit_deltas.append((r['first'], r['last'], s20_war, r['p_war'], r['p_war'] - s20_war))
-        pit_deltas.sort(key=lambda x: x[4], reverse=True)
+                pit_deltas.append((r['player_id'], s20_war, r['p_war'], r['p_war'] - s20_war))
+        pit_deltas.sort(key=lambda x: x[3], reverse=True)
 
         h3(f"WAR Delta (xWAR - S{LAST_COMPLETED_SEASON} WAR)")
         p("Bounce-back candidates (top 10):")

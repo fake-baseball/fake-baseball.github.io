@@ -6,7 +6,6 @@ from dominate.tags import table, thead, tbody, tr, th, td, abbr as abbr_tag
 from dominate.tags import b as bold_tag, i as italic_tag, a as anchor_tag
 
 from registry import REGISTRY
-from pages.slug import convert_name
 from util import fmt_ip, weighted_avg
 
 
@@ -106,13 +105,13 @@ def per_game_df(df):
 def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, border=0):
     """Render a DataFrame as a dominate table with formatting, bolding, and player links.
 
-    df         - DataFrame; may contain 'first_name'/'last_name' for Player links,
-                 'stat_type' for row CSS classes, 'Season'/'Team' for bolding lookups.
+    df         - DataFrame; may contain 'player_id' for Player links (name looked up from
+                 player_info), 'stat_type' for row CSS classes, 'Season'/'Team' for bolding.
     depth      - number of directory levels above docs/ root for the calling page.
                  0 = docs/ (e.g. index.html), 1 = docs/leaders/, 2 = docs/teams/Team/.
-                 Player links are built as '../' * depth + 'players/{slug}.html'.
-    hidden     - set of column names to exclude from display; 'stat_type', 'first_name',
-                 and 'last_name' are always hidden.
+                 Player links are built as '../' * depth + 'players/{player_id}.html'.
+    hidden     - set of column names to exclude from display; 'stat_type', 'player_id',
+                 'first_name', and 'last_name' are always hidden.
     row_class  - callable (row) -> str override for <tr> CSS class.
     cell_style - callable (col, raw_val, row) -> str or None for inline style= on cells.
     border     - HTML border attribute on <table>.
@@ -121,7 +120,7 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
     from leaders import SEASON_THRESHOLDS
     import league as lg
 
-    _always_hidden = {'stat_type', 'first_name', 'last_name'}
+    _always_hidden = {'stat_type', 'player_id', 'first_name', 'last_name'}
     _hidden = _always_hidden | (set(hidden) if hidden else set())
 
     _LEFT_ALIGNED  = {'player_link', 'team_link', 'season_link', 'mono', 'text'}
@@ -164,8 +163,9 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
             return fmt_rdiff(int(val))
         return str(val) if val is not None else ''
 
+    from data import players as players_data
     visible_cols = [c for c in df.columns if c not in _hidden]
-    has_name_cols = 'first_name' in df.columns and 'last_name' in df.columns
+    has_player_id = 'player_id' in df.columns
     col_meta = {c: _resolve_meta(c) for c in visible_cols}
 
     bat_ldr      = leaders_mod.batting_leaders
@@ -200,12 +200,13 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
                         raw_val = raw_row[col]
 
                         ctype = meta.get('type', 'text')
-                        if ctype == 'player_link' and has_name_cols:
-                            first  = raw_row['first_name']
-                            last   = raw_row['last_name']
-                            slug   = convert_name(first, last)
-                            _pfx   = '../' * depth + 'players/'
-                            content = anchor_tag(f"{first} {last}", href=f"{_pfx}{slug}.html")
+                        if ctype == 'player_link' and has_player_id:
+                            pid  = raw_row['player_id']
+                            if pid:
+                                pi   = players_data.player_info
+                                lbl  = f"{pi.loc[pid, 'first_name']} {pi.loc[pid, 'last_name']}"
+                                _pfx = '../' * depth + 'players/'
+                                content = anchor_tag(lbl, href=f"{_pfx}{pid}.html")
                         elif ctype == 'team_link' and raw_val:
                             team_slug = str(raw_val).replace(' ', '')
                             _pfx = '../' * depth + 'teams/'
@@ -284,15 +285,15 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
     return t
 
 
-def player_link(first, last, depth=1, label=None):
+def player_link(pid, depth=1, label=None):
     """Return a dominate <a> tag linking to a player page.
 
+    pid   - player_id (used directly as URL slug).
     depth - number of directory levels above docs/ root for the calling page.
             0 = docs/ (e.g. index.html), 1 = docs/leaders/, 2 = docs/teams/Team/.
-            The href is built as '../' * depth + 'players/{slug}.html'.
-    label - link text; defaults to 'First Last'.
+            The href is built as '../' * depth + 'players/{pid}.html'.
+    label - link text; defaults to pid.
     """
     from dominate.tags import a
     prefix = '../' * depth + 'players/'
-    href = f"{prefix}{convert_name(first, last)}.html"
-    return a(label or f"{first} {last}", href=href)
+    return a(label or pid, href=f"{prefix}{pid}.html")

@@ -5,14 +5,15 @@ from dominate.tags import *
 
 import batting
 import pitching
-from pages.page_utils import convert_name, make_doc
+from data import players as players_data
+from pages.page_utils import make_doc
 
 
 def generate_players_index():
-    names = set()
-    names.update(batting.stats[['first_name', 'last_name']].drop_duplicates().itertuples(index=False))
-    names.update(pitching.stats[['first_name', 'last_name']].drop_duplicates().itertuples(index=False))
-    players_list = sorted(names, key=lambda x: x[1].lower())
+    pids = set(batting.stats['player_id'].unique())
+    pids.update(pitching.stats['player_id'].unique())
+    pi = players_data.player_info
+    players_list = sorted(pids, key=lambda pid: pi.loc[pid, 'last_name'].lower())
 
     doc = make_doc("All Players")
     with doc:
@@ -22,9 +23,11 @@ def generate_players_index():
             span(a(letter, href=f"#{letter}"))
             span(" ")
         current_letter = ''
-        for first, last in players_list:
+        for pid in players_list:
+            first = pi.loc[pid, 'first_name']
+            last  = pi.loc[pid, 'last_name']
             if last[0].upper() != current_letter:
                 current_letter = last[0].upper()
                 h2(current_letter, id=current_letter)
-            p(a(f"{last}, {first}", href=f"{convert_name(first, last)}.html"))
+            p(a(f"{last}, {first}", href=f"{pid}.html"))
     Path("docs/players/index.html").write_text(str(doc))
