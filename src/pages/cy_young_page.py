@@ -15,7 +15,7 @@ _STAT_COLS = ['p_cyp', 'p_cyp2', 'p_cyp3', 'p_war', 'p_vb', 'p_w', 'p_l', 'p_era
 def generate_cy_young():
     teams = teams_data.teams
     conferences = list(dict.fromkeys(teams['conference_name']))
-    abbr_by_conf = teams.groupby('conference_name')['abbr'].apply(list).to_dict()
+    abbr_by_conf = teams.groupby('conference_name')['team_id'].apply(list).to_dict()
 
     doc = make_doc("Cy Young Predictor", depth=0)
     with doc:

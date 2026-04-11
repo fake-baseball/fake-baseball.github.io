@@ -2,6 +2,7 @@
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 from dominate.tags import *
 
 from constants import CURRENT_SEASON, LAST_COMPLETED_SEASON
@@ -115,18 +116,18 @@ def _combined_war_conversion_table(model_info, bat_linear_info, pit_linear_info)
                     td(pred_pit_lin)
 
 
-def _team_salary_table(abbr_map, bat_rows, pit_rows, bat_war_model_info, pit_war_model_info):
+def _team_salary_table(bat_rows, pit_rows, bat_war_model_info, pit_war_model_info):
     pi = players.player_info
 
     # Actual salaries per team
-    totals = {}  # team_name -> {'bat': float, 'pit': float}
+    totals = {}  # team_id -> {'bat': float, 'pit': float}
     for pid, row in pi[~pi['is_retired']].iterrows():
         try:
             sal = float(row['salary'])
         except (ValueError, TypeError):
             continue
-        team = row['team_name']
-        if not team or team == 'FREE AGENT':
+        team = row['team_id']
+        if not team or pd.isna(team):
             continue
         if team not in totals:
             totals[team] = {'bat': 0.0, 'pit': 0.0,
@@ -144,8 +145,8 @@ def _team_salary_table(abbr_map, bat_rows, pit_rows, bat_war_model_info, pit_war
         m        = war_model_info[0]
         smearing = war_model_info[3]
         for d in rows:
-            team = pi.loc[d['player_id'], 'team_name']
-            if not team or team == 'FREE AGENT' or team not in totals:
+            team = pi.loc[d['player_id'], 'team_id']
+            if team is None or (isinstance(team, float) and pd.isna(team)) or team not in totals:
                 continue
             xwar = d.get('proj_war')
             if xwar is not None:
@@ -203,13 +204,13 @@ def _team_salary_table(abbr_map, bat_rows, pit_rows, bat_war_model_info, pit_war
                 th('Pit Diff')
                 th('Total')
                 th('Pos%')
+        ti = teams_data.team_info
         with tbody():
-            for team_name, v in sorted(totals.items(), key=lambda x: x[0]):
-                abbr = abbr_map[team_name]
+            for team_id, v in sorted(totals.items(), key=lambda x: x[0]):
                 total = v['bat'] + v['pit']
                 pct = v['bat'] / total * 100 if total > 0 else 0.0
                 with tr():
-                    td(abbr)
+                    td(ti.loc[team_id, 'abbr'] if team_id in ti.index else team_id)
                     td(_fmt_sal(v['bat']))
                     td(f"{v['bat_xwar']:.1f}")
                     _diff_td(v['bat_pred'], v['bat'])
@@ -250,7 +251,7 @@ def _fmt_diff(diff):
     return f"{'+' if diff >= 0 else ''}{diff:.1f}m"
 
 
-def _player_table(rows, skills, labels, abbr_map, war_model_info, war_linear_info=None):
+def _player_table(rows, skills, labels, war_model_info, war_linear_info=None):
     skill_headers = [labels[s] for s in skills]
     war_model    = war_model_info[0] if war_model_info else None
     war_smearing = war_model_info[3] if war_model_info else 1.0
@@ -289,8 +290,9 @@ def _player_table(rows, skills, labels, abbr_map, war_model_info, war_linear_inf
                     diff_proj_lin = '-'
                 with tr():
                     td(a(f"{first} {last}", href=f"players/{pid}.html"))
-                    team = players.player_info.loc[pid, 'team_name']
-                    td(abbr_map.get(team, team))
+                    team_id = players.player_info.loc[pid, 'team_id']
+                    ti = teams_data.team_info
+                    td(ti.loc[team_id, 'abbr'] if team_id and team_id in ti.index else 'FA')
                     for val in d['X']:
                         td(val)
                     td(_fmt_sal(d['pred_skills']))
@@ -398,7 +400,6 @@ def _methodology_section():
 
 def generate_salaries():
     pi       = players.player_info
-    abbr_map = teams_data.teams.set_index('team_name')['abbr'].to_dict()
 
     (bat_model_info, bat_rows, pit_model_info, pit_rows,
      bat_war_model_info, pit_war_model_info,
@@ -440,15 +441,15 @@ def generate_salaries():
             _combined_war_conversion_table(combined_war_model_info, bat_war_linear_info, pit_war_linear_info)
 
         h2("Team Salary Allocation")
-        _team_salary_table(abbr_map, bat_rows, pit_rows, bat_war_model_info, pit_war_model_info)
+        _team_salary_table(bat_rows, pit_rows, bat_war_model_info, pit_war_model_info)
 
         h2("Position Players")
         if bat_rows:
-            _player_table(bat_rows, BAT_SKILLS, BAT_LABELS, abbr_map, bat_war_model_info, bat_war_linear_info)
+            _player_table(bat_rows, BAT_SKILLS, BAT_LABELS, bat_war_model_info, bat_war_linear_info)
 
         h2("Pitchers")
         if pit_rows:
-            _player_table(pit_rows, PIT_SKILLS, PIT_LABELS, abbr_map, pit_war_model_info, pit_war_linear_info)
+            _player_table(pit_rows, PIT_SKILLS, PIT_LABELS, pit_war_model_info, pit_war_linear_info)
 
         _methodology_section()
 

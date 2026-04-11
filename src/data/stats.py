@@ -59,6 +59,7 @@ def load_batting():
     if s21 is not None:
         data = pd.concat([data, s21], ignore_index=True)
 
+    data['team'] = data['team'].str.lower()
     data['player_id'] = data.apply(lambda r: convert_name(r['first_name'], r['last_name']), axis=1)
     player_names.update(
         {row['player_id']: (row['first_name'], row['last_name'])
@@ -139,6 +140,7 @@ def load_pitching():
     if s21 is not None:
         data = pd.concat([data, s21], ignore_index=True)
 
+    data['team'] = data['team'].str.lower()
     data['player_id'] = data.apply(lambda r: convert_name(r['first_name'], r['last_name']), axis=1)
     player_names.update(
         {row['player_id']: (row['first_name'], row['last_name'])

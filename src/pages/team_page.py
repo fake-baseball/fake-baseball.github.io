@@ -119,7 +119,7 @@ def generate_team_page(team_name, roster, team_info):
     team_name - string team name
     roster    - DataFrame of players on this team (rows from player_info, reset_index'd)
     """
-    slug     = team_name.replace(' ', '')
+    slug     = team_info['team_id']
     from pages.slug import convert_name
     pitchers = roster[roster['pos1'] == 'P'].sort_values(['last_name', 'first_name']).copy()
     position = roster[roster['pos1'] != 'P'].sort_values(['last_name', 'first_name']).copy()
@@ -127,11 +127,11 @@ def generate_team_page(team_name, roster, team_info):
     for df in (pitchers, position):
         df['Name'] = None  # placeholder; _roster_table uses player_id for the link
 
-    rotation = teams_data.rotations[teams_data.rotations['teamName'] == team_name].sort_values('rotation')
-    lineup   = teams_data.lineups[teams_data.lineups['teamName'] == team_name].sort_values('battingOrder')
+    rotation = teams_data.rotations[teams_data.rotations['team_id'] == slug].sort_values('rotation')
+    lineup   = teams_data.lineups[teams_data.lineups['team_id'] == slug].sort_values('batting_order')
 
-    lineup_pids   = set(convert_name(r['firstName'], r['lastName']) for _, r in lineup.iterrows())
-    rotation_pids = set(convert_name(r['firstName'], r['lastName']) for _, r in rotation.iterrows())
+    lineup_pids   = set(convert_name(r['first_name'], r['last_name']) for _, r in lineup.iterrows())
+    rotation_pids = set(convert_name(r['first_name'], r['last_name']) for _, r in rotation.iterrows())
 
     bench = roster[
         (roster['pos1'] != 'P') &
@@ -150,14 +150,14 @@ def generate_team_page(team_name, roster, team_info):
         h2("Starters")
         h3("Lineup")
         players_data = [
-            (row['firstName'], row['lastName'], row['pos'],
-             _batter_stats(row['firstName'], row['lastName']))
+            (row['first_name'], row['last_name'], row['pos'],
+             _batter_stats(row['first_name'], row['last_name']))
             for _, row in lineup.iterrows()
         ]
         _lineup_table(players_data, ['AVG', 'HR', 'RBI', 'OPS', 'WAR'])
         h3("Rotation")
         rotation_list = [
-            (f"SP{int(row['rotation'])}", row['firstName'], row['lastName'])
+            (f"SP{int(row['rotation'])}", row['first_name'], row['last_name'])
             for _, row in rotation.iterrows()
         ]
         _pitcher_table(rotation_list, ['W-L', 'ERA', 'IP', 'K', 'WAR'])
@@ -176,7 +176,7 @@ def generate_team_page(team_name, roster, team_info):
         _roster_table(position, _POSITION_COLS)
 
         h2("History")
-        team_standings = teams_data.standings[teams_data.standings['teamName'] == team_name].sort_values('Season').copy()
+        team_standings = teams_data.standings[teams_data.standings['team_id'] == slug].sort_values('Season').copy()
         team_standings['Diff'] = team_standings['runsFor'] - team_standings['runsAgainst']
         total_w  = team_standings['gamesWon'].sum()
         total_l  = team_standings['gamesLost'].sum()

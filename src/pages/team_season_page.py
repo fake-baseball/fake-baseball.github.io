@@ -39,10 +39,10 @@ def _totals_row(season_num, abbr):
     return bat_row, pit_row
 
 
-def _rank_table(season_num, abbr, conference, cols, ranks_df):
+def _rank_table(season_num, team_id, conference, cols, ranks_df):
     """Render a transposed ranking table: columns=stats, rows=Conf rank / BFBL rank."""
-    conf_map = teams_data.teams.set_index('abbr')['conference_name'].to_dict()
-    conf_teams = {a for a, c in conf_map.items() if c == conference}
+    conf_map = teams_data.teams.set_index('team_id')['conference_name'].to_dict()
+    conf_teams = {tid for tid, c in conf_map.items() if c == conference}
 
     with table(cls='leaders-index', border=0):
         with thead():
@@ -56,12 +56,12 @@ def _rank_table(season_num, abbr, conference, cols, ranks_df):
                 with tr():
                     th(scope_label)
                     for col in cols:
-                        td(team_ranks.rank_label(season_num, abbr, col, ranks_df, scope_abbrs))
+                        td(team_ranks.rank_label(season_num, team_id, col, ranks_df, scope_abbrs))
 
 
-def generate_team_season_page(team_name, season_num, abbr):
+def generate_team_season_page(team_name, season_num, team_id):
     standing = teams_data.standings[
-        (teams_data.standings['teamName'] == team_name) &
+        (teams_data.standings['team_id'] == team_id) &
         (teams_data.standings['Season'] == season_num)
     ]
     if standing.empty:
@@ -71,7 +71,7 @@ def generate_team_season_page(team_name, season_num, abbr):
     win_pct = fmt_round(w / (w + l), 3, False)
     conference = row['conference_name']
 
-    bat_total, pit_total = _totals_row(season_num, abbr)
+    bat_total, pit_total = _totals_row(season_num, team_id)
 
     def _prep(df, cols, total_row=None):
         df = df.copy()
@@ -89,19 +89,19 @@ def generate_team_season_page(team_name, season_num, abbr):
         return df[list(dict.fromkeys(available))]
 
     bat_stats = bat_module.stats[
-        (bat_module.stats['team'] == abbr) &
+        (bat_module.stats['team'] == team_id) &
         (bat_module.stats['season'] == season_num) &
         (bat_module.stats['stat_type'] != 'career')
     ].sort_values('pa', ascending=False)
 
     pit_stats = pit_module.stats[
-        (pit_module.stats['team'] == abbr) &
+        (pit_module.stats['team'] == team_id) &
         (pit_module.stats['season'] == season_num) &
         (pit_module.stats['stat_type'] != 'career')
     ].sort_values('p_ip', ascending=False)
 
     team_seasons = sorted(
-        teams_data.standings[teams_data.standings['teamName'] == team_name]['Season'].unique()
+        teams_data.standings[teams_data.standings['team_id'] == team_id]['Season'].unique()
     )
     idx = team_seasons.index(season_num) if season_num in team_seasons else -1
     prev_season = team_seasons[idx - 1] if idx > 0 else None
@@ -122,9 +122,9 @@ def generate_team_season_page(team_name, season_num, abbr):
 
         h2("Rankings")
         h3("Batting")
-        _rank_table(season_num, abbr, conference, BAT_RANK_COLS, team_ranks.batting)
+        _rank_table(season_num, team_id, conference, BAT_RANK_COLS, team_ranks.batting)
         h3("Pitching")
-        _rank_table(season_num, abbr, conference, PIT_RANK_COLS, team_ranks.pitching)
+        _rank_table(season_num, team_id, conference, PIT_RANK_COLS, team_ranks.pitching)
 
         h2("Stats")
         p("Individual player stats here may show stats that a player achieved with another team "
@@ -138,13 +138,13 @@ def generate_team_season_page(team_name, season_num, abbr):
         if teams_data.schedules.get(season_num) is not None:
             h2("Game Log")
             sched = teams_data.schedules[season_num]
-            games = sched[(sched['Home Team'] == team_name) | (sched['Away Team'] == team_name)].copy()
+            games = sched[(sched['home_team_id'] == team_id) | (sched['away_team_id'] == team_id)].copy()
             games = games.sort_values('Game #').reset_index(drop=True)
             w_count = l_count = streak_char = streak_len = 0
             gl_rows = []
             for game_num, (_, g) in enumerate(games.iterrows(), start=1):
-                home      = g['Home Team'] == team_name
-                opp       = g['Away Team'] if home else g['Home Team']
+                home      = g['home_team_id'] == team_id
+                opp       = g['away_team_id'] if home else g['home_team_id']
                 rs        = g['Home Score'] if home else g['Away Score']
                 ras       = g['Away Score'] if home else g['Home Score']
                 played    = rs is not None and not (isinstance(rs, float) and math.isnan(rs))
@@ -191,5 +191,4 @@ def generate_team_season_page(team_name, season_num, abbr):
                     })
             render_table(pd.DataFrame(gl_rows), depth=2, hidden={'season'})
 
-    slug = team_name.replace(' ', '')
-    Path(f"docs/teams/{slug}/{season_num}.html").write_text(str(doc))
+    Path(f"docs/teams/{team_id}/{season_num}.html").write_text(str(doc))

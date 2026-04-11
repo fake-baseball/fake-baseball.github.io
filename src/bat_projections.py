@@ -123,7 +123,7 @@ def compute():
             'speed':     speed,
             'fielding':  fielding,
             'arm':       arm,
-            'team':      str(pi['team_name']) if 'team_name' in pi.index else '',
+            'team':      pi['team_id'] if 'team_id' in pi.index and pd.notna(pi['team_id']) else None,
             **{f'pa_{s}': season_pa[s] for s in PROJ_SEASONS},
             **{f'x{comp}': model_rates[comp] for comp in COMPONENTS},
             **{f'{comp}_rate': v for comp, v in proj.items()},
@@ -218,14 +218,12 @@ def compute_all():
     ]
     pa_per_gb = (s20['pa'] / s20['gb']).mean()
 
-    abbr_map = teams_data.teams.set_index('team_name')['abbr']
-
     for row in rows:
         pi = players.player_info.loc[row['player_id']]
         pp = pi['pos1']
         sp = pi['pos2']
-        team_abbr = abbr_map.get(row['team'], '')
-        pf     = (1 + park_factors.get(team_abbr, 1.0)) / 2
+        team_id = row['team']  # team_id (lowercase abbr) or None for free agents
+        pf     = (1 + park_factors.get(team_id, 1.0)) / 2
         r_bat  = ((row['woba'] - lg_wOBA_20 * pf) / scale_wOBA) * row['proj_pa']
         xGB    = row['proj_pa'] / pa_per_gb if pa_per_gb > 0 else 0.0
         row['gb'] = max(0, min(num_games, int(round(xGB))))
@@ -250,7 +248,7 @@ def compute_all():
             row['wrc']      = 0.0
 
     # Rcorr: target correct total WAR using only rostered players to set the rate
-    rostered    = [r for r in rows if r['team'] != 'FREE AGENT']
+    rostered    = [r for r in rows if r['team'] is not None]
     total_raa   = sum(r['_raa']  for r in rostered)
     total_rrep  = sum(r['_rrep'] for r in rostered)
     total_pa    = sum(r['proj_pa'] for r in rostered)

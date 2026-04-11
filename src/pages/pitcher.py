@@ -22,9 +22,8 @@ import player_ranks
 
 _PIT_SUMMARY_COLS = ['season', 'p_war', 'p_w', 'p_l', 'p_era', 'p_gp', 'p_gs', 'p_sv', 'p_ip', 'p_k', 'p_whip']
 
-_proj_index  = None   # (first, last) -> proj dict, built on first use
-_abbr_map    = None   # team_name -> abbr, built on first use
-_stats_index = None   # (first, last) -> player DataFrame, built on first use
+_proj_index  = None   # player_id -> proj dict, built on first use
+_stats_index = None   # player_id -> player DataFrame, built on first use
 
 
 def _get_proj_index():
@@ -32,13 +31,6 @@ def _get_proj_index():
     if _proj_index is None:
         _proj_index = {r['player_id']: r for r in pit_proj_module.rows}
     return _proj_index
-
-
-def _get_abbr_map():
-    global _abbr_map
-    if _abbr_map is None:
-        _abbr_map = teams_data.teams.set_index('team_name')['abbr'].to_dict()
-    return _abbr_map
 
 
 def _get_stats_index():
@@ -86,14 +78,14 @@ def _pit_proj_row(pid, cols):
 
     pi_row = players.player_info.loc[pid] if pid in players.player_info.index else None
     if pi_row is not None:
-        team_abbr = _get_abbr_map().get(pi_row['team_name'], '')
+        team_id = pi_row['team_id'] if 'team_id' in pi_row.index and not (isinstance(pi_row['team_id'], float) and pd.isna(pi_row['team_id'])) else None
     else:
-        team_abbr = ''
+        team_id = None
     d = {col: np.nan for col in cols}
     d.update({
         'season': 'Proj', 'stat_type': 'projected',
         'age':  pi_row['age'] if pi_row is not None else np.nan,
-        'team': team_abbr,
+        'team': team_id,
         'p_w': proj['p_w'], 'p_l': proj['p_l'],
         'p_win_pct': proj['p_w'] / (proj['p_w'] + proj['p_l']) if (proj['p_w'] + proj['p_l']) > 0 else np.nan,
         'p_gp': proj['p_gp'], 'p_gs': proj['p_gs'], 'p_sv': proj['p_sv'],

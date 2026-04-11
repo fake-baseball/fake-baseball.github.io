@@ -3,8 +3,10 @@ import pandas as pd
 from constants import CURRENT_SEASON
 from data.sources import TEAMS_CSV, STANDINGS_CSV, SCHEDULE20_CSV
 from data.sources import season21_latest, read_s21
+from data.data_utils import team_abbr_to_id
 
 teams      = None
+team_info  = None  # indexed by team_id; columns: team_name, abbr, division_name, conference_name
 rotations  = None
 lineups    = None
 standings  = None
@@ -24,20 +26,33 @@ schedules  = {}    # {season_num: schedule_df} for all seasons with schedule dat
 # to ensure this convention is met.
 
 def load_teams():
-    global teams
+    global teams, team_info
     teams = pd.read_csv(TEAMS_CSV)[['team_name', 'abbr', 'division_name', 'conference_name']]
+    teams['team_id'] = teams['abbr'].map(team_abbr_to_id)
+    team_info = teams.set_index('team_id')[['team_name', 'abbr', 'division_name', 'conference_name']]
+
+
+def _to_team_id(series):
+    """Map a Series of full team names to team_id. Requires load_teams() to have run."""
+    lookup = team_info.reset_index().set_index('team_name')['team_id']
+    return series.map(lookup)
 
 
 def load_rotations():
     global rotations
     df = read_s21(season21_latest('rotations'))
-    rotations = df.rename(columns={'slot': 'rotation'})[['teamName', 'rotation', 'firstName', 'lastName', 'role']]
+    df = df.rename(columns={'slot': 'rotation', 'firstName': 'first_name', 'lastName': 'last_name'})
+    df['team_id'] = _to_team_id(df['teamName'])
+    rotations = df[['team_id', 'rotation', 'first_name', 'last_name', 'role']]
 
 
 def load_lineups():
     global lineups
     df = read_s21(season21_latest('lineups'))
-    lineups = df[df['lineupType'] == 'DH'][['teamName', 'battingOrder', 'firstName', 'lastName', 'pos']].copy()
+    df = df[df['lineupType'] == 'DH'].copy()
+    df = df.rename(columns={'battingOrder': 'batting_order', 'firstName': 'first_name', 'lastName': 'last_name'})
+    df['team_id'] = _to_team_id(df['teamName'])
+    lineups = df[['team_id', 'batting_order', 'first_name', 'last_name', 'pos']].copy()
 
 
 def load_standings():
@@ -51,8 +66,11 @@ def load_standings():
     if s21 is not None:
         df = pd.concat([df, s21], ignore_index=True)
 
-    teams_df = pd.read_csv(TEAMS_CSV)[['team_name', 'division_name', 'conference_name']]
-    df = df.merge(teams_df, left_on='teamName', right_on='team_name', how='left').drop(columns='team_name')
+    # Merge in division/conference from team_info, then convert to team_id
+    df = df.merge(
+        team_info[['team_name', 'division_name', 'conference_name']].reset_index(),
+        left_on='teamName', right_on='team_name', how='left'
+    ).drop(columns='team_name')
 
     chunks = []
     for _, group in df.groupby(['Season', 'division_name']):
@@ -65,6 +83,7 @@ def load_standings():
         group['GB'] = ((max_w - group['gamesWon']) + (group['gamesLost'] - min_l)) / 2
         chunks.append(group)
     df = pd.concat(chunks)
+    df['team_id'] = _to_team_id(df['teamName'])
     standings = df
 
 
@@ -74,7 +93,6 @@ def _standings_from_schedule21():
     if path is None:
         return None
     sched = read_s21(path)
-    # Only completed games (non-null scores)
     played = sched.dropna(subset=['home_score', 'away_score']).copy()
     if played.empty:
         return None
@@ -109,8 +127,11 @@ def load_schedule20():
     global schedule20, schedules
     df = pd.read_csv(SCHEDULE20_CSV)
     df.columns = df.columns.str.strip()
-    schedule20 = df[['Game #', 'Day', 'Home Team', 'Home Score', 'Away Score', 'Away Team']]
-    schedules[20] = schedule20
+    df = df[['Game #', 'Day', 'Home Team', 'Home Score', 'Away Score', 'Away Team']].copy()
+    df['home_team_id'] = _to_team_id(df['Home Team'])
+    df['away_team_id'] = _to_team_id(df['Away Team'])
+    schedule20 = df
+    schedules[20] = df
     _load_schedule21()
 
 
@@ -123,15 +144,17 @@ def _load_schedule21():
     raw.columns = raw.columns.str.strip()
     if raw.empty:
         return
-    all_games = raw.rename(columns={
+    df = raw.rename(columns={
         'home_team':  'Home Team',
         'home_score': 'Home Score',
         'away_score': 'Away Score',
         'away_team':  'Away Team',
     }).copy()
-    played_mask = all_games['Home Score'].notna() & all_games['Away Score'].notna()
-    all_games.loc[played_mask, 'Home Score'] = all_games.loc[played_mask, 'Home Score'].astype(int)
-    all_games.loc[played_mask, 'Away Score'] = all_games.loc[played_mask, 'Away Score'].astype(int)
-    all_games['Game #'] = range(1, len(all_games) + 1)
-    all_games['Day']    = None
-    schedules[CURRENT_SEASON] = all_games[['Game #', 'Day', 'Home Team', 'Home Score', 'Away Score', 'Away Team']]
+    played_mask = df['Home Score'].notna() & df['Away Score'].notna()
+    df.loc[played_mask, 'Home Score'] = df.loc[played_mask, 'Home Score'].astype(int)
+    df.loc[played_mask, 'Away Score'] = df.loc[played_mask, 'Away Score'].astype(int)
+    df['Game #'] = range(1, len(df) + 1)
+    df['Day']    = None
+    df['home_team_id'] = _to_team_id(df['Home Team'])
+    df['away_team_id'] = _to_team_id(df['Away Team'])
+    schedules[CURRENT_SEASON] = df[['Game #', 'Day', 'Home Team', 'Home Score', 'Away Score', 'Away Team', 'home_team_id', 'away_team_id']]

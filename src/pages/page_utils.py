@@ -15,7 +15,7 @@ def _abbr_to_conf():
     global _abbr_to_conf_cache
     if _abbr_to_conf_cache is None:
         from data import teams as teams_data
-        _abbr_to_conf_cache = teams_data.teams.set_index('abbr')['conference_name'].to_dict()
+        _abbr_to_conf_cache = teams_data.teams.set_index('team_id')['conference_name'].to_dict()
     return _abbr_to_conf_cache
 
 
@@ -208,15 +208,18 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
                                 _pfx = '../' * depth + 'players/'
                                 content = anchor_tag(lbl, href=f"{_pfx}{pid}.html")
                         elif ctype == 'team_link' and raw_val:
-                            team_slug = str(raw_val).replace(' ', '')
+                            from data import teams as teams_data
+                            team_id = str(raw_val)
+                            ti      = teams_data.team_info
+                            lbl     = ti.loc[team_id, 'abbr'] if team_id in ti.index else team_id
                             _pfx = '../' * depth + 'teams/'
                             row_season = raw_row.get('season') if 'season' in df.columns else None
                             try:
                                 s_int = int(row_season)
-                                href = f"{_pfx}{team_slug}/{s_int}.html"
+                                href = f"{_pfx}{team_id}/{s_int}.html"
                             except (ValueError, TypeError):
-                                href = f"{_pfx}{team_slug}/index.html"
-                            content = anchor_tag(str(raw_val), href=href)
+                                href = f"{_pfx}{team_id}/index.html"
+                            content = anchor_tag(lbl, href=href)
                         elif ctype == 'season_link':
                             try:
                                 s_int = int(raw_val)

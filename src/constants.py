@@ -65,7 +65,7 @@ park_factors = {
     'BUS': 109.2252, 'HON': 89.0382,  'KBC': 98.1349,  'NGO': 95.5229,  'SEO': 109.2252,
     'BBR': 98.9917,  'JAK': 96.7187,  'JSB': 96.7187,  'MFP': 98.9917,  'DAK': 99.6863,
 }
-park_factors = {team: value / 100 for team, value in park_factors.items()}
+park_factors = {team.lower(): value / 100 for team, value in park_factors.items()}
 # NOTE: we implicitly assume league-average park factor is 100
 
 # Qualification thresholds

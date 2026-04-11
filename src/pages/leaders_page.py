@@ -36,7 +36,7 @@ def generate_leaders():
         conf = row.conference_name
         if conf not in conf_teams:
             conf_teams[conf] = []
-        conf_teams[conf].append(row.abbr)
+        conf_teams[conf].append(row.team_id)
     conf_order = list(conf_teams.keys())
 
     descriptors = []

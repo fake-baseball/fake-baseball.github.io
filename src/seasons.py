@@ -18,14 +18,14 @@ def strength_of_schedule(sched, standings_rows):
         w = row['gamesWon']
         l = row['gamesLost']
         total = w + l
-        win_pct[row['teamName']] = w / total if total > 0 else 0.5
+        win_pct[row['team_id']] = w / total if total > 0 else 0.5
 
     all_teams = set(win_pct)
     played   = {t: [] for t in all_teams}
     unplayed = {t: [] for t in all_teams}
 
     for _, g in sched.iterrows():
-        ht, at = g['Home Team'], g['Away Team']
+        ht, at = g['home_team_id'], g['away_team_id']
         score_missing = isinstance(g['Home Score'], float) and math.isnan(g['Home Score'])
         if score_missing:
             if ht in unplayed: unplayed[ht].append(at)
@@ -60,14 +60,14 @@ def split_records(sched, div_map, conf_map, winning_teams):
     for _, g in sched.iterrows():
         if isinstance(g['Home Score'], float) and math.isnan(g['Home Score']):
             continue
-        total_games[g['Home Team']] += 1
-        total_games[g['Away Team']] += 1
+        total_games[g['home_team_id']] += 1
+        total_games[g['away_team_id']] += 1
     game_count = {t: 0 for t in div_map}
 
     for _, g in sched.sort_values('Game #').iterrows():
         if isinstance(g['Home Score'], float) and math.isnan(g['Home Score']):
             continue
-        ht, at = g['Home Team'], g['Away Team']
+        ht, at = g['home_team_id'], g['away_team_id']
         hs, as_ = int(g['Home Score']), int(g['Away Score'])
         margin = abs(hs - as_)
         game_count[ht] += 1
@@ -110,12 +110,12 @@ def vs_division_records(season_num):
     sched = teams_data.schedules.get(season_num)
     if sched is None:
         return None, None
-    teams_df = teams_data.teams
-    div_map = teams_df.set_index('team_name')['division_name'].to_dict()
+    teams_df = teams_data.team_info.reset_index()
+    div_map = teams_df.set_index('team_id')['division_name'].to_dict()
     divisions = list(dict.fromkeys(teams_df['division_name']))
     records = {t: {d: [0, 0] for d in divisions} for t in div_map}
     for _, g in sched.iterrows():
-        ht, at = g['Home Team'], g['Away Team']
+        ht, at = g['home_team_id'], g['away_team_id']
         hs, as_ = int(g['Home Score']), int(g['Away Score'])
         opp_div_ht = div_map.get(at)
         opp_div_at = div_map.get(ht)
@@ -133,25 +133,25 @@ def vs_division_records(season_num):
 
 
 def h2h_records(season_num):
-    """Return (team_order, abbr_map, records_dict) for a head-to-head matrix.
+    """Return (team_order, records_dict) for a head-to-head matrix.
 
     records_dict: (team, opp) -> [wins, losses] from team's perspective.
-    Returns None if no schedule data available.
+    team_order entries are team_id values from standings.
+    Returns (None, None) if no schedule data available.
     """
     sched = teams_data.schedules.get(season_num)
     if sched is None:
-        return None, None, None
+        return None, None
     team_order = list(dict.fromkeys(
         teams_data.standings[teams_data.standings['Season'] == season_num]
         .sort_values(['conference_name', 'division_name', 'gamesWon'], ascending=[True, True, False])
-        ['teamName']
+        ['team_id']
     ))
-    abbr_map = teams_data.teams.set_index('team_name')['abbr'].to_dict()
     records = {}
     for _, g in sched.iterrows():
         if isinstance(g['Home Score'], float) and math.isnan(g['Home Score']):
             continue
-        ht, at = g['Home Team'], g['Away Team']
+        ht, at = g['home_team_id'], g['away_team_id']
         hs, as_ = int(g['Home Score']), int(g['Away Score'])
         records.setdefault((ht, at), [0, 0])
         records.setdefault((at, ht), [0, 0])
@@ -161,4 +161,4 @@ def h2h_records(season_num):
         else:
             records[(ht, at)][1] += 1
             records[(at, ht)][0] += 1
-    return team_order, abbr_map, records
+    return team_order, records

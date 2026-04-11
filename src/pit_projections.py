@@ -174,7 +174,7 @@ def compute():
             'junk':      junk,
             'accuracy':  accuracy,
             'role':      role,
-            'team':      str(pi['team_name']) if 'team_name' in pi.index else '',
+            'team':      pi['team_id'] if 'team_id' in pi.index and pd.notna(pi['team_id']) else None,
             **{f'ip_{s}':  season_ip[s]  for s in PROJ_SEASONS},
             **{f'app_{s}': season_app[s] for s in PROJ_SEASONS},
             **{f'x{comp}': model_rates[comp] for comp in COMPONENTS},
@@ -263,19 +263,16 @@ def compute_all():
     # ── Historical data for W/L/SV models and RP appearance model ─────────────
     df_all = pit_module.stats[pit_module.stats['stat_type'] == 'season'].copy()
 
-    # Team name <-> abbreviation mapping (needed for RS/G lookup)
-    name_to_abbr = teams_data.teams.set_index('team_name')['abbr'].to_dict()
-
-    # Historical team RS/G per (season, abbr) for SP W model
+    # Historical team RS/G per (season, team_id) for SP W model
     hist_rs = {}
     for _, srow in teams_data.standings.iterrows():
-        abbr = name_to_abbr.get(srow['teamName'])
-        if abbr:
+        tid = srow['team_id']
+        if pd.notna(tid):
             games = int(srow['gamesWon']) + int(srow['gamesLost'])
             if games > 0:
-                hist_rs[(int(srow['Season']), abbr)] = float(srow['runsFor']) / games
+                hist_rs[(int(srow['Season']), tid)] = float(srow['runsFor']) / games
 
-    # League-average RS/G (weighted blend) — fallback for free-agent SPs
+    # League-average RS/G (weighted blend) - fallback for free-agent SPs
     lg_rs_per_g = sum(
         WEIGHTS[s] * lg.season_batting.loc[s, 'r_per_g'] for s in PROJ_SEASONS
     ) / WEIGHT_TOTAL
@@ -284,12 +281,10 @@ def compute_all():
     bat_rows = proj_module.compute_all()
     proj_r_by_team = {}
     for br in bat_rows:
-        if br['team'] == 'FREE AGENT':
+        if br['team'] is None:
             continue
-        abbr = name_to_abbr.get(br['team'], '')
-        if abbr:
-            proj_r_by_team[abbr] = proj_r_by_team.get(abbr, 0.0) + br.get('r', 0.0)
-    proj_rs_per_g = {abbr: total / 80.0 for abbr, total in proj_r_by_team.items()}
+        proj_r_by_team[br['team']] = proj_r_by_team.get(br['team'], 0.0) + br.get('r', 0.0)
+    proj_rs_per_g = {tid: total / 80.0 for tid, total in proj_r_by_team.items()}
 
     # SP W/GS ~ xRA9 + IP/GS + team_rs_per_g:
     # xRA9 and IP/GS capture pitcher quality and 5-inning win eligibility;
@@ -426,7 +421,7 @@ def compute_all():
         row['_rw_ip_role'] = rw_ip_role
 
     # Rcorr: target correct total WAR using only rostered players to set the rate
-    rostered    = [r for r in rows if r['team'] != 'FREE AGENT']
+    rostered    = [r for r in rows if r['team'] is not None]
     total_raa   = sum(r['_raa']  for r in rostered)
     total_rrep  = sum(r['_rrep'] for r in rostered)
     total_ip    = sum(r['proj_ip'] for r in rostered)
@@ -444,15 +439,13 @@ def compute_all():
         xra9 = row['p_ra9']
 
         if role == 'SP':
-            team_abbr = name_to_abbr.get(row['team'], '')
-            rs_per_g  = proj_rs_per_g.get(team_abbr, lg_rs_per_g)
+            rs_per_g  = proj_rs_per_g.get(row['team'], lg_rs_per_g)
             ip_per_gs = row['proj_ip'] / apps if apps > 0 else 0.0
             xW  = max(0.0, sp_w_model.predict([[xra9, ip_per_gs, rs_per_g]])[0]) * apps
             xL  = max(0.0, sp_l_model.predict([[xra9, rs_per_g]])[0]) * apps
             xSV = 0
         else:
-            team_abbr  = name_to_abbr.get(row['team'], '')
-            rs_per_g   = proj_rs_per_g.get(team_abbr, lg_rs_per_g)
+            rs_per_g   = proj_rs_per_g.get(row['team'], lg_rs_per_g)
             decisions  = max(0.0, rp_dec_model.predict([[xra9]])[0]) * apps
             wl_diff    = rp_wl_model.predict([[xra9, rs_per_g]])[0] * apps
             xW  = max(0.0, (decisions + wl_diff) / 2)

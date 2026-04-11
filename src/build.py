@@ -243,15 +243,13 @@ def main():
         print("Generating teams pages...", end='', flush=True)
         t = time.time()
         for _, t_row in teams_data.teams.iterrows():
-            Path(f"docs/teams/{t_row['team_name'].replace(' ', '')}").mkdir(exist_ok=True)
+            Path(f"docs/teams/{t_row['team_id']}").mkdir(exist_ok=True)
         generate_teams_index()
         _done(t)
         print("Generating team-season pages...", end='', flush=True)
         t = time.time()
-        team_abbr = teams_data.teams.set_index('team_name')['abbr']
-        for _, ts_row in teams_data.standings[['teamName', 'Season']].drop_duplicates().iterrows():
-            tname, season_num = ts_row['teamName'], ts_row['Season']
-            generate_team_season_page(tname, season_num, team_abbr[tname])
+        for _, ts_row in teams_data.standings[['team_id', 'teamName', 'Season']].drop_duplicates().iterrows():
+            generate_team_season_page(ts_row['teamName'], ts_row['Season'], ts_row['team_id'])
         _done(t)
 
     if 'games' in pages:

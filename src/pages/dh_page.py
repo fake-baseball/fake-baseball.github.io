@@ -23,10 +23,9 @@ def _dh_table(rows):
     for row in rows:
         if row.get('_dh_off') is None:
             continue
-        abbr = row.get('_team_abbr') or 'FA'
         records.append({
             'player_id': row['player_id'], 'player': '',
-            'team':     abbr,
+            'team':     row['team'],
             'pos':      row['_dh_pos'],
             'pos2':     row.get('_dh_spos', ''),
             'power':    row['power'],
@@ -51,11 +50,7 @@ def generate_dh():
     pi = players.player_info
     ppos_map = pi['pos1'].to_dict()  # keyed by player_id
     spos_map = pi['pos2'].to_dict()
-    abbr_map = teams_data.teams.set_index('team_name')['abbr']
-
     rows = proj_module.rows
-    for r in rows:
-        r['_team_abbr'] = abbr_map.get(r['team'], r['team']) if r['team'] != 'FREE AGENT' else None
 
     # Last completed season error/PB rates per player
     edf = bat_module.stats[(bat_module.stats['season'] == LAST_COMPLETED_SEASON) & (bat_module.stats['gb'] > 0)].copy()

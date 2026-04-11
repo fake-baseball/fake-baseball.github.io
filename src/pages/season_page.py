@@ -35,10 +35,10 @@ def _standings_section(season_num):
     sos   = None
     if sched is not None:
         teams_df = teams_data.teams
-        div_map  = teams_df.set_index('team_name')['division_name'].to_dict()
-        conf_map = teams_df.set_index('team_name')['conference_name'].to_dict()
+        div_map  = teams_df.set_index('team_id')['division_name'].to_dict()
+        conf_map = teams_df.set_index('team_id')['conference_name'].to_dict()
         winning_teams = set(
-            season_rows[season_rows['gamesWon'] > season_rows['gamesLost']]['teamName']
+            season_rows[season_rows['gamesWon'] > season_rows['gamesLost']]['team_id']
         )
         split = split_records(sched, div_map, conf_map, winning_teams)
         sos   = strength_of_schedule(sched, season_rows)
@@ -54,7 +54,7 @@ def _standings_section(season_num):
         for _, row in conf_group.sort_values(['t_pct', 'Diff'], ascending=[False, False]).iterrows():
             conf_gb = ((max_w - row['gamesWon']) + (row['gamesLost'] - min_l)) / 2
             rec = {
-                'team_name': row['teamName'],
+                'team_name': row['team_id'],
                 't_w':    row['gamesWon'],
                 't_l':    row['gamesLost'],
                 't_pct':  row['t_pct'],
@@ -66,7 +66,7 @@ def _standings_section(season_num):
                 'stat_type': 'season',
             }
             if split:
-                sp = split[row['teamName']]
+                sp = split[row['team_id']]
                 rec.update({
                     't_last10':      _fmt_rec(*sp['last10']),
                     't_home':        _fmt_rec(*sp['home']),
@@ -75,7 +75,7 @@ def _standings_section(season_num):
                     't_inter':       _fmt_rec(*sp['inter']),
                 })
             if sos:
-                s = sos[row['teamName']]
+                s = sos[row['team_id']]
                 rec['t_sos']     = s['sos']     if s['sos']     is not None else float('nan')
                 rec['t_sos_rem'] = s['sos_rem'] if s['sos_rem'] is not None else float('nan')
             conf_rows.append(rec)
@@ -93,7 +93,7 @@ def _standings_section(season_num):
             div_group['t_pct'] = div_group['gamesWon'] / (div_group['gamesWon'] + div_group['gamesLost'])
             for _, row in div_group.sort_values(['t_pct', 'Diff'], ascending=[False, False]).iterrows():
                 rec = {
-                    'team_name': row['teamName'],
+                    'team_name': row['team_id'],
                     't_w':    row['gamesWon'],
                     't_l':    row['gamesLost'],
                     't_pct':  row['gamesWon'] / (row['gamesWon'] + row['gamesLost']),
@@ -105,7 +105,7 @@ def _standings_section(season_num):
                     'stat_type': 'season',
                 }
                 if split:
-                    sp = split[row['teamName']]
+                    sp = split[row['team_id']]
                     rec.update({
                         't_last10':      _fmt_rec(*sp['last10']),
                         't_div':         _fmt_rec(*sp['div']),
@@ -121,7 +121,7 @@ def _standings_section(season_num):
                         't_shutout':     _fmt_rec(*sp['shutout']),
                     })
                 if sos:
-                    s = sos[row['teamName']]
+                    s = sos[row['team_id']]
                     rec['t_sos']     = s['sos']     if s['sos']     is not None else float('nan')
                     rec['t_sos_rem'] = s['sos_rem'] if s['sos_rem'] is not None else float('nan')
                 rows.append(rec)
@@ -167,7 +167,7 @@ def _wildcard_section(season_num, season_rows, split, sos):
 
         def _make_rec(row, gb_val, stype):
             rec = {
-                'team_name': row['teamName'],
+                'team_name': row['team_id'],
                 't_w':    row['gamesWon'],
                 't_l':    row['gamesLost'],
                 't_pct':  row['t_pct'],
@@ -179,9 +179,9 @@ def _wildcard_section(season_num, season_rows, split, sos):
                 'stat_type': stype,
             }
             if split:
-                rec['t_last10'] = _fmt_rec(*split[row['teamName']]['last10'])
+                rec['t_last10'] = _fmt_rec(*split[row['team_id']]['last10'])
             if sos:
-                s = sos[row['teamName']]
+                s = sos[row['team_id']]
                 rec['t_sos']     = s['sos']     if s['sos']     is not None else float('nan')
                 rec['t_sos_rem'] = s['sos_rem'] if s['sos_rem'] is not None else float('nan')
             return rec
@@ -259,7 +259,7 @@ def _division_standings_section(season_num):
             h4(div_name)
             rows = []
             for _, row in div_group.sort_values(['gamesWon', 'Diff'], ascending=[False, False]).iterrows():
-                team = row['teamName']
+                team = row['team_id']
                 rec = {
                     'team_name': team,
                     't_w':   row['gamesWon'],
@@ -284,32 +284,30 @@ def _division_standings_section(season_num):
 
 
 def _h2h_matrix(season_num):
-    team_order, abbr_map, records = h2h_records(season_num)
+    team_order, records = h2h_records(season_num)
     if team_order is None:
         return
+    ti = teams_data.team_info
     h2("Head-to-Head")
     with table(border=1, cls='compact'):
         with thead():
             with tr():
                 th('')
-                for t in team_order:
-                    th(abbr_map[t])
+                for tid in team_order:
+                    th(ti.loc[tid, 'abbr'] if tid in ti.index else tid)
         with tbody():
-            for row_team in team_order:
+            for row_tid in team_order:
                 with tr():
-                    td(b(abbr_map[row_team]))
-                    for col_team in team_order:
-                        if row_team == col_team:
+                    td(b(ti.loc[row_tid, 'abbr'] if row_tid in ti.index else row_tid))
+                    for col_tid in team_order:
+                        if row_tid == col_tid:
                             td('\u2014')
                         else:
-                            rec = records.get((row_team, col_team), [0, 0])
+                            rec = records.get((row_tid, col_tid), [0, 0])
                             td(f"{rec[0]}-{rec[1]}" if rec[0] or rec[1] else '')
 
 
 def _totals_section(season_num):
-    conf_map = teams_data.teams.set_index('abbr')['conference_name'].to_dict()
-    name_map = teams_data.teams.set_index('abbr')['team_name'].to_dict()
-
     h2("Totals")
     for label, cols, df in [
         ('Batting',  BAT_RANK_COLS, team_ranks.batting),
@@ -319,7 +317,7 @@ def _totals_section(season_num):
         if season_num not in df.index.get_level_values('season'):
             continue
         season_data = df.xs(season_num, level='season').reset_index()
-        season_data['team_name'] = season_data['team'].map(name_map)
+        season_data.rename(columns={'team': 'team_name'}, inplace=True)
         season_data['stat_type'] = 'season'
         available_cols = [c for c in cols if c in season_data.columns]
         render_table(
@@ -329,8 +327,6 @@ def _totals_section(season_num):
 
 
 def _rankings_section(season_num):
-    name_map = teams_data.teams.set_index('abbr')['team_name'].to_dict()
-
     h2("Rankings")
     for label, cols, df in [
         ('Batting',  BAT_RANK_COLS, team_ranks.batting),
@@ -350,12 +346,14 @@ def _rankings_section(season_num):
                     for col in available_cols:
                         meta = REGISTRY.get(col, {})
                         th(meta.get('name', col))
+            ti = teams_data.team_info
             with tbody():
-                for abbr in season_data.index:
+                for team_id in season_data.index:
                     with tr():
-                        td(name_map.get(abbr, abbr))
+                        lbl = ti.loc[team_id, 'abbr'] if team_id in ti.index else team_id
+                        td(lbl)
                         for col in available_cols:
-                            conf_str, bfbl_str = ranks.get(abbr, {}).get(col, ('-', '-'))
+                            conf_str, bfbl_str = ranks.get(team_id, {}).get(col, ('-', '-'))
                             td(f"{bfbl_str}")
 
 

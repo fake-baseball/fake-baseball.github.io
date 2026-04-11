@@ -132,7 +132,7 @@ def compute_season_leaders():
     batting_leaders  = _compute_leaders(bat_data, [bat_meta])
     pitching_leaders = _compute_leaders(pit_data, [pit_meta])
 
-    abbr_to_conf = teams_data.teams.set_index('abbr')['conference_name'].to_dict()
+    abbr_to_conf = teams_data.teams.set_index('team_id')['conference_name'].to_dict()
     confs        = teams_data.teams['conference_name'].dropna().unique()
 
     bat_c          = bat_data.copy()

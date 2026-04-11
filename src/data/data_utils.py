@@ -2,6 +2,14 @@
 import re
 
 
+def team_abbr_to_id(abbr):
+    """Turn a team abbreviation into a team_id (lowercase, used as URL slug).
+
+    Example: 'MSP' -> 'msp'
+    """
+    return abbr.lower()
+
+
 def convert_name(first, last):
     """Turn a player name into a player_id (filename-safe, used as URL slug).
 

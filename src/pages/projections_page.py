@@ -24,12 +24,13 @@ def _f(stat, val):
     return fmt_round(val, m['decimal_places'], m['leading_zero'], m['percentage'])
 
 
-def _team_td(abbr):
+def _team_td(team_id):
     with td():
-        if abbr is None:
+        if team_id is None:
             em('FA')
         else:
-            raw(abbr)
+            ti = teams_data.team_info
+            raw(ti.loc[team_id, 'abbr'] if team_id in ti.index else team_id)
 
 
 
@@ -38,7 +39,7 @@ def _proj_table(rows):
     for row in rows:
         rec = {
             'player_id': row['player_id'], 'player': '',
-            'team':    row['_team_abbr'] or 'FA',
+            'team':    row['team'],
             'power':   row['power'],   'contact': row['contact'],
             'speed':   row['speed'],   'fielding': row['fielding'], 'arm': row['arm'],
             'gb':  row['gb'],  'pa':  row['proj_pa'],
@@ -78,7 +79,7 @@ def _pit_all_table(pit_rows):
     for row in pit_rows:
         records.append({
             'player_id': row['player_id'], 'player': '',
-            'team':     row['_team_abbr'] or 'FA',
+            'team':     row['team'],
             'velocity': row['velocity'], 'junk': row['junk'], 'accuracy': row['accuracy'],
             'role':     row['role'],
             'p_ip':  row['proj_ip'],
@@ -136,12 +137,13 @@ def _war_delta_table(deltas):
 
 
 def _top50_section(rows, pit_rows, ppos_map):
-    combined = [('bat', r) for r in rows if r['_team_abbr']] + [('pit', r) for r in pit_rows if r['_team_abbr']]
+    combined = [('bat', r) for r in rows if r['team']] + [('pit', r) for r in pit_rows if r['team']]
     combined.sort(key=lambda x: x[1]['war'] if 'war' in x[1] else x[1]['p_war'], reverse=True)
     h2("Top 50")
     with ol():
         for kind, r in combined[:50]:
-            abbr = r['_team_abbr'] or 'FA'
+            ti   = teams_data.team_info
+            abbr = ti.loc[r['team'], 'abbr'] if r['team'] and r['team'] in ti.index else 'FA'
             pid  = r['player_id']
             pi_r = players.player_info.loc[pid]
             name = f"{pi_r['first_name']} {pi_r['last_name']}"
@@ -172,7 +174,8 @@ def _rookie_war_list(bat_rookies, pit_rookies, ppos_map, n=10):
     p(f"Stat of the day: my projected top {n} rookie position players and pitchers by WAR:")
     with ol():
         for kind, r in combined[:n]:
-            abbr = r['_team_abbr'] or 'FA'
+            ti   = teams_data.team_info
+            abbr = ti.loc[r['team'], 'abbr'] if r['team'] and r['team'] in ti.index else 'FA'
             pid  = r['player_id']
             pi_r = players.player_info.loc[pid]
             name = f"{pi_r['first_name']} {pi_r['last_name']}"
@@ -200,38 +203,35 @@ def generate_projections():
     rows = proj_module.rows
     pit_rows = pit_proj_module.rows
 
-    # Build player -> team lookup and team name -> abbreviation map
+    # Build player -> team_id lookup
     pi = players.player_info
-    player_team = pi['team_name'].to_dict()
-    abbr_map = teams_data.teams.set_index('team_name')['abbr']
+    player_team = pi['team_id'].to_dict()
     ppos_map = pi['pos1'].to_dict()
-    for r in rows + pit_rows:
-        r['_team_abbr'] = abbr_map.get(r['team'], r['team']) if r['team'] != 'FREE AGENT' else None
 
     # team -> bat/pit rows
     team_proj     = {}
     pit_team_proj = {}
     for r in rows:
-        tname = player_team.get(r['player_id'])
-        if tname and tname != 'FREE AGENT':
-            team_proj.setdefault(tname, []).append(r)
+        tid = r['team']
+        if tid is not None:
+            team_proj.setdefault(tid, []).append(r)
     for r in pit_rows:
-        tname = player_team.get(r['player_id'])
-        if tname and tname != 'FREE AGENT':
-            pit_team_proj.setdefault(tname, []).append(r)
+        tid = r['team']
+        if tid is not None:
+            pit_team_proj.setdefault(tid, []).append(r)
 
     # Build combined team summary with division info
-    team_info = teams_data.teams.set_index('team_name')
+    team_info = teams_data.teams.set_index('team_id')
     all_teams = sorted(set(list(team_proj.keys()) + list(pit_team_proj.keys())))
     team_summary = []
-    for tname in all_teams:
-        bat_war = sum(r['war']   for r in team_proj.get(tname, []))
-        pit_war = sum(r['p_war'] for r in pit_team_proj.get(tname, []))
+    for tid in all_teams:
+        bat_war = sum(r['war']   for r in team_proj.get(tid, []))
+        pit_war = sum(r['p_war'] for r in pit_team_proj.get(tid, []))
         tot_war = bat_war + pit_war
         wins    = min(num_games, max(0, round(_REPL_WINS + tot_war)))
-        div     = team_info.loc[tname, 'division_name'] if tname in team_info.index else ''
+        div     = team_info.loc[tid, 'division_name'] if tid in team_info.index else ''
         team_summary.append({
-            'team': tname, 'division': div,
+            'team': tid, 'division': div,
             'bat_war': bat_war, 'pit_war': pit_war, 'tot_war': tot_war,
             'wins': wins, 'losses': num_games - wins,
         })
@@ -263,7 +263,8 @@ def generate_projections():
             with tbody():
                 for t in team_summary:
                     with tr():
-                        td(t['team'])
+                        ti = teams_data.team_info
+                        td(ti.loc[t['team'], 'abbr'] if t['team'] and t['team'] in ti.index else 'FA')
                         td(t['division'])
                         td(fmt_round(t['bat_war'], 1, True, False))
                         td(fmt_round(t['pit_war'], 1, True, False))

@@ -73,7 +73,7 @@ def season_ranks(season_num, ranks_df, cols):
     if season_num not in ranks_df.index.get_level_values('season'):
         return {}
     season_data = ranks_df.xs(season_num, level='season')
-    conf_map = teams_data.teams.set_index('abbr')['conference_name'].to_dict()
+    conf_map = teams_data.teams.set_index('team_id')['conference_name'].to_dict()
     available = [c for c in cols if c in season_data.columns]
 
     # Precompute BFBL-wide ranks for each col

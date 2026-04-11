@@ -1,9 +1,9 @@
 import pandas as pd
 
-from data.sources import PLAYERS_CSV, RETIRED_BATTERS_CSV, RETIRED_PITCHERS_CSV
+from data.sources import PLAYERS_CSV, RETIRED_BATTERS_CSV, RETIRED_PITCHERS_CSV, TEAMS_CSV
 from data.sources import season21_latest, season21_earliest, read_s21
 from data.stats import _ROLE_MAP, player_names
-from data.data_utils import convert_name
+from data.data_utils import convert_name, team_abbr_to_id
 
 
 player_info      = None  # all players (active + retired), indexed by player_id
@@ -36,6 +36,8 @@ def load_player_info():
 def _load_players21(path):
     """Load a season21 players CSV; returns DataFrame indexed by player_id with is_retired=False."""
     raw = read_s21(path)
+    t = pd.read_csv(TEAMS_CSV, usecols=['team_name', 'abbr'])
+    team_id_by_name = t.set_index('team_name')['abbr'].map(team_abbr_to_id)
 
     df = pd.DataFrame()
     df['id']                = raw['id']
@@ -44,6 +46,7 @@ def _load_players21(path):
     df['last_name']         = raw['lastName']
     df['age']               = raw['age']
     df['team_name']         = raw['teamName']
+    df['team_id']           = df['team_name'].map(team_id_by_name)
     df['pos1']              = raw['primaryPosition'].map(
                                   {1:'P',2:'C',3:'1B',4:'2B',5:'3B',6:'SS',7:'LF',8:'CF',9:'RF'})
     df['pos2']              = raw['secondaryPosition'].fillna(0).astype(int).map(

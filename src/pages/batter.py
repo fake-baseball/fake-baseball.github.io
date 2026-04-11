@@ -24,9 +24,8 @@ _ALL_BAT = {k: v for k, v in REGISTRY.items() if v.get('context') in _BAT_CONTEX
 
 _SUMMARY_COLS = ['season', 'war', 'ab', 'h', 'hr', 'avg', 'r', 'rbi', 'sb', 'ops']
 
-_proj_index  = None   # (first, last) -> proj dict, built on first use
-_abbr_map    = None   # team_name -> abbr, built on first use
-_stats_index = None   # (first, last) -> player DataFrame, built on first use
+_proj_index  = None   # player_id -> proj dict, built on first use
+_stats_index = None   # player_id -> player DataFrame, built on first use
 
 
 def _get_proj_index():
@@ -34,13 +33,6 @@ def _get_proj_index():
     if _proj_index is None:
         _proj_index = {r['player_id']: r for r in proj_module.rows}
     return _proj_index
-
-
-def _get_abbr_map():
-    global _abbr_map
-    if _abbr_map is None:
-        _abbr_map = teams_data.teams.set_index('team_name')['abbr'].to_dict()
-    return _abbr_map
 
 
 def _get_stats_index():
@@ -94,14 +86,14 @@ def _bat_proj_row(pid, cols):
 
     pi_row = players.player_info.loc[pid] if pid in players.player_info.index else None
     if pi_row is not None:
-        team_abbr = _get_abbr_map().get(pi_row['team_name'], '')
+        team_id = pi_row['team_id'] if 'team_id' in pi_row.index and not (isinstance(pi_row['team_id'], float) and pd.isna(pi_row['team_id'])) else None
     else:
-        team_abbr = ''
+        team_id = None
     d = {col: np.nan for col in cols}
     d.update({
         'season': 'Proj', 'stat_type': 'projected',
         'age':  pi_row['age'] if pi_row is not None else np.nan,
-        'team': team_abbr,
+        'team': team_id,
         'pa': pa, 'ab': ab, 'bb': bb, 'hbp': hbp,
         'b_2b': twob, 'b_3b': threeb, 'hr': hr, 'h': h, 'tb': tb,
         'k': k, 'sb': sb, 'cs': cs, 'bip': bip, 'xbh': xbh,
