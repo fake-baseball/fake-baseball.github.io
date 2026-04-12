@@ -24,7 +24,7 @@ def _dh_table(rows):
         if row.get('_dh_off') is None:
             continue
         records.append({
-            'player_id': row['player_id'], 'player': '',
+            'player_name': row['player_id'],
             'team':     row['team'],
             'pos':      row['_dh_pos'],
             'pos2':     row.get('_dh_spos', ''),

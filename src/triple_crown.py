@@ -29,12 +29,14 @@ def batting_triple_crown():
                 'avg': avg_idx.loc[pid, 'avg'],
                 'hr':  hr_idx.loc[pid, 'hr'],
                 'rbi': rbi_idx.loc[pid, 'rbi'],
+                'pa':  avg_idx.loc[pid, 'pa'],
+                'team': avg_idx.loc[pid, 'team'],
             })
     return sorted(winners, key=lambda w: w['season'])
 
 
 def _conf_abbrs(conference):
-    return set(teams_data.teams[teams_data.teams['conference_name'] == conference]['abbr'])
+    return set(teams_data.teams[teams_data.teams['conference_name'] == conference]['team_id'])
 
 
 def batting_triple_crown_conf(conference):
@@ -56,6 +58,8 @@ def batting_triple_crown_conf(conference):
                 'avg': avg_idx.loc[pid, 'avg'],
                 'hr':  hr_idx.loc[pid, 'hr'],
                 'rbi': rbi_idx.loc[pid, 'rbi'],
+                'pa':  avg_idx.loc[pid, 'pa'],
+                'team': avg_idx.loc[pid, 'team'],
             })
     return sorted(winners, key=lambda w: w['season'])
 
@@ -79,6 +83,8 @@ def pitching_triple_crown_conf(conference):
                 'p_w':   w_idx.loc[pid, 'p_w'],
                 'p_era': era_idx.loc[pid, 'p_era'],
                 'p_k':   k_idx.loc[pid, 'p_k'],
+                'p_ip':  era_idx.loc[pid, 'p_ip'],
+                'team':  era_idx.loc[pid, 'team'],
             })
     return sorted(winners, key=lambda w: w['season'])
 
@@ -129,6 +135,7 @@ def batting_title(conference=None):
                     'player_id':   row['player_id'],
                     'avg':         row['avg'],
                     'pa':          row['pa'],
+                    'team':        row['team'],
                     'unqualified': unqual,
                 })
 
@@ -164,6 +171,7 @@ def era_title(conference=None):
                 'player_id': row['player_id'],
                 'p_era':     row['p_era'],
                 'p_ip':      row['p_ip'],
+                'team':      row['team'],
             })
 
     return sorted(winners, key=lambda w: w['season'])
@@ -211,5 +219,7 @@ def pitching_triple_crown():
                 'p_w':   w_idx.loc[pid, 'p_w'],
                 'p_era': era_idx.loc[pid, 'p_era'],
                 'p_k':   k_idx.loc[pid, 'p_k'],
+                'p_ip':  era_idx.loc[pid, 'p_ip'],
+                'team':  era_idx.loc[pid, 'team'],
             })
     return sorted(winners, key=lambda w: w['season'])

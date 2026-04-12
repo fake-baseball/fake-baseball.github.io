@@ -30,6 +30,7 @@ def load_player_info():
                          'is_retired': True, 'retirement_season': pd.NA, 'age': pd.NA})
         orphan_df = pd.DataFrame(rows, index=pd.Index(orphans, name='player_id'))
         player_info = pd.concat([player_info, orphan_df])
+    player_info['player_name'] = player_info.index
     player_info_proj = _load_players21(season21_earliest('players'))
 
 

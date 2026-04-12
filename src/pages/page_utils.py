@@ -120,6 +120,14 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
     from leaders import SEASON_THRESHOLDS
     import league as lg
 
+    _SUMMARY_TYPES = {'career', 'team', 'projected', 'totals'}
+    _SUMMARY_LABELS = {
+        'career':    'Career',
+        'team':      '',
+        'projected': 'Proj',
+        'totals':    'Totals',
+    }
+
     _always_hidden = {'stat_type', 'player_id', 'first_name', 'last_name'}
     _hidden = _always_hidden | (set(hidden) if hidden else set())
 
@@ -165,7 +173,6 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
 
     from data import players as players_data
     visible_cols = [c for c in df.columns if c not in _hidden]
-    has_player_id = 'player_id' in df.columns
     col_meta = {c: _resolve_meta(c) for c in visible_cols}
 
     bat_ldr      = leaders_mod.batting_leaders
@@ -200,35 +207,40 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
                         raw_val = raw_row[col]
 
                         ctype = meta.get('type', 'text')
-                        if ctype == 'player_link' and has_player_id:
-                            pid  = raw_row['player_id']
-                            if pid:
+                        is_summary = stat_type in _SUMMARY_TYPES
+                        if ctype == 'player_link':
+                            if is_summary:
+                                content = _SUMMARY_LABELS.get(stat_type, '')
+                            else:
+                                pid = raw_val
                                 pi   = players_data.player_info
                                 lbl  = f"{pi.loc[pid, 'first_name']} {pi.loc[pid, 'last_name']}"
                                 _pfx = '../' * depth + 'players/'
                                 content = anchor_tag(lbl, href=f"{_pfx}{pid}.html")
-                        elif ctype in ('team_abbr_link', 'team_name_link') and raw_val:
-                            from data import teams as teams_data
-                            team_id = str(raw_val)
-                            ti      = teams_data.team_info
-                            if ctype == 'team_name_link':
-                                lbl = ti.loc[team_id, 'team_name'] if team_id in ti.index else team_id
+                        elif ctype in ('team_abbr_link', 'team_name_link'):
+                            if is_summary and stat_type != 'team':
+                                content = ''
                             else:
-                                lbl = ti.loc[team_id, 'abbr'] if team_id in ti.index else team_id
-                            _pfx = '../' * depth + 'teams/'
-                            row_season = raw_row.get('season') if 'season' in df.columns else None
-                            try:
-                                s_int = int(row_season)
-                                href = f"{_pfx}{team_id}/{s_int}.html"
-                            except (ValueError, TypeError):
-                                href = f"{_pfx}{team_id}/index.html"
-                            content = anchor_tag(lbl, href=href)
+                                from data import teams as teams_data
+                                team_id = str(raw_val)
+                                ti      = teams_data.team_info
+                                if ctype == 'team_name_link':
+                                    lbl = ti.loc[team_id, 'team_name'] if team_id in ti.index else team_id
+                                else:
+                                    lbl = ti.loc[team_id, 'abbr'] if team_id in ti.index else team_id
+                                _pfx = '../' * depth + 'teams/'
+                                row_season = raw_row.get('season') if 'season' in df.columns else None
+                                try:
+                                    s_int = int(row_season)
+                                    href = f"{_pfx}{team_id}/{s_int}.html"
+                                except (ValueError, TypeError):
+                                    href = f"{_pfx}{team_id}/index.html"
+                                content = anchor_tag(lbl, href=href)
                         elif ctype == 'season_link':
-                            try:
-                                s_int = int(raw_val)
-                            except (ValueError, TypeError):
-                                content = str(raw_val) if raw_val is not None else ''
+                            if is_summary:
+                                content = _SUMMARY_LABELS.get(stat_type, '')
                             else:
+                                s_int = int(raw_val)
                                 _pfx = '../' * depth + 'seasons/'
                                 content = anchor_tag(f"S{s_int}", href=f"{_pfx}{s_int}.html")
                         else:

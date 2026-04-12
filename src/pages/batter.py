@@ -91,7 +91,7 @@ def _bat_proj_row(pid, cols):
         team_id = None
     d = {col: np.nan for col in cols}
     d.update({
-        'season': 'Proj', 'stat_type': 'projected',
+        'season': np.nan, 'stat_type': 'projected',
         'age':  pi_row['age'] if pi_row is not None else np.nan,
         'team': team_id,
         'pa': pa, 'ab': ab, 'bb': bb, 'hbp': hbp,

@@ -140,8 +140,8 @@ def write_leader_page(desc):
 
 def _write_batting_pages(title, slug, stat, meta, worst, conf_order, conf_teams):
     qual_col = meta['qual_col']
-    season_cols = list(dict.fromkeys(['player_id', stat, 'season', qual_col, 'team']))
-    career_cols = list(dict.fromkeys(['player_id', stat, qual_col]))
+    season_cols = list(dict.fromkeys(['player_name', stat, 'season', qual_col, 'team']))
+    career_cols = list(dict.fromkeys(['player_name', stat, qual_col]))
 
     def _conf_sections_season():
         sections = []
@@ -149,7 +149,6 @@ def _write_batting_pages(title, slug, stat, meta, worst, conf_order, conf_teams)
             cdf = get_leaders(stat, num=_CONF_LEADERS, worst=worst, teams=conf_teams[conf])
             cdf = cdf[season_cols].copy()
             cdf.insert(0, '#', cdf.index)
-            cdf.insert(1, 'player', '')
             sections.append((conf, cdf))
         return sections
 
@@ -157,8 +156,7 @@ def _write_batting_pages(title, slug, stat, meta, worst, conf_order, conf_teams)
         sections = []
         for conf in conf_order:
             cdf = get_leaders_by_season(stat, worst=worst, teams=conf_teams[conf])
-            cdf = cdf[list(dict.fromkeys(['season', 'player_id', stat, qual_col, 'team']))].copy()
-            cdf.insert(1, 'player', '')
+            cdf = cdf[list(dict.fromkeys(['season', 'player_name', stat, qual_col, 'team']))].copy()
             sections.append((conf, cdf))
         return sections
 
@@ -166,27 +164,23 @@ def _write_batting_pages(title, slug, stat, meta, worst, conf_order, conf_teams)
     df = get_leaders(stat, num=_TOTAL_LEADERS, worst=worst)
     df = df[season_cols].copy()
     df.insert(0, '#', df.index)
-    df.insert(1, 'player', '')
     _write_page(title, slug, 'season', df, _conf_sections_season())
 
     # Seasonal
     df = get_leaders_by_season(stat, worst=worst)
-    df = df[list(dict.fromkeys(['season', 'player_id', stat, qual_col, 'team']))].copy()
-    df.insert(1, 'player', '')
+    df = df[list(dict.fromkeys(['season', 'player_name', stat, qual_col, 'team']))].copy()
     _write_page(title, slug, 'seasonal', df, _conf_sections_seasonal())
 
     # Career
     df = get_career_leaders(stat, num=_TOTAL_LEADERS, worst=worst)
     df = df[career_cols].copy()
     df.insert(0, '#', df.index)
-    df.insert(1, 'player', '')
     _write_page(title, slug, 'career', df, [])
 
     # Active
     df = get_career_leaders(stat, active=True, num=_CONF_LEADERS, worst=worst)
     df = df[career_cols].copy()
     df.insert(0, '#', df.index)
-    df.insert(1, 'player', '')
     _write_page(title, slug, 'active', df, [])
 
 
@@ -205,13 +199,13 @@ def _write_pitching_pages(title, slug, stat, meta, worst, conf_order, conf_teams
         return d
 
     if stat == 'p_ip':
-        season_cols   = ['player_id', 'role', 'p_ip', 'season', 'team']
-        seasonal_cols = ['season', 'player_id', 'role', 'p_ip', 'team']
-        career_cols   = ['player_id', 'role', 'p_ip']
+        season_cols   = ['player_name', 'role', 'p_ip', 'season', 'team']
+        seasonal_cols = ['season', 'player_name', 'role', 'p_ip', 'team']
+        career_cols   = ['player_name', 'role', 'p_ip']
     else:
-        season_cols   = ['player_id', 'role', stat, 'season', 'p_ip', 'team']
-        seasonal_cols = ['season', 'player_id', 'role', stat, 'p_ip', 'team']
-        career_cols   = ['player_id', 'role', stat, 'p_ip']
+        season_cols   = ['player_name', 'role', stat, 'season', 'p_ip', 'team']
+        seasonal_cols = ['season', 'player_name', 'role', stat, 'p_ip', 'team']
+        career_cols   = ['player_name', 'role', stat, 'p_ip']
 
     def _conf_sections_season():
         sections = []
@@ -219,7 +213,6 @@ def _write_pitching_pages(title, slug, stat, meta, worst, conf_order, conf_teams
             cdf = get_leaders(stat, num=_CONF_LEADERS, worst=worst, teams=conf_teams[conf])
             cdf = cdf[list(dict.fromkeys(season_cols))].copy()
             cdf.insert(0, '#', cdf.index)
-            cdf.insert(1, 'player', '')
             sections.append((conf, cdf))
         return sections
 
@@ -228,7 +221,6 @@ def _write_pitching_pages(title, slug, stat, meta, worst, conf_order, conf_teams
         for conf in conf_order:
             cdf = get_leaders_by_season(stat, worst=worst, teams=conf_teams[conf])
             cdf = cdf[list(dict.fromkeys(seasonal_cols))].copy()
-            cdf.insert(1, 'player', '')
             sections.append((conf, cdf))
         return sections
 
@@ -236,27 +228,23 @@ def _write_pitching_pages(title, slug, stat, meta, worst, conf_order, conf_teams
     df = get_leaders(stat, num=_TOTAL_LEADERS, worst=worst)
     df = df[list(dict.fromkeys(season_cols))].copy()
     df.insert(0, '#', df.index)
-    df.insert(1, 'player', '')
     _write_page(title, slug, 'season', df, _conf_sections_season())
 
     # Seasonal
     df = get_leaders_by_season(stat, worst=worst)
     df = df[list(dict.fromkeys(seasonal_cols))].copy()
-    df.insert(1, 'player', '')
     _write_page(title, slug, 'seasonal', df, _conf_sections_seasonal())
 
     # Career
     df = _apply_role(get_career_leaders(stat, num=_TOTAL_LEADERS, worst=worst))
     df = df[list(dict.fromkeys(career_cols))].copy()
     df.insert(0, '#', df.index)
-    df.insert(1, 'player', '')
     _write_page(title, slug, 'career', df, [])
 
     # Active
     df = _apply_role(get_career_leaders(stat, active=True, num=_CONF_LEADERS, worst=worst))
     df = df[list(dict.fromkeys(career_cols))].copy()
     df.insert(0, '#', df.index)
-    df.insert(1, 'player', '')
     _write_page(title, slug, 'active', df, [])
 
 

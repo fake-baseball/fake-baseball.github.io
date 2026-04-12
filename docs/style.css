@@ -81,7 +81,8 @@ tbody tr:hover {
     background: #e8f0fb;
 }
 
-tbody tr.career td, tbody tr.career th {
+tbody tr.career td, tbody tr.career th,
+tbody tr.totals td, tbody tr.totals th {
     border-top: 2px solid #aaa;
     border-bottom: 2px solid #aaa;
     background: #f5f5f5;

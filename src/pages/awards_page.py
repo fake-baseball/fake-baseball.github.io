@@ -11,24 +11,25 @@ from triple_crown import (batting_triple_crown, pitching_triple_crown,
 from data import teams as teams_data
 
 
-def _triple_crown_table(winners):
+def _to_row(w, extra=None):
+    d = {**w, 'player_name': w['player_id'], 'stat_type': 'season'}
+    if extra:
+        d.update(extra)
+    return d
+
+
+def _triple_crown_table(winners, hidden=None):
     if not winners:
         p("No triple crown winners.")
         return
-    rows = [{**w, 'player': '', 'stat_type': 'season'} for w in winners]
-    render_table(pd.DataFrame(rows), depth=0)
+    render_table(pd.DataFrame([_to_row(w) for w in winners]), depth=0, hidden=hidden)
 
 
 def _batting_title_table(winners):
     if not winners:
         p("No batting title winners.")
         return
-    rows = [
-        {**{k: v for k, v in w.items() if k != 'unqualified'},
-         'player': '', 'stat_type': 'season',
-         'Note': '* hitless AB rule' if w['unqualified'] else ''}
-        for w in winners
-    ]
+    rows = [_to_row({k: v for k, v in w.items() if k != 'unqualified'}, {'Note': '* hitless AB rule' if w['unqualified'] else ''}) for w in winners]
     render_table(pd.DataFrame(rows), depth=0)
 
 
@@ -36,16 +37,14 @@ def _era_title_table(winners):
     if not winners:
         p("No ERA title winners.")
         return
-    rows = [{**w, 'player': '', 'stat_type': 'season'} for w in winners]
-    render_table(pd.DataFrame(rows), depth=0)
+    render_table(pd.DataFrame([_to_row(w) for w in winners]), depth=0)
 
 
 def _hr_sb_table(members):
     if not members:
         p("No members.")
         return
-    rows = [{**w, 'player': '', 'stat_type': 'season'} for w in members]
-    render_table(pd.DataFrame(rows), depth=0)
+    render_table(pd.DataFrame([_to_row(w) for w in members]), depth=0)
 
 
 def generate_awards():
@@ -63,16 +62,16 @@ def generate_awards():
 
         h2("Triple Crown")
         h3("Batting")
-        _triple_crown_table(bat_winners)
+        _triple_crown_table(bat_winners, hidden={'pa'})
         h3("Pitching")
-        _triple_crown_table(pit_winners)
+        _triple_crown_table(pit_winners, hidden={'p_ip'})
 
         for conf in conferences:
             h2(f"{conf} Triple Crown")
             h3("Batting")
-            _triple_crown_table(conf_bat[conf])
+            _triple_crown_table(conf_bat[conf], hidden={'pa'})
             h3("Pitching")
-            _triple_crown_table(conf_pit[conf])
+            _triple_crown_table(conf_pit[conf], hidden={'p_ip'})
 
         h2("Batting Title")
         for conf in conferences:

@@ -12,8 +12,8 @@ from registry import REGISTRY
 from pages.page_utils import make_doc, fmt_round, fmt_rdiff, render_table
 from util import fmt_ip
 
-_PITCHER_COLS  = ['jersey', 'Name',  'role', 'throws', 'velocity', 'junk', 'accuracy', 'fielding', 'arsenal', 'age', 'salary']
-_POSITION_COLS = ['jersey', 'Name',  'pos1', 'pos2', 'bats', 'power', 'contact', 'speed', 'fielding', 'arm', 'age', 'salary']
+_PITCHER_COLS  = ['jersey', 'player_name', 'role', 'throws', 'velocity', 'junk', 'accuracy', 'fielding', 'arsenal', 'age', 'salary']
+_POSITION_COLS = ['jersey', 'player_name', 'pos1', 'pos2', 'bats', 'power', 'contact', 'speed', 'fielding', 'arm', 'age', 'salary']
 
 
 def _batter_stats(first, last):
@@ -107,11 +107,8 @@ def _pitcher_table(players_list, stat_rows):
                         td(s21[stat] if s21 is not None else '-')
 
 
-def _roster_table(group, cols, link_col='Name'):
-    df = group.copy()
-    df['player'] = ''
-    display_cols = ['player' if c == link_col else c for c in cols]
-    render_table(df[display_cols + ['player_id']], depth=2)
+def _roster_table(group, cols):
+    render_table(group[cols], depth=2)
 
 
 def generate_team_page(team_name, roster, team_info):
@@ -123,9 +120,6 @@ def generate_team_page(team_name, roster, team_info):
     from pages.slug import convert_name
     pitchers = roster[roster['pos1'] == 'P'].sort_values(['last_name', 'first_name']).copy()
     position = roster[roster['pos1'] != 'P'].sort_values(['last_name', 'first_name']).copy()
-
-    for df in (pitchers, position):
-        df['Name'] = None  # placeholder; _roster_table uses player_id for the link
 
     rotation = teams_data.rotations[teams_data.rotations['team_id'] == slug].sort_values('rotation')
     lineup   = teams_data.lineups[teams_data.lineups['team_id'] == slug].sort_values('batting_order')

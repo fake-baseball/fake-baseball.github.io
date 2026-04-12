@@ -66,6 +66,7 @@ def compute():
 
     d['stat_type'] = 'season'
     stats = _append_summary_rows(d)
+    stats['player_name'] = stats['player_id']
 
 
 def _append_summary_rows(d):

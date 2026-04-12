@@ -1060,7 +1060,7 @@ REGISTRY = {
     'gl_wl':         {'name': 'W/L',     'label': 'Win or Loss',       'type': 'text',      'context': 'meta'},
     'gl_rec':        {'name': 'Record',  'label': 'Cumulative Record', 'type': 'record',    'context': 'meta'},
     'gl_streak':     {'name': 'Streak',  'label': 'Win/Loss Streak',   'type': 'mono',      'context': 'meta'},
-    'player':        {'name': 'Player',  'type': 'player_link', 'context': 'meta'},
+    'player_name':   {'name': 'Player',  'type': 'player_link', 'context': 'meta'},
     'team':          {'name': 'Team',    'type': 'team_abbr_link', 'context': 'meta'},
     'team_id':       {'name': 'ID',      'type': 'text',        'context': 'meta'},
     'season':        {'name': 'Season',  'type': 'season_link', 'context': 'meta'},

@@ -72,7 +72,7 @@ def get_career_leaders(stat, active=False, worst=False, num=10, team=None, teams
     qual_col = meta['qual_col']
     data = _stats_df(stat)
     df = data[data[qual_col] >= CAREER_THRESHOLDS[qual_col]] if meta['qualified'] else data
-    df = df[df['season'] == 'Career']
+    df = df[df['stat_type'] == 'career']
     if active:
         df = df[df['player_id'].isin(players.player_info.index[~players.player_info['is_retired']])]
     if team is not None:

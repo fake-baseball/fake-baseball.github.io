@@ -15,14 +15,14 @@ from pages.page_utils import make_doc, render_table, fmt_round
 
 
 _BAT_COLS = [
-    'player', 'war',
+    'player_name', 'war',
     'gb', 'pa', 'ab', 'r', 'h', 'b_2b', 'b_3b', 'hr', 'rbi',
     'sb', 'cs', 'bb', 'k', 'avg', 'obp', 'slg', 'ops', 'ops_plus',
     'tb', 'hbp', 'sh', 'sf', 'e', 'pb', 'stat_type',
 ]
 
 _PIT_COLS = [
-    'player', 'p_war',
+    'player_name', 'p_war',
     'p_w', 'p_l', 'p_win_pct', 'p_era', 'p_gp', 'p_gs', 'p_cg', 'p_sho', 'p_sv', 'p_ip',
     'p_h', 'p_ra', 'p_er', 'p_hr', 'p_bb', 'p_k', 'p_hbp', 'p_wp', 'p_bf', 'p_era_minus', 'p_fip', 'p_whip',
     'stat_type',
@@ -77,12 +77,9 @@ def generate_team_season_page(team_name, season_num, team_id):
         df = df.copy()
         if total_row is not None:
             total_row = total_row.copy()
-            total_row['player_id']  = ''
-            total_row['player']     = ''
-            total_row['stat_type']  = 'career'
+            total_row['stat_type']  = 'totals'
             df = pd.concat([df, total_row], ignore_index=True)
-        df['player'] = ''
-        available = ['player_id'] + [c for c in cols if c in df.columns]
+        available = ['player_name'] + [c for c in cols if c in df.columns and c != 'player_name']
         for extra in ('season', 'team'):
             if extra in df.columns and extra not in available:
                 available.append(extra)

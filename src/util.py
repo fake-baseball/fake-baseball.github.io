@@ -48,12 +48,11 @@ def append_summary_rows(d, player_keys, recompute_fn, weighted_avg_specs, extra_
     gt = player_keys + ['team']
 
     career = d.groupby(gp).sum(numeric_only=True).reset_index()
-    career['season']    = 'Career'
+    career['season']    = np.nan
     career['age']       = ''
     career['stat_type'] = 'career'
-    team_counts = d.groupby(gp)['team'].nunique().reset_index(name='team')
-    career = career.merge(team_counts, on=gp)
-    career['team'] = career['team'].astype(str) + 'TM'
+    if 'team' in career.columns:
+        career['team'] = np.nan
     if extra_meta:
         for k, v in extra_meta.items():
             career[k] = v
@@ -64,10 +63,7 @@ def append_summary_rows(d, player_keys, recompute_fn, weighted_avg_specs, extra_
         ).values
 
     team_totals = d.groupby(gt).sum(numeric_only=True).reset_index()
-    season_counts = d.groupby(gt)['season'].nunique().reset_index(name='season')
-    team_totals = team_totals.drop(columns=['season']).merge(season_counts, on=gt)
-    team_totals['season'] = team_totals['season'].apply(
-        lambda n: f"{n} Szn" if n == 1 else f"{n} Szns")
+    team_totals['season']    = np.nan
     team_totals['age']       = ''
     team_totals['stat_type'] = 'team'
     if extra_meta:

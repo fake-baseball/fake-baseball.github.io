@@ -38,7 +38,7 @@ def _proj_table(rows):
     records = []
     for row in rows:
         rec = {
-            'player_id': row['player_id'], 'player': '',
+            'player_name': row['player_id'],
             'team':    row['team'],
             'power':   row['power'],   'contact': row['contact'],
             'speed':   row['speed'],   'fielding': row['fielding'], 'arm': row['arm'],
@@ -78,7 +78,7 @@ def _pit_all_table(pit_rows):
     records = []
     for row in pit_rows:
         records.append({
-            'player_id': row['player_id'], 'player': '',
+            'player_name': row['player_id'],
             'team':     row['team'],
             'velocity': row['velocity'], 'junk': row['junk'], 'accuracy': row['accuracy'],
             'role':     row['role'],
