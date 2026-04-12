@@ -1027,7 +1027,8 @@ REGISTRY = {
     'rank':       {'name': 'Rank',       'type': 'integer', 'context': 'meta'},
 
     # ── Team standings columns ────────────────────────────────────────────────
-    'team_name':     {'name': 'Team',     'type': 'team_link', 'context': 'meta'},
+    'team_name':     {'name': 'Team',     'type': 'team_name_link', 'context': 'meta'},
+    'team_abbr':     {'name': 'Team',     'type': 'team_abbr_link', 'context': 'meta'},
     't_w':           {'name': 'W',        'label': 'Wins',             'type': 'integer',   'context': 'meta'},
     't_l':           {'name': 'L',        'label': 'Losses',           'type': 'integer',   'context': 'meta'},
     't_pct':         {'name': 'Pct',      'label': 'Win Percentage',   'type': 'stat',      'decimal_places': 3, 'leading_zero': False, 'context': 'meta'},
@@ -1053,15 +1054,15 @@ REGISTRY = {
     # Game log columns
     'gl_num':        {'name': '#',       'label': 'Game Number',       'type': 'integer',   'context': 'meta'},
     'gl_ha':         {'name': 'H/A',     'label': 'Home or Away',      'type': 'text',      'context': 'meta'},
-    'gl_opp':        {'name': 'Opp',     'label': 'Opponent Team',     'type': 'team_link', 'context': 'meta'},
+    'gl_opp':        {'name': 'Opp',     'label': 'Opponent Team',     'type': 'team_abbr_link', 'context': 'meta'},
     'gl_r':          {'name': 'R',       'label': 'Runs Scored',       'type': 'integer',   'context': 'meta'},
     'gl_ra':         {'name': 'RA',      'label': 'Runs Allowed',      'type': 'integer',   'context': 'meta'},
     'gl_wl':         {'name': 'W/L',     'label': 'Win or Loss',       'type': 'text',      'context': 'meta'},
     'gl_rec':        {'name': 'Record',  'label': 'Cumulative Record', 'type': 'record',    'context': 'meta'},
     'gl_streak':     {'name': 'Streak',  'label': 'Win/Loss Streak',   'type': 'mono',      'context': 'meta'},
     'player':        {'name': 'Player',  'type': 'player_link', 'context': 'meta'},
-    'team':          {'name': 'Team',    'type': 'team_link',   'context': 'meta'},
-    'team_id':       {'name': 'Team',    'type': 'team_link',   'context': 'meta'},
+    'team':          {'name': 'Team',    'type': 'team_abbr_link', 'context': 'meta'},
+    'team_id':       {'name': 'ID',      'type': 'text',        'context': 'meta'},
     'season':        {'name': 'Season',  'type': 'season_link', 'context': 'meta'},
     'stream':        {'name': 'Stream',  'type': 'text',        'context': 'meta'},
     'age':                {'name': 'Age',              'type': 'integer', 'context': 'meta'},

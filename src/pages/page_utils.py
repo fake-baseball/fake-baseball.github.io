@@ -123,7 +123,7 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
     _always_hidden = {'stat_type', 'player_id', 'first_name', 'last_name'}
     _hidden = _always_hidden | (set(hidden) if hidden else set())
 
-    _LEFT_ALIGNED  = {'player_link', 'team_link', 'season_link', 'mono', 'text'}
+    _LEFT_ALIGNED  = {'player_link', 'team_abbr_link', 'team_name_link', 'season_link', 'mono', 'text'}
     _RIGHT_ALIGNED = {'stat', 'ip', 'integer', 'salary', 'gb', 'rdiff', 'record'}
 
     def _align(ctype):
@@ -207,11 +207,14 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
                                 lbl  = f"{pi.loc[pid, 'first_name']} {pi.loc[pid, 'last_name']}"
                                 _pfx = '../' * depth + 'players/'
                                 content = anchor_tag(lbl, href=f"{_pfx}{pid}.html")
-                        elif ctype == 'team_link' and raw_val:
+                        elif ctype in ('team_abbr_link', 'team_name_link') and raw_val:
                             from data import teams as teams_data
                             team_id = str(raw_val)
                             ti      = teams_data.team_info
-                            lbl     = ti.loc[team_id, 'abbr'] if team_id in ti.index else team_id
+                            if ctype == 'team_name_link':
+                                lbl = ti.loc[team_id, 'team_name'] if team_id in ti.index else team_id
+                            else:
+                                lbl = ti.loc[team_id, 'abbr'] if team_id in ti.index else team_id
                             _pfx = '../' * depth + 'teams/'
                             row_season = raw_row.get('season') if 'season' in df.columns else None
                             try:
@@ -248,8 +251,9 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
                                     best_o = float(overall_ldr.loc[season, col])
                                     overall_best = fval <= best_o if meta['lowest'] else fval >= best_o
 
-                                    if 'team' in df.columns:
-                                        team     = raw_row.get('team', '')
+                                    _team_col = next((c for c in ('team', 'team_abbr') if c in df.columns), None)
+                                    if _team_col:
+                                        team     = raw_row.get(_team_col, '')
                                         conf     = abbr_to_conf.get(team)
                                         conf_ldr = conf_ldr_dict.get(conf) if conf else None
                                         if conf_ldr is not None and season in conf_ldr.index and col in conf_ldr.columns:
@@ -274,7 +278,7 @@ def render_table(df, *, depth=0, hidden=None, row_class=None, cell_style=None, b
                         align_style = 'text-align: left' if _align(ctype) == 'left' else None
                         extra_style = cell_style(col, raw_val, raw_row) if cell_style else None
                         style_str = '; '.join(filter(None, [align_style, extra_style])) or None
-                        is_name_col = ctype in ('player_link', 'team_link')
+                        is_name_col = ctype in ('player_link', 'team_abbr_link', 'team_name_link')
                         is_streak_col = ctype == 'mono'
                         cls_val = 'name-col' if is_name_col else ('mono-col' if is_streak_col else None)
                         if style_str and cls_val:
