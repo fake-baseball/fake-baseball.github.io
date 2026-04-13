@@ -42,6 +42,9 @@ def compute():
     # Batting value (r_bat must come before wrc_plus)
     f.compute_r_bat(d)
     f.compute_r_br(d)
+    f.compute_e_runs(d)
+    f.compute_pb_runs(d)
+    f.compute_skill_runs(d)
     f.compute_r_def(d)
     f.compute_r_pos(d)
 

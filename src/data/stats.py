@@ -351,3 +351,48 @@ def pitching_stream_rows(first, last):
         rows.append(row)
 
     return rows
+
+
+def load_s21_snapshots():
+    """Load season21 player skills and batting game counts for all snapshots.
+
+    Returns (pl_skills, bat_gb) where:
+      pl_skills: {file_num: {player_id: {'arm', 'speed', 'fielding'}}}
+      bat_gb:    {file_num: {player_id: cumulative gamesBatting}}
+    Returns ({}, {}) if no season21 files exist.
+    """
+    import math
+    import os
+
+    def _file_num(path):
+        return int(os.path.basename(path).rsplit('_', 1)[1].split('.')[0])
+
+    player_files  = season21_all('players')
+    batting_files = season21_all('batting')
+    if not player_files or not batting_files:
+        return {}, {}
+
+    pl_skills = {}
+    for path in player_files:
+        raw = read_s21(path)
+        num = _file_num(path)
+        pl_skills[num] = {}
+        for _, row in raw.iterrows():
+            pid = convert_name(str(row['firstName']), str(row['lastName']))
+            pl_skills[num][pid] = {
+                'arm':      float(row['arm']),
+                'speed':    float(row['speed']),
+                'fielding': float(row['fielding']),
+            }
+
+    bat_gb = {}
+    for path in batting_files:
+        raw = read_s21(path)
+        num = _file_num(path)
+        bat_gb[num] = {}
+        for _, row in raw.iterrows():
+            pid = convert_name(str(row['firstName']), str(row['lastName']))
+            v = row['gamesBatting']
+            bat_gb[num][pid] = int(v) if not math.isnan(v) else 0
+
+    return pl_skills, bat_gb

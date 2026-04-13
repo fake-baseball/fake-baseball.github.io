@@ -172,7 +172,7 @@ def attach_dh_model(rows, ppos_map, spos_map, e_rate_map=None, lg_pb_rate=0.0):
             sec_rate_each = sec_rate / n_sec
         field_scale = 1.0 - p_dh
         arm, spd, fld = r['arm'], r['speed'], r['fielding']
-        xgb = r.get('xGB') or 0.0
+        xgb = r.get('gb') or 0.0
         rdef_attr = 0.0
         # Primary position
         if ppos in DEF_SCALE:
@@ -208,3 +208,99 @@ def attach_dh_model(rows, ppos_map, spos_map, e_rate_map=None, lg_pb_rate=0.0):
     for r in rows:
         if r.get('_dh_ratio') is None:
             r['_dh_p'] = r['_dh_rpos_per_gb'] = r['_dh_rpos_per_80g'] = r['_dh_rdef_attr'] = r['_dh_rdef_e20'] = r['_dh_rdef'] = None
+
+
+def compute_season_rdef_rpos(ppos_map, spos_map, pl_skills, bat_gb):
+    """Integrate Rdef(A) and Rpos over all season21 snapshots.
+
+    pl_skills: {file_num: {player_id: {'arm', 'speed', 'fielding'}}} -- from load_s21_snapshots()
+    bat_gb:    {file_num: {player_id: cumulative gamesBatting}}       -- from load_s21_snapshots()
+    Skills from players_NN apply to the games played between batting_NN and batting_(NN+1).
+    Returns a dict: player_id -> {'s21_rdef_attr': float, 's21_rpos': float}.
+    """
+    if not pl_skills or not bat_gb:
+        return {}
+
+    # All player ids across all batting files
+    all_pids = set()
+    for gb_map in bat_gb.values():
+        all_pids.update(gb_map.keys())
+
+    # For each interval N: skills from players_N, games = batting_(N+1).gb - batting_N.gb
+    bat_nums = sorted(bat_gb.keys())
+    pl_nums  = sorted(pl_skills.keys())
+
+    # Compute league-mean DEF score per position from the final players snapshot
+    # (positional identity doesn't change, so any snapshot works; use last for most complete roster)
+    final_pl_num = pl_nums[-1]
+    pos_scores = {}
+    for pid in all_pids:
+        ppos = ppos_map.get(pid, '')
+        if ppos not in POS_WEIGHTS:
+            continue
+        skills = pl_skills[final_pl_num].get(pid) or pl_skills[pl_nums[0]].get(pid)
+        if skills is None:
+            continue
+        score = def_score(ppos, skills['arm'], skills['speed'], skills['fielding'])
+        pos_scores.setdefault(ppos, []).append(score)
+    lg_mean_def = {pos: sum(v) / len(v) for pos, v in pos_scores.items()}
+
+    # Accumulate
+    result = {pid: {'s21_rdef_attr': 0.0, 's21_rpos': 0.0} for pid in all_pids}
+
+    for i, pl_num in enumerate(pl_nums):
+        # Find the batting interval this skills snapshot covers
+        # skills_N -> games between batting_N and batting_(N+1)
+        next_bat_nums = [n for n in bat_nums if n > pl_num]
+        prev_bat_nums = [n for n in bat_nums if n <= pl_num]
+        if not next_bat_nums or not prev_bat_nums:
+            continue
+        next_bat = next_bat_nums[0]
+        prev_bat = prev_bat_nums[-1]
+
+        for pid in all_pids:
+            ppos = ppos_map.get(pid, '')
+            if ppos not in POS_WEIGHTS:
+                continue
+            skills = pl_skills[pl_num].get(pid)
+            if skills is None:
+                continue
+
+            gb_next = bat_gb[next_bat].get(pid, 0)
+            gb_prev = bat_gb[prev_bat].get(pid, 0)
+            interval_gb = max(0, gb_next - gb_prev)
+            if interval_gb == 0:
+                continue
+
+            spos_str = spos_map.get(pid, '')
+            sec_pos  = expand_secondary_positions(ppos, spos_str)
+            sec_pos  = [p for p in sec_pos if p in POS_WEIGHTS]
+            n_sec    = len(sec_pos)
+
+            if n_sec == 0:
+                pri_rate, sec_rate_each = 1.0, 0.0
+            else:
+                sec_rate = DH_SEC_BASE_RATE * DH_SEC_RATE_BASE ** (n_sec - 1)
+                pri_rate = 1.0 - sec_rate
+                sec_rate_each = sec_rate / n_sec
+
+            arm, spd, fld = skills['arm'], skills['speed'], skills['fielding']
+
+            # Rpos contribution for this interval (no DH probability adjustment here)
+            rpos_interval = RPOS.get(ppos, 0.0) * pri_rate
+            for sp in sec_pos:
+                rpos_interval += RPOS.get(sp, 0.0) * sec_rate_each
+            result[pid]['s21_rpos'] += rpos_interval * interval_gb / num_games
+
+            # Rdef(A) contribution for this interval
+            if ppos in DEF_SCALE:
+                def_pri = def_score(ppos, arm, spd, fld)
+                time_pri = interval_gb * pri_rate / num_games
+                result[pid]['s21_rdef_attr'] += (def_pri - lg_mean_def.get(ppos, def_pri)) * DEF_SCALE[ppos] * time_pri
+            for sp in sec_pos:
+                if sp in DEF_SCALE:
+                    def_sec = def_score(sp, arm, spd, fld, debuff=DH_FLD_DEBUFF)
+                    time_sec = interval_gb * sec_rate_each / num_games
+                    result[pid]['s21_rdef_attr'] += (def_sec - lg_mean_def.get(sp, def_sec)) * DEF_SCALE[sp] * time_sec
+
+    return result

@@ -318,7 +318,7 @@ def generate_batter_page(pid):
 
         h3("Fielding")
         render_table(stats[['season', 'age', 'team', 'pos1', 'pos2',
-                    'gb', 'gf', 'e', 'e_per_gf', 'pb', 'pb_per_gf', 'stat_type']], depth=1)
+                    'gb', 'gf', 'e', 'e_per_gf', 'e_runs', 'pb', 'pb_per_gf', 'pb_runs', 'skill_runs', 'r_def', 'stat_type']], depth=1)
 
         h3("Value")
         render_table(stats[[

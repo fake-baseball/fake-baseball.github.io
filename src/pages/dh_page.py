@@ -8,12 +8,14 @@ import bat_projections as proj_module
 import batting as bat_module
 from data import players
 from data import teams as teams_data
+from data.stats import load_s21_snapshots
 from constants import num_games, runs_E_new, runs_PB, mlb_E_rate, CURRENT_SEASON, LAST_COMPLETED_SEASON
 
 from pages.page_utils import make_doc, render_table, fmt_round
 from registry import REGISTRY
 from dh import (
     attach_dh_model,
+    compute_season_rdef_rpos,
     RPOS, DEF_TIERS, POS_WEIGHTS, DEF_SCALE,
 )
 
@@ -42,6 +44,9 @@ def _dh_table(rows):
             'rdef_e20':    row['_dh_rdef_e20'],
             'rdef_old':    row.get('_dh_rdef_old'),
             'rdef':        row['_dh_rdef'],
+            'Rdef(A21)': round(row['_dh_s21_rdef_attr'], 1) if row.get('_dh_s21_rdef_attr') is not None else None,
+            'Rpos(S21)': round(row['_dh_s21_rpos'], 1)      if row.get('_dh_s21_rpos')      is not None else None,
+            'Rdef(S21)': round(row['_dh_s21_rdef_real'], 1) if row.get('_dh_s21_rdef_real') is not None else None,
         })
     render_table(pd.DataFrame(records), depth=0)
 
@@ -66,13 +71,30 @@ def generate_dh():
     cat_df = edf[edf['pos1'] == 'C']
     lg_pb_rate = cat_df['pb_rate'].mean() if len(cat_df) > 0 else 0.0
 
-    # Old model Rdef from current season
+    # Old model Rdef from last completed season
     s20 = bat_module.stats[(bat_module.stats['season'] == LAST_COMPLETED_SEASON)][['player_id', 'r_def']]
     old_rdef_map = s20.set_index('player_id')['r_def'].to_dict()
     for r in rows:
         r['_dh_rdef_old'] = old_rdef_map.get(r['player_id'])
 
+    # Real S21 Rdef from current season batting stats
+    s21_bat = bat_module.stats[
+        (bat_module.stats['season'] == CURRENT_SEASON) &
+        (bat_module.stats['stat_type'] == 'season')
+    ][['player_id', 'r_def']]
+    s21_rdef_map = s21_bat.set_index('player_id')['r_def'].to_dict()
+    for r in rows:
+        r['_dh_s21_rdef_real'] = s21_rdef_map.get(r['player_id'])
+
     attach_dh_model(rows, ppos_map, spos_map, e_rate_map, lg_pb_rate)
+
+    pl_skills, bat_gb = load_s21_snapshots()
+    s21_results = compute_season_rdef_rpos(ppos_map, spos_map, pl_skills, bat_gb)
+    for r in rows:
+        res = s21_results.get(r['player_id'], {})
+        r['_dh_s21_rdef_attr'] = res.get('s21_rdef_attr')
+        r['_dh_s21_rpos']      = res.get('s21_rpos')
+
     rows.sort(key=lambda r: r['_dh_rdef'] or 0, reverse=True)
 
     doc = make_doc("Positional Adjustments", depth=0)

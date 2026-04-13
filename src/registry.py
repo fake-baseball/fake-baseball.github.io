@@ -530,6 +530,28 @@ REGISTRY = {
         'decimal_places': 3, 'leading_zero': False,
         'context': 'fielding',
     },
+    # -- Value -----------------------------------------------------------------
+    'e_runs': {
+        'name': 'Rerr',
+        'label': 'Error Runs',
+        'description': 'Runs above average from errors relative to positional average error rate.',
+        'decimal_places': 1,
+        'context': 'fielding',
+    },
+    'pb_runs': {
+        'name': 'Rpb',
+        'label': 'Passed Ball Runs',
+        'description': 'Runs above average from passed balls relative to positional average passed ball rate (catchers only).',
+        'decimal_places': 1,
+        'context': 'fielding',
+    },
+    'skill_runs': {
+        'name': 'Rskill',
+        'label': 'Skill Runs',
+        'description': 'Attribute-based defensive runs above average, integrated over season 21 skill snapshots. Zero for seasons before 21.',
+        'decimal_places': 1,
+        'context': 'fielding',
+    },
 
     # =========================================================================
     # Pitching (context: 'pitching')

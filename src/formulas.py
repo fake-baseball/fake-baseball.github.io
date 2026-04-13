@@ -84,13 +84,116 @@ def compute_r_br(d):
     lg_wsb = d['season'].map(lg.season_batting['lg_wsb'])
     d['r_br'] = d['sb'] * runs_SB + d['cs'] * runs_CS - lg_wsb * (d['b_1b'] + d['bb'] + d['hbp'])
 
-def compute_r_def(d):
+def compute_e_runs(d):
     import league as lg
-    avg_e  = d.set_index(['pos1', 'pos2']).index.map(lg.pos_fielding['e_per_gf'])
-    avg_pb = d.set_index(['pos1', 'pos2']).index.map(lg.pos_fielding['pb_per_gf'])
-    def_e  = (_div(d['e'],  d['gf']) - avg_e)  * runs_E * d['gb']
-    def_pb = (_div(d['pb'], d['gf']) - avg_pb) * runs_E * d['gb']
-    d['r_def'] = def_e + def_pb
+    avg_e       = d.set_index(['pos1', 'pos2']).index.map(lg.pos_fielding['e_per_gf'])
+    d['e_runs'] = (_div(d['e'], d['gf']) - avg_e) * runs_E * d['gb']
+
+def compute_pb_runs(d):
+    import league as lg
+    avg_pb       = d.set_index(['pos1', 'pos2']).index.map(lg.pos_fielding['pb_per_gf'])
+    d['pb_runs'] = (_div(d['pb'], d['gf']) - avg_pb) * runs_E * d['gb']
+
+def compute_skill_runs(d):
+    """Attribute-based defensive runs above average, integrated over season21 skill snapshots.
+
+    For season 21 rows, integrates each snapshot's DEF score against the games played under
+    those skills. For all other seasons, skill_runs = 0.0.
+    Skills from players_NN apply to the games played between batting_NN and batting_(NN+1).
+    """
+    from constants import CURRENT_SEASON, num_games
+    from data.stats import load_s21_snapshots
+    from data.players import player_info
+    from dh import (
+        def_score, expand_secondary_positions,
+        POS_WEIGHTS, DEF_SCALE, DH_FLD_DEBUFF,
+        DH_SEC_BASE_RATE, DH_SEC_RATE_BASE,
+    )
+
+    d['skill_runs'] = 0.0
+
+    pl_skills, bat_gb = load_s21_snapshots()
+    if not pl_skills or not bat_gb:
+        return
+
+    ppos_map = player_info['pos1'].to_dict()
+    spos_map = player_info['pos2'].to_dict()
+
+    all_pids = set()
+    for gb_map in bat_gb.values():
+        all_pids.update(gb_map.keys())
+
+    bat_nums = sorted(bat_gb.keys())
+    pl_nums  = sorted(pl_skills.keys())
+
+    # League-mean DEF score per position (from final snapshot for most complete roster)
+    final_pl_num = pl_nums[-1]
+    pos_scores = {}
+    for pid in all_pids:
+        ppos = ppos_map.get(pid, '')
+        if ppos not in POS_WEIGHTS:
+            continue
+        skills = pl_skills[final_pl_num].get(pid) or pl_skills[pl_nums[0]].get(pid)
+        if skills is None:
+            continue
+        score = def_score(ppos, skills['arm'], skills['speed'], skills['fielding'])
+        pos_scores.setdefault(ppos, []).append(score)
+    lg_mean_def = {pos: sum(v) / len(v) for pos, v in pos_scores.items()}
+
+    # Accumulate skill_runs per player_id
+    skill_map = {pid: 0.0 for pid in all_pids}
+
+    for pl_num in pl_nums:
+        next_bat_nums = [n for n in bat_nums if n > pl_num]
+        prev_bat_nums = [n for n in bat_nums if n <= pl_num]
+        if not next_bat_nums or not prev_bat_nums:
+            continue
+        next_bat = next_bat_nums[0]
+        prev_bat = prev_bat_nums[-1]
+
+        for pid in all_pids:
+            ppos = ppos_map.get(pid, '')
+            if ppos not in POS_WEIGHTS:
+                continue
+            skills = pl_skills[pl_num].get(pid)
+            if skills is None:
+                continue
+
+            gb_next = bat_gb[next_bat].get(pid, 0)
+            gb_prev = bat_gb[prev_bat].get(pid, 0)
+            interval_gb = max(0, gb_next - gb_prev)
+            if interval_gb == 0:
+                continue
+
+            spos_str = spos_map.get(pid, '')
+            sec_pos  = expand_secondary_positions(ppos, spos_str)
+            sec_pos  = [p for p in sec_pos if p in POS_WEIGHTS]
+            n_sec    = len(sec_pos)
+
+            if n_sec == 0:
+                pri_rate, sec_rate_each = 1.0, 0.0
+            else:
+                sec_rate = DH_SEC_BASE_RATE * DH_SEC_RATE_BASE ** (n_sec - 1)
+                pri_rate = 1.0 - sec_rate
+                sec_rate_each = sec_rate / n_sec
+
+            arm, spd, fld = skills['arm'], skills['speed'], skills['fielding']
+
+            if ppos in DEF_SCALE:
+                def_pri  = def_score(ppos, arm, spd, fld)
+                time_pri = interval_gb * pri_rate / num_games
+                skill_map[pid] += (def_pri - lg_mean_def.get(ppos, def_pri)) * DEF_SCALE[ppos] * time_pri
+            for sp in sec_pos:
+                if sp in DEF_SCALE:
+                    def_sec  = def_score(sp, arm, spd, fld, debuff=DH_FLD_DEBUFF)
+                    time_sec = interval_gb * sec_rate_each / num_games
+                    skill_map[pid] += (def_sec - lg_mean_def.get(sp, def_sec)) * DEF_SCALE[sp] * time_sec
+
+    # Apply only to CURRENT_SEASON rows
+    mask = d['season'] == CURRENT_SEASON
+    d.loc[mask, 'skill_runs'] = d.loc[mask, 'player_id'].map(skill_map).fillna(0.0)
+
+def compute_r_def(d):  d['r_def'] = d['e_runs'] + d['pb_runs'] + d['skill_runs']
 
 def compute_r_pos(d):
     import league as lg
