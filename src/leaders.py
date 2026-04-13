@@ -40,7 +40,26 @@ def _stats_df(stat):
 
 # ── Leaders ──────────────────────────────────────────────────────────────────
 
-def get_leaders(stat, season=None, worst=False, num=10, team=None, teams=None):
+_OF_POSITIONS = {'LF', 'CF', 'RF'}
+
+
+def _pos_mask(df, pos):
+    """Boolean mask for rows matching a position or list of positions.
+    'OF' expands to LF/CF/RF. Only applies if 'pos1' is a column in df."""
+    if 'pos1' not in df.columns:
+        return pd.Series(True, index=df.index)
+    if isinstance(pos, str):
+        pos = [pos]
+    expanded = set()
+    for p in pos:
+        if p == 'OF':
+            expanded |= _OF_POSITIONS
+        else:
+            expanded.add(p)
+    return df['pos1'].isin(expanded)
+
+
+def get_leaders(stat, season=None, worst=False, num=10, team=None, teams=None, pos=None, role=None):
     meta = REGISTRY[stat]
     ascending = meta['lowest'] ^ worst
     qual_col = meta['qual_col']
@@ -55,6 +74,11 @@ def get_leaders(stat, season=None, worst=False, num=10, team=None, teams=None):
         df = df[df['team'] == team]
     if teams is not None:
         df = df[df['team'].isin(teams)]
+    if pos is not None:
+        df = df[_pos_mask(df, pos)]
+    if role is not None:
+        roles = [role] if isinstance(role, str) else list(role)
+        df = df[df['role'].isin(roles)]
     if ascending:
         df = df[df[stat] <= df[stat].nsmallest(num).max()]
         df = df.sort_values(stat, ascending=True)
@@ -65,7 +89,7 @@ def get_leaders(stat, season=None, worst=False, num=10, team=None, teams=None):
     return df
 
 
-def get_career_leaders(stat, active=False, worst=False, num=10, team=None, teams=None):
+def get_career_leaders(stat, active=False, worst=False, num=10, team=None, teams=None, pos=None, role=None):
     from data import players
     meta = REGISTRY[stat]
     ascending = meta['lowest'] ^ worst
@@ -87,6 +111,11 @@ def get_career_leaders(stat, active=False, worst=False, num=10, team=None, teams
         )
         eligible = recent_team[recent_team.isin(teams)].index
         df = df[df['player_id'].isin(eligible)]
+    if pos is not None:
+        df = df[_pos_mask(df, pos)]
+    if role is not None:
+        roles = [role] if isinstance(role, str) else list(role)
+        df = df[df['role'].isin(roles)]
     if ascending:
         df = df[df[stat] <= df[stat].nsmallest(num).max()]
         df = df.sort_values(stat, ascending=True)

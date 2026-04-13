@@ -15,6 +15,7 @@ Options:
   --cy-young    Cy Young Predictor page
   --glossary    Glossary page
   --dh          Designated Hitter and Defense page
+  --all-stars   All-Star Voting page
 
 If no options are given, everything is built.
 """
@@ -51,12 +52,15 @@ from pages.team_season_page import generate_team_season_page
 from pages.games_page       import generate_games
 from pages.home             import generate_home
 from pages.awards_page      import generate_awards
+from pages.playoffs_page    import generate_playoffs
+from pages.playoff_hunt_page import generate_playoff_hunt
 from pages.projections_page import generate_projections
 from pages.salaries_page    import generate_salaries
 from pages.glossary_page    import generate_glossary
 from pages.dh_page          import generate_dh
 from pages.leaders_page     import generate_leaders
 from pages.cy_young_page    import generate_cy_young
+from pages.all_stars_page   import generate_all_stars
 
 # Dependencies
 
@@ -83,6 +87,8 @@ _PAGE_DEPS = {
     'leaders_page':{'raw', 'league', 'teams', 'standings', 'stats', 'leaders'},
     'seasons':     {'raw', 'league', 'teams', 'standings', 'schedule', 'stats', 'team_ranks', 'leaders'},
     'teams_page':  {'raw', 'league', 'teams', 'standings', 'schedule', 'rotations', 'lineups', 'player_info', 'stats', 'team_ranks', 'leaders'},
+    'playoffs':      set(),
+    'playoff_hunt':  {'raw', 'teams', 'standings', 'schedule'},
     'awards':      {'raw', 'league', 'teams', 'standings', 'stats', 'leaders', 'player_info'},
     'cy_young':    {'raw', 'league', 'teams', 'standings', 'stats', 'leaders', 'player_info'},
     'projections': {'raw', 'league', 'teams', 'standings', 'stats', 'leaders', 'player_info', 'bat_proj', 'pit_proj'},
@@ -91,6 +97,7 @@ _PAGE_DEPS = {
     'home':        set(),
     'games':       set(),
     'glossary':    set(),
+    'all_stars':   {'raw', 'league', 'teams', 'standings', 'stats', 'leaders', 'player_info'},
 }
 
 # Topological order for data loading
@@ -108,16 +115,20 @@ _NAV_PAGE_MAP = {
     'seasons':      'seasons',
     'teams_page':   'teams',
     'games':        'games',
+    'playoffs':     'playoffs',
+    'playoff_hunt': 'playoff_hunt',
     'awards':       'awards',
     'projections':  'projections',
     'dh':           'dh',
     'salaries':     'salaries',
     'cy_young':     'cy_young',
     'glossary':     'glossary',
+    'all_stars':    'all_stars',
 }
 
 _ALL_PAGES = {'players', 'leaders_page', 'seasons', 'teams_page', 'home',
-              'awards', 'projections', 'salaries', 'cy_young', 'glossary', 'dh', 'games'}
+              'awards', 'playoffs', 'playoff_hunt', 'projections', 'salaries', 'cy_young', 'glossary', 'dh', 'games',
+              'all_stars'}
 
 
 def _done(t):
@@ -133,12 +144,15 @@ def main():
     parser.add_argument("--teams",       action="store_true")
     parser.add_argument("--home",        action="store_true")
     parser.add_argument("--awards",      action="store_true")
+    parser.add_argument("--playoffs",     action="store_true")
+    parser.add_argument("--playoff-hunt", action="store_true")
     parser.add_argument("--projections", action="store_true")
     parser.add_argument("--salaries",    action="store_true")
     parser.add_argument("--cy-young",    action="store_true")
     parser.add_argument("--glossary",    action="store_true")
     parser.add_argument("--dh",          action="store_true")
     parser.add_argument("--games",       action="store_true")
+    parser.add_argument("--all-stars",   action="store_true")
     args = parser.parse_args()
 
     requested = {
@@ -148,12 +162,15 @@ def main():
         'teams_page':   args.teams,
         'home':         args.home,
         'awards':       args.awards,
+        'playoffs':     args.playoffs,
+        'playoff_hunt': args.playoff_hunt,
         'projections':  args.projections,
         'salaries':     args.salaries,
         'cy_young':     args.cy_young,
         'glossary':     args.glossary,
         'dh':           args.dh,
         'games':        args.games,
+        'all_stars':    args.all_stars,
     }
 
     pages = {k for k, v in requested.items() if v} or _ALL_PAGES
@@ -256,6 +273,14 @@ def main():
         print("Generating games...", end='', flush=True)
         t = time.time(); generate_games(); _done(t)
 
+    if 'playoffs' in pages:
+        print("Generating playoffs page...", end='', flush=True)
+        t = time.time(); generate_playoffs(); _done(t)
+
+    if 'playoff_hunt' in pages:
+        print("Generating playoff hunt page...", end='', flush=True)
+        t = time.time(); generate_playoff_hunt(); _done(t)
+
     if 'awards' in pages:
         print("Generating awards page...", end='', flush=True)
         t = time.time(); generate_awards(); _done(t)
@@ -285,6 +310,10 @@ def main():
     if 'cy_young' in pages:
         print("Generating Cy Young Predictor page...", end='', flush=True)
         t = time.time(); generate_cy_young(); _done(t)
+
+    if 'all_stars' in pages:
+        print("Generating All-Star Voting page...", end='', flush=True)
+        t = time.time(); generate_all_stars(); _done(t)
 
     if 'home' in pages:
         print("Generating home page...", end='', flush=True)

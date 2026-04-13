@@ -25,12 +25,15 @@ NAV_LINKS = [
     ("seasons",     "Seasons",                "seasons/index.html"),
     ("teams",       "Teams",                  "teams/index.html"),
     ("games",       "Games",                  "games/index.html"),
+    ("playoffs",    "Playoffs",               "playoffs.html"),
+    ("playoff_hunt", "Playoff Hunt",          "playoff_hunt.html"),
     ("awards",      "Awards",                 "awards.html"),
     ("projections", "Projections",            "projections.html"),
     ("dh",          "Positional Adjustments", "dh.html"),
     ("salaries",    "Salaries",               "salaries.html"),
     ("cy_young",    "Cy Young Predictor",     "cy_young.html"),
     ("glossary",    "Glossary",               "glossary.html"),
+    ("all_stars",   "All-Star Voting",        "all_stars.html"),
 ]
 
 # Set of active section keys; populated by build.py before page generation.
