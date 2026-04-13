@@ -9,10 +9,14 @@ from leaders import get_leaders
 from pages.page_utils import make_doc, render_table
 
 _BAT_COLS = ['player_name', 'team', 'season', 'b_gp', 'pa', 'hr', 'r', 'rbi', 'sb',
-             'avg', 'obp', 'slg', 'ops', 'woba', 'wrc_plus', 'war', 'stat_type']
+             'avg', 'obp', 'slg', 'ops', 'woba', 'wrc_plus',
+             'r_bat', 'r_br', 'r_def', 'r_pos', 'r_corr', 'r_rep', 'raa', 'rar', 'war',
+             'stat_type']
 
 _PIT_COLS = ['player_name', 'team', 'season', 'p_gp', 'p_gs', 'p_sv', 'p_ip',
-             'p_w', 'p_l', 'p_era', 'p_fip', 'p_whip', 'p_k', 'p_bb', 'p_war', 'stat_type']
+             'p_w', 'p_l', 'p_era', 'p_fip', 'p_whip', 'p_k', 'p_bb',
+             'p_r_def', 'p_raa', 'p_r_lev', 'p_raa_lev', 'p_r_rep', 'p_rar', 'p_war',
+             'stat_type']
 
 _POSITIONS = ['C', '1B', '2B', '3B', 'SS', 'OF']
 _ROLES = [('SP', 10), ('SP/RP', 5), ('RP', 5), ('CL', 5)]

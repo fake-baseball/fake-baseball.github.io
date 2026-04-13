@@ -197,8 +197,75 @@ def compute_r_def(d):  d['r_def'] = d['e_runs'] + d['pb_runs'] + d['skill_runs']
 
 def compute_r_pos(d):
     import league as lg
+    from constants import CURRENT_SEASON
     rpos = d.set_index(['pos1', 'pos2']).index.map(lg.pos_adjustment['r_pos'])
     d['r_pos'] = rpos * d['gb'] / num_games
+
+    # Season 21: override with skill-snapshot-integrated positional adjustment
+    from data.stats import load_s21_snapshots
+    from data.players import player_info
+    from dh import (
+        expand_secondary_positions, RPOS, POS_WEIGHTS,
+        DH_SEC_BASE_RATE, DH_SEC_RATE_BASE,
+    )
+    pl_skills, bat_gb = load_s21_snapshots()
+    if not pl_skills or not bat_gb:
+        return
+
+    ppos_map = player_info['pos1'].to_dict()
+    spos_map = player_info['pos2'].to_dict()
+
+    all_pids = set()
+    for gb_map in bat_gb.values():
+        all_pids.update(gb_map.keys())
+
+    bat_nums = sorted(bat_gb.keys())
+    pl_nums  = sorted(pl_skills.keys())
+
+    rpos_map = {pid: 0.0 for pid in all_pids}
+
+    for pl_num in pl_nums:
+        next_bat_nums = [n for n in bat_nums if n > pl_num]
+        prev_bat_nums = [n for n in bat_nums if n <= pl_num]
+        if not next_bat_nums or not prev_bat_nums:
+            continue
+        next_bat = next_bat_nums[0]
+        prev_bat = prev_bat_nums[-1]
+
+        for pid in all_pids:
+            ppos = ppos_map.get(pid, '')
+            if ppos not in POS_WEIGHTS:
+                continue
+            if pl_skills[pl_num].get(pid) is None:
+                continue
+
+            gb_next = bat_gb[next_bat].get(pid, 0)
+            gb_prev = bat_gb[prev_bat].get(pid, 0)
+            interval_gb = max(0, gb_next - gb_prev)
+            if interval_gb == 0:
+                continue
+
+            spos_str = spos_map.get(pid, '')
+            sec_pos  = expand_secondary_positions(ppos, spos_str)
+            sec_pos  = [p for p in sec_pos if p in POS_WEIGHTS]
+            n_sec    = len(sec_pos)
+
+            if n_sec == 0:
+                pri_rate, sec_rate_each = 1.0, 0.0
+            else:
+                sec_rate = DH_SEC_BASE_RATE * DH_SEC_RATE_BASE ** (n_sec - 1)
+                pri_rate = 1.0 - sec_rate
+                sec_rate_each = sec_rate / n_sec
+
+            rpos_interval = RPOS.get(ppos, 0.0) * pri_rate
+            for sp in sec_pos:
+                rpos_interval += RPOS.get(sp, 0.0) * sec_rate_each
+            rpos_map[pid] += rpos_interval * interval_gb / num_games
+
+    mask = d['season'] == CURRENT_SEASON
+    d.loc[mask, 'r_pos'] = d.loc[mask, 'player_id'].map(rpos_map).fillna(
+        d.loc[mask, 'r_pos']
+    )
 
 def compute_r_rep(d):
     import league as lg
