@@ -106,6 +106,11 @@ table.compact th, table.compact td {
     padding: 0.1rem 0.3rem;
 }
 
+svg.odds-chart {
+    display: block;
+    margin-bottom: 1em;
+}
+
 td.mono-col {
     font-family: "PT Mono", monospace;
 }
@@ -124,5 +129,5 @@ label {
 }
 
 meter {
-    width: 162px;
+    width: 110px;
 }
