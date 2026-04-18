@@ -129,5 +129,9 @@ label {
 }
 
 meter {
-    width: 110px;
+    width: 162px;
+}
+
+meter.skill-meter {
+    width: 80px;
 }
