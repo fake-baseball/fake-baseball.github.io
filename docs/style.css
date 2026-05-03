@@ -82,6 +82,7 @@ tbody tr:hover {
 }
 
 tbody tr.career td, tbody tr.career th,
+tbody tr.playoff_career td, tbody tr.playoff_career th,
 tbody tr.totals td, tbody tr.totals th {
     border-top: 2px solid #aaa;
     border-bottom: 2px solid #aaa;
@@ -96,6 +97,18 @@ tbody tr.team td, tbody tr.team th {
 tbody tr.projected td, tbody tr.projected th {
     background: #dbeeff;
     font-style: italic;
+}
+
+td.conf-best {
+    font-weight: bold;
+}
+
+td.league-best {
+    font-style: italic;
+}
+
+tbody tr td.all-time-best {
+    background-color: gold;
 }
 
 ul {
@@ -134,4 +147,28 @@ meter {
 
 meter.skill-meter {
     width: 80px;
+}
+
+td.scores-team-col {
+    text-align: left;
+}
+
+td.scores-score-col {
+    text-align: center;
+}
+
+td.scores-home {
+    text-align: right;
+    padding-left: 1em;
+}
+
+td.scores-starter-col, th.scores-starter-col {
+    text-align: left;
+    font-family: "PT Sans", sans-serif;
+    white-space: nowrap;
+}
+
+td.scores-starter-col.scores-home, th.scores-starter-col.scores-home {
+    text-align: right;
+    padding-left: 0;
 }
